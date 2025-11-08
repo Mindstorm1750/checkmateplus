@@ -1,0 +1,121 @@
+
+# 24-10-2025 meeting
+
+## Task allocation
+
+Luke will work on engine
+- Move generation
+- Move making
+- Evaluation
+- Search algorithm (depends on move generation, move making, and evaluation being done)
+
+James will do:
+- Backend (survey database and websocket connections for game)
+
+elendil7 will do:
+- Voice commands to make moves (front end work as well)
+
+Ainan will do:
+- Front end (chessboard component and user flow)
+- Move times algorithm (data already found on database.lichess.org)
+- Tests for engine and the initial data types
+- Technical report
+
+## Technical details
+
+Going with React for frontend right now. "React works better with Spring"- James
+
+## Layla
+
+Team agrees to drop Layla.
+
+## Future meetings
+
+Friday continues to be good for:
+- Luke
+- James
+- Ainan
+- elendil7
+
+Friday 9am will be with David.
+
+## TODO
+
+- [x] Email David about next meeting Friday 9am.
+- [x] Email ethics officer regarding surveying of people after games.
+
+## Misc
+
+David said it's okay for next meeting to be next Friday (not that rushed).
+
+
+# 31-10-2025 meeting
+
+## What members have been up to
+
+James said he's been setting up a test repo and springboot.
+
+Luke has been looking at Kotlin as he's never used it before and a chess engine programming wiki.
+
+Ainan has been doing data exploring/cleaning of a chess dataset in Python.
+
+## Advice
+
+- Everyone has to know the project inside out so that everyone can talk about it.
+
+## TODO
+
+- [x] David will email project template soon.
+- [x] Still have to email ethics officer.
+
+## Decide on
+
+If we're having users login then decide how to keep things secure and anonymous.
+
+If we're having users, how do they represent themselves? Just username? No avatar?
+
+If we're doing multiplayer, how do users meet each other? List of online players?
+
+## Front-end
+
+Make website resizable (mobile compatible even). Means touch-compatible.
+
+## Possible further development
+
+Offline play.
+
+## Notes
+
+Even if we're just doing player vs computer, logging in is needed to protect the endpoint.
+
+Once a fortnight meetings if everything is going well.
+
+Can speed things up at poster fair if the survey is done seperately (on paper) instead of on the same device that people are playing on. Means that there must be the ability to disable post-game surveys.
+
+
+# 7-11-2025 meeting
+
+## Things done
+
+- elendil7 emailed Marek asking for the gitlab account to be setup soon.
+- Ainan emailed Palani for ethics approval.
+- Project name has been chosen.
+
+## Things yet to be done
+
+- [ ] David's project template needs to be filled out. Put it in shared google docs for collaboration.
+- [ ] **Poster**.
+- [x] James to setup a repository so that we can start before next term.
+
+## Registration
+
+Project to be registered today.
+
+## Future meeting schedule
+
+Will continue at 0930 Friday but once a fortnight instead of once a week.
+
+
+
+
+
