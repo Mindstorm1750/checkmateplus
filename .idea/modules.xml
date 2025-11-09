@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/ChessMate.iml" filepath="$PROJECT_DIR$/ChessMate.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Checkmate+.iml" filepath="$PROJECT_DIR$/Checkmate+.iml" />
       <module fileurl="file://$PROJECT_DIR$/frontend/frontend.iml" filepath="$PROJECT_DIR$/frontend/frontend.iml" />
     </modules>
   </component>
