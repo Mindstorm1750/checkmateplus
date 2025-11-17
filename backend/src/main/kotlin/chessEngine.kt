@@ -9,10 +9,20 @@ enum class Colour {
 
 data class Piece(val type: PieceType, val color: Colour)
 
-typealias Square = Int //All Squares are now Int - code easier to read
+typealias Square = Int // All Squares are now Int - code easier to read
 
-fun Square.toFileRank(): Pair<Square, Square> = this % 8 to this / 8
-fun fileRank (file: Int, rank:Int): Square = rank*8 + file
+/**
+ * FileRank isn't a pair of Squares because Squares have values between 0 and 63,
+ * whereas File and Rank are values between 0 and 7
+ */
+typealias FileRank = Pair<Int, Int>
+
+
+fun Square.toFileRank(): FileRank = this % 8 to this / 8
+fun FileRank.toSquare(): Square {
+    val (file, rank) = this
+    return rank * 8 + file
+}
 
 //Move representation
 data class Move(
@@ -49,8 +59,8 @@ class Board{
 
         //Input Pawns
         for (file in 0..7){
-            squares[fileRank(file,1)] = Piece(PieceType.PAWN, Colour.WHITE)
-            squares[fileRank(file,6)] = Piece(PieceType.PAWN, Colour.BLACK)
+            squares[Pair(file,1).toSquare()] = Piece(PieceType.PAWN, Colour.WHITE)
+            squares[Pair(file,6).toSquare()] = Piece(PieceType.PAWN, Colour.BLACK)
         }
 
         val backRank = listOf(
@@ -60,8 +70,8 @@ class Board{
         )
         //Fill in back ranks
         for (file in 0..7){
-            squares[fileRank(file,0)] = Piece(backRank[file], Colour.WHITE)
-            squares[fileRank(file,7)] = Piece(backRank[file], Colour.BLACK)
+            squares[Pair(file,0).toSquare()] = Piece(backRank[file], Colour.WHITE)
+            squares[Pair(file,7).toSquare()] = Piece(backRank[file], Colour.BLACK)
 
         }
 
@@ -125,7 +135,8 @@ class Board{
         for (rank in 7 downTo 0) {
             print("${rank + 1} ")
             for (file in 0..7) {
-                val sq = fileRank(file, rank)
+                val fileRank = Pair(file, rank)
+                val sq = fileRank.toSquare()
                 val piece = squares[sq]
                 val symbol = when (piece?.type) {
                     PieceType.PAWN -> if (piece.color == Colour.WHITE) "P" else "p"
