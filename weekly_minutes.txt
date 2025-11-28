@@ -104,7 +104,7 @@ Can speed things up at poster fair if the survey is done seperately (on paper) i
 ## Things yet to be done
 
 - [ ] David's project template needs to be filled out. Put it in shared google docs for collaboration.
-- [ ] **Poster**.
+- [x] **Poster**.
 - [x] James to setup a repository so that we can start before next term.
 
 ## Registration
@@ -116,6 +116,26 @@ Project to be registered today.
 Will continue at 0930 Friday but once a fortnight instead of once a week.
 
 
+# 21-11-2025 meeting
 
+## Poster feedback
 
+Poster needs more technical detail and could do with visuals of what the final product might look like.
 
+Poster needs to be more enticing.
+
+## Advice
+
+Be 2 weeks ahead of schedule (some leeway).
+
+## Future meetings
+
+This will be last meeting of term.
+
+## Project template
+
+Is just a template; can be modified anyhow we like. Is for keeping paperwork up-to-date and organised. It's a document that keeps changing.
+
+## Palani's ethics approval
+
+Will get done by David.
