@@ -139,3 +139,49 @@ Is just a template; can be modified anyhow we like. Is for keeping paperwork up-
 ## Palani's ethics approval
 
 Will get done by David.
+
+# 12-1-2026 meeting
+
+James has been making a graph for our microservice architecture.
+
+Websocket connections will be the main implementation. Supporting a fallback to long-polling would be a stretch goal.
+
+## First set of goals
+
+Minimum viable product would be:
+- No account creation (people play anonymously)
+- Human vs human matchmaking *and* human vs AI
+- Survey included post-game (even though poster fair survey would be paper and pen)
+- Voice commands
+- At least more than one piece animation option
+- Some realistic move-time implementation
+- App will be visitable by URL
+- Only 1 AI opponent to choose from
+
+## Voice commands
+
+Model could be run locally instead.
+
+Beyond just turning voice into text, we need to then interpret text into a chess move ("knight to f3" needs to become g1 to f3 for the chess engine. Have to deal with ambiguity lke two knights
+
+## Piece animations
+
+At least a "fun" option.
+
+## Stretch goals
+
+- Be able to make accounts. James is suggesting password-less implementation. Either passkeys, OAuth, or device authentication (what you have). Have a contact admins page if users are stuck
+- Maybe users can upload their own images for use as chesspiece designs
+- Multiple AI difficulty options (or even other engines like Stockfish)
+- Proper mobile support
+
+## Poster
+
+David recommends them to be done in Publisher (Microsoft Publisher).
+
+David emphasis it to be done soon.
+
+## Post-game survey task
+
+Will be just 1 to 5 star rating for "How much did you enjoy the game?" and an *optional* text input for any other comments. This same format will be used in the poster fair survey except done using pen and paper to free up the computer for more people to play.
+
