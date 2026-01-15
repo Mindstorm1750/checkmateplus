@@ -5,14 +5,22 @@
       <profile name="Gradle Imported" enabled="true">
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
-          <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.projectlombok/lombok/1.18.42/8365263844ebb62398e0dc33057ba10ba472d3b8/lombok-1.18.42.jar" />
+          <entry name="$PROJECT_DIR$/../../GradleHome/caches/modules-2/files-2.1/org.projectlombok/lombok/1.18.42/8365263844ebb62398e0dc33057ba10ba472d3b8/lombok-1.18.42.jar" />
         </processorPath>
         <module name="backend.main" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="backend" target="21" />
+    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="MatchmakingService" options="-parameters" />
+      <module name="MatchmakingService.aot" options="-parameters" />
+      <module name="MatchmakingService.aotTest" options="-parameters" />
+      <module name="MatchmakingService.main" options="-parameters" />
+      <module name="MatchmakingService.test" options="-parameters" />
       <module name="backend" options="-parameters" />
       <module name="backend.aot" options="-parameters" />
       <module name="backend.aotTest" options="-parameters" />
