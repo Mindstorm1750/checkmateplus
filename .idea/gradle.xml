@@ -7,6 +7,11 @@
         <option name="externalProjectPath" value="$PROJECT_DIR$/ChessLibrary" />
         <option name="gradleHome" value="" />
         <option name="gradleJvm" value="openjdk-24" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/ChessLibrary" />
+          </set>
+        </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/MatchmakingService" />
