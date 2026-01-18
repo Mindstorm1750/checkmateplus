@@ -64,5 +64,5 @@ fun FenToBoard(fen: String): Board {
         i++
     }
 
-    return Board() // placeholder until uk.ac.kent.Board class allows parameters in its constructor
+    return Board() // placeholder until Board class allows parameters in its constructor
 }

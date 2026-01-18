@@ -1,6 +1,6 @@
 package uk.ac.kent.chessLibrary.chessEngine
 
-//uk.ac.kent.Move representation
+//Move representation
 data class Move(
     val from: Square, // Where piece starts
     val to: Square, // Where piece ends up

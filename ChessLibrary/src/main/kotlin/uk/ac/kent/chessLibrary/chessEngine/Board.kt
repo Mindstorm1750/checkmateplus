@@ -49,11 +49,11 @@ class Board{
         val startRank = if(color == Colour.WHITE) 1 else 6
         val forward = from + direction
 
-        //uk.ac.kent.Move forward 1 square
+        //Move forward 1 square
         if (forward in 0..63 && squares[forward] == null){
             moves.add(Move(from, forward))
 
-            //uk.ac.kent.Move forward 2 squares from starting position
+            //Move forward 2 squares from starting position
             val doubleForward = from + 2 * direction
             if ((from / 8 == startRank) && squares[doubleForward] == null && squares[forward]==null){
                 moves.add(Move(from, doubleForward))
