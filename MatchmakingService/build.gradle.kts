@@ -25,6 +25,7 @@ repositories {
 }
 
 extra["springCloudVersion"] = "2025.1.0"
+val springGrpcVersion by extra("1.0.1")
 
 dependencies {
     implementation(project(":ChessLibrary"))
@@ -39,6 +40,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-websocket")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springframework.boot:spring-boot-starter-cache")
+    implementation("org.springframework.grpc:spring-grpc-spring-boot-starter")
     testImplementation("org.springframework.security:spring-security-test")
     compileOnly("org.projectlombok:lombok")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
@@ -55,6 +57,7 @@ dependencies {
 dependencyManagement {
     imports {
         mavenBom("org.springframework.cloud:spring-cloud-dependencies:${property("springCloudVersion")}")
+        mavenBom("org.springframework.grpc:spring-grpc-dependencies:$springGrpcVersion")
     }
 }
 
