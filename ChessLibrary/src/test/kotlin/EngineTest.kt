@@ -1,8 +1,7 @@
-package uk.ac.kent.backend
-
-import org.junit.jupiter.api.Test
-import toFileRank
-import toSquare
+import uk.ac.kent.chessLibrary.chessEngine.Colour
+import uk.ac.kent.chessLibrary.chessEngine.toFileRank
+import uk.ac.kent.chessLibrary.chessEngine.toSquare
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class EngineTest {
@@ -44,5 +43,5 @@ class EngineTest {
         assertEquals(d4.toSquare(), 27)
     }
 
-    
+
 }

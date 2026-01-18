@@ -1,10 +1,10 @@
 package uk.ac.kent.matchmakingservice
 
 import org.springframework.data.redis.core.RedisTemplate
-import playerModels.Player
-import playerModels.TimeControl
+import uk.ac.kent.chessLibrary.playerModels.Player
+import uk.ac.kent.playerModels.TimeControl
 
-import playerModels.MatchStatus
+import uk.ac.kent.playerModels.MatchStatus
 import kotlinx.serialization.json.Json
 import uk.ac.kent.matchmakingservice.models.Match
 import kotlin.time.ExperimentalTime

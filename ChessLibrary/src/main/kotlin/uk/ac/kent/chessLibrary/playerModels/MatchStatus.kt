@@ -1,4 +1,4 @@
-package playerModels
+package uk.ac.kent.playerModels
 
 import kotlinx.serialization.Serializable
 

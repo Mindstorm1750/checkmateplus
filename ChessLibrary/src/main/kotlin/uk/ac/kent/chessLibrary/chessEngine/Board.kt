@@ -1,45 +1,4 @@
-enum class PieceType{
-    PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING
-}
-
-enum class Colour {
-    WHITE, BLACK;
-    fun opposite() = if (this == WHITE) BLACK else Colour.WHITE
-}
-
-data class Piece(val type: PieceType, val color: Colour)
-
-typealias Square = Int // All Squares are now Int - code easier to read
-
-/**
- * FileRank isn't a pair of Squares because Squares have values between 0 and 63,
- * whereas File and Rank are values between 0 and 7
- */
-typealias FileRank = Pair<Int, Int>
-
-
-fun Square.toFileRank(): FileRank = this % 8 to this / 8
-fun FileRank.toSquare(): Square {
-    val (file, rank) = this
-    return rank * 8 + file
-}
-
-//Move representation
-data class Move(
-    val from: Square, // Where piece starts
-    val to: Square, // Where piece ends up
-    val promotion: PieceType? = null,
-    val isCapture: Boolean = false,
-    val isCastling: Boolean = false,
-    val isEnPassant: Boolean = false,
-)
-
-data class CastlingRights(
-    var whiteKingSide: Boolean = true,
-    var whiteQueenSide: Boolean = true,
-    var blackKingSide: Boolean = true,
-    var blackQueenSide: Boolean = true
-)
+package uk.ac.kent.chessLibrary.chessEngine
 
 class Board{
     private val squares: Array<Piece?> = Array(64) { null }
@@ -90,11 +49,11 @@ class Board{
         val startRank = if(color == Colour.WHITE) 1 else 6
         val forward = from + direction
 
-        //Move forward 1 square
+        //uk.ac.kent.Move forward 1 square
         if (forward in 0..63 && squares[forward] == null){
             moves.add(Move(from, forward))
 
-            //Move forward 2 squares from starting position
+            //uk.ac.kent.Move forward 2 squares from starting position
             val doubleForward = from + 2 * direction
             if ((from / 8 == startRank) && squares[doubleForward] == null && squares[forward]==null){
                 moves.add(Move(from, doubleForward))
@@ -156,12 +115,4 @@ class Board{
     }
 
 
-}
-
-
-
-
-fun main() {
-    val board = Board()   // sets up the starting position
-    board.printBoard()    // 👈 shows the board in the console
 }

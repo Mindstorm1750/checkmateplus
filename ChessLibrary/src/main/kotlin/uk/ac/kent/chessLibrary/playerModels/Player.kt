@@ -1,10 +1,11 @@
-package playerModels
+package uk.ac.kent.chessLibrary.playerModels
 
 import kotlinx.serialization.Serializable
 import java.util.UUID
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
+
 /**
  * Base class for all player types in the matchmaking system
  */

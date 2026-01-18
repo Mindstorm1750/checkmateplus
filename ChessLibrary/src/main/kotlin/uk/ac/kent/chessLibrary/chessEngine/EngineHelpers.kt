@@ -1,3 +1,5 @@
+package uk.ac.kent.chessLibrary.chessEngine
+
 const val STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 val charToPieceMap: Map<Char, Piece> = mapOf(
@@ -20,8 +22,8 @@ val pieceToCharMap: Map<Piece, Char> = charToPieceMap.map { (k, v) -> v to k }.t
 
 /**
  * Turns a FEN string into a board. Intended to help engine testing.
- * Can also be used to create a Board for the starting position using STARTING_FEN
- * @return a Board represented by the FEN string
+ * Can also be used to createBoard for the starting position using STARTING_FEN
+ * @return Board represented by the FEN string
  */
 fun FenToBoard(fen: String): Board {
     val fenParts = fen.trim().split(' ')
@@ -32,7 +34,8 @@ fun FenToBoard(fen: String): Board {
         whiteKingSide = fenParts[2].contains('K'),
         whiteQueenSide = fenParts[2].contains('Q'),
         blackKingSide = fenParts[2].contains('k'),
-        blackQueenSide = fenParts[2].contains('q'),)
+        blackQueenSide = fenParts[2].contains('q'),
+    )
     var enPassantSquare: Square? = null
     val halfMoveClock = fenParts[4].toInt()
     val fullMoveNumber = fenParts[5].toInt()
@@ -61,5 +64,5 @@ fun FenToBoard(fen: String): Board {
         i++
     }
 
-    return Board() // placeholder until Board class allows parameters in its constructor
+    return Board() // placeholder until uk.ac.kent.Board class allows parameters in its constructor
 }
