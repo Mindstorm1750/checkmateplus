@@ -1,23 +1,23 @@
 package uk.ac.kent.matchmakingservice
 
+import kotlinx.serialization.json.Json
 import org.springframework.data.redis.core.RedisTemplate
 import uk.ac.kent.chessLibrary.playerModels.Player
-import uk.ac.kent.playerModels.TimeControl
-
-import uk.ac.kent.playerModels.MatchStatus
-import kotlinx.serialization.json.Json
 import uk.ac.kent.matchmakingservice.models.Match
+import uk.ac.kent.playerModels.MatchStatus
+import uk.ac.kent.playerModels.TimeControl
 import kotlin.time.ExperimentalTime
 
 class MatchmakingService(
     private val redisTemplate: RedisTemplate<String, String>
-    ) {
+) {
 
-        companion object {
-            private const val QUEUE_PREFIX = "matchmaking:queue:"
-            private const val PLAYER_QUEUE_MAP = "matchmaking:player_queue_map"
-            private const val ACTIVE_MATCHES = "matchmaking:active_matches"
-        }
+    companion object {
+        private const val QUEUE_PREFIX = "matchmaking:queue:"
+        private const val PLAYER_QUEUE_MAP = "matchmaking:player_queue_map"
+        private const val ACTIVE_MATCHES = "matchmaking:active_matches"
+    }
+
     /**
      * Add a player to the matchmaking queue
      */
@@ -33,24 +33,22 @@ class MatchmakingService(
 
         val queueKey = "$QUEUE_PREFIX${timeControl.name}"
 
-        // Try to atomically pop an opponent and create match
+
         val opponentJson = redisTemplate.opsForList().rightPop(queueKey)
 
         return if (opponentJson != null) {
-            // Found opponent!
             val opponent = deserializePlayer(opponentJson)
 
-            // Remove opponent from tracking
             redisTemplate.opsForHash<String, String>()
                 .delete(PLAYER_QUEUE_MAP, opponent.playerId)
 
             createMatch(listOf(opponent, player), timeControl)
         } else {
-            // No opponent, add to queue
+
             val playerJson = serializePlayer(player)
             redisTemplate.opsForList().leftPush(queueKey, playerJson)
 
-            // Track which queue player is in
+
             redisTemplate.opsForHash<String, String>()
                 .put(PLAYER_QUEUE_MAP, player.playerId, timeControl.name)
 
@@ -67,7 +65,7 @@ class MatchmakingService(
 
         val queueKey = "$QUEUE_PREFIX$timeControlName"
 
-        // Remove from queue (need to scan list)
+
         val queueSize = redisTemplate.opsForList().size(queueKey) ?: 0
         val players = redisTemplate.opsForList().range(queueKey, 0, queueSize)
 
@@ -87,6 +85,7 @@ class MatchmakingService(
 
         return removed
     }
+
     /**
      * Get queue sizes for all time controls
      */
@@ -134,7 +133,8 @@ class MatchmakingService(
         }
 
         return updatedMatch
-}
+    }
+
     @OptIn(ExperimentalTime::class)
     private fun createMatch(players: List<Player>, timeControl: TimeControl): Match {
         val match = Match(

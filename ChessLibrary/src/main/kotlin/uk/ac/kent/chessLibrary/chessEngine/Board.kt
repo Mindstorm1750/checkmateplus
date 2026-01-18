@@ -114,5 +114,7 @@ class Board{
         println("Side to move: $sideToMove")
     }
 
+    fun executeMove(from: String, to: String, promotion: String?) {}
+
 
 }

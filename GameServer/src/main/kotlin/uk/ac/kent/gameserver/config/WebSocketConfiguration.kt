@@ -1,15 +1,25 @@
 package uk.ac.kent.gameserver.config
 
-import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.web.socket.server.standard.ServletServerContainerFactoryBean
+import org.springframework.messaging.simp.config.MessageBrokerRegistry
+import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker
+import org.springframework.web.socket.config.annotation.StompEndpointRegistry
+import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer
 
 @Configuration
-class WebSocketConfiguration {
+@EnableWebSocketMessageBroker
+class WebSocketConfiguration : WebSocketMessageBrokerConfigurer {
 
-    @Bean
-    fun createWebSocketContainer() = ServletServerContainerFactoryBean().apply {
-        maxTextMessageBufferSize = 8192
-        maxBinaryMessageBufferSize = 8192
+    override fun registerStompEndpoints(registry: StompEndpointRegistry) {
+        registry
+            .addEndpoint("/match")
+            .setAllowedOriginPatterns("*")
+            .withSockJS()
+    }
+
+    override fun configureMessageBroker(config: MessageBrokerRegistry) {
+        config.setApplicationDestinationPrefixes("/app")
+        config.enableSimpleBroker("/topic", "/queue")
+        config.setUserDestinationPrefix("/user")
     }
 }
