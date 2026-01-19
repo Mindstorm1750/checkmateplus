@@ -1,7 +1,8 @@
-rootProject.name = "ChessMate"
+rootProject.name = "Checkmate+"
 
 include(
     "ChessLibrary",
     "MatchmakingService",
-    "GameServer"
+    "GameServer",
+    "GameServerManager"
 )
