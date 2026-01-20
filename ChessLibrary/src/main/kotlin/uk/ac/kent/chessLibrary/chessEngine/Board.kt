@@ -1,3 +1,7 @@
+package uk.ac.kent.chessLibrary.chessEngine
+
+import kotlin.math.abs
+
 data class Board(
     val squares: Array<Piece?> = Array(64) { null },
     val sideToMove: Colour = Colour.WHITE,
@@ -19,7 +23,7 @@ data class Board(
             piece
         }
 
-        val newEnPassantSquare = if (piece.type == PieceType.PAWN && kotlin.math.abs(move.to - move.from)==16){
+        val newEnPassantSquare = if (piece.type == PieceType.PAWN && abs(move.to - move.from) ==16){
             (move.from + move.to)/2
         }else{
             null
@@ -93,8 +97,8 @@ data class Board(
             if (target in 0..63){
                 val (toFile, toRank) = target.toFileRank()
                 //ensure knight doesnt wrap around board
-                val fileDiff = kotlin.math.abs(toFile - fromFile)
-                val rankDiff = kotlin.math.abs(toRank - fromRank)
+                val fileDiff = abs(toFile - fromFile)
+                val rankDiff = abs(toRank - fromRank)
 
                 if((fileDiff==2 && rankDiff == 1)||(fileDiff == 1 && rankDiff == 2)){
                     val piece = squares[target]
@@ -125,8 +129,8 @@ data class Board(
 
             while(target in 0..63){
                 val(toFile, toRank) = target.toFileRank()
-                val fileDiff = kotlin.math.abs(toFile - currentFile)
-                val rankDiff = kotlin.math.abs(toRank - currentRank)
+                val fileDiff = abs(toFile - currentFile)
+                val rankDiff = abs(toRank - currentRank)
                 if(fileDiff!=1 || rankDiff!=1){
                     break
                 }
@@ -160,7 +164,7 @@ data class Board(
                 val (toFile, _) = target.toFileRank()
 
                 if(direction == 1 || direction == -1){
-                    if (kotlin.math.abs(toFile - fromFile) >1){
+                    if (abs(toFile - fromFile) >1){
                         break
                     }
                 }
@@ -198,8 +202,8 @@ data class Board(
                 val (toFile, toRank) = target.toFileRank()
 
                 // Check king didn't wrap around board
-                val fileDiff = kotlin.math.abs(toFile - fromFile)
-                val rankDiff = kotlin.math.abs(toRank - fromRank)
+                val fileDiff = abs(toFile - fromFile)
+                val rankDiff = abs(toRank - fromRank)
 
                 if (fileDiff <= 1 && rankDiff <= 1) {
                     val piece = squares[target]
