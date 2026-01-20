@@ -20,7 +20,7 @@ class MatchWebSocketController(
     private val messagingTemplate: SimpMessagingTemplate,
     private val matchService: MatchService
 ) {
-    //Need to add disconnect/reconnect support incase of connection drop
+    //TODO: Need to add disconnect/reconnect support incase of connection drop
 
 
 
@@ -154,7 +154,8 @@ class MatchWebSocketController(
             }
         }
     }
-
+    //might depreciate this in favour of automated start system once players have joined.
+    //Can use this for a pause incase of disconnect feature
     @MessageMapping("/match/{matchId}/start")
     fun startMatch(@DestinationVariable matchId: String) {
         matchService.startTimer(

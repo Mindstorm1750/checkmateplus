@@ -2,8 +2,8 @@ package uk.ac.kent.matchmakingservice.models
 
 import kotlinx.serialization.Serializable
 import uk.ac.kent.chessLibrary.playerModels.Player
-import uk.ac.kent.playerModels.MatchStatus
-import uk.ac.kent.playerModels.TimeControl
+import uk.ac.kent.chessLibrary.playerModels.MatchStatus
+import uk.ac.kent.chessLibrary.playerModels.TimeControl
 import java.util.*
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime

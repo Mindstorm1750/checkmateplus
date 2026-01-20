@@ -56,6 +56,7 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.springframework.grpc:spring-grpc-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    implementation(project(":ChessLibrary"))
 }
 
 dependencyManagement {

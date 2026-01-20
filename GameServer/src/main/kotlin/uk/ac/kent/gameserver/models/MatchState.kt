@@ -3,7 +3,7 @@ package uk.ac.kent.gameserver.models
 import uk.ac.kent.chessLibrary.chessEngine.Board
 import uk.ac.kent.chessLibrary.chessEngine.Colour
 import uk.ac.kent.chessLibrary.playerModels.Player
-import uk.ac.kent.playerModels.TimeControl
+import uk.ac.kent.chessLibrary.playerModels.TimeControl
 
 class MatchState(
     val players: List<Player>,

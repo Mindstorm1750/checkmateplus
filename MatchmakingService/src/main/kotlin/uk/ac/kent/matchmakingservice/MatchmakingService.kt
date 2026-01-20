@@ -4,8 +4,8 @@ import kotlinx.serialization.json.Json
 import org.springframework.data.redis.core.RedisTemplate
 import uk.ac.kent.chessLibrary.playerModels.Player
 import uk.ac.kent.matchmakingservice.models.Match
-import uk.ac.kent.playerModels.MatchStatus
-import uk.ac.kent.playerModels.TimeControl
+import uk.ac.kent.chessLibrary.playerModels.MatchStatus
+import uk.ac.kent.chessLibrary.playerModels.TimeControl
 import kotlin.time.ExperimentalTime
 
 class MatchmakingService(

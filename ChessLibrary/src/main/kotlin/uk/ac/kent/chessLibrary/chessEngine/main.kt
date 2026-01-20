@@ -1,3 +1,5 @@
+package uk.ac.kent.chessLibrary.chessEngine
+
 fun main() {
     val board = Board.startingPosition()
     println("Starting position:")
