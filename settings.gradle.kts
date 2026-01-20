@@ -1,4 +1,4 @@
-rootProject.name = "Checkmate+"
+rootProject.name = "ChessMate"
 
 include(
     "ChessLibrary",
