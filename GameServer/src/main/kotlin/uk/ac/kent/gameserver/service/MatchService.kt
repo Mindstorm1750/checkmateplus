@@ -1,7 +1,13 @@
 package uk.ac.kent.gameserver.service
 
 import org.springframework.stereotype.Service
+import uk.ac.kent.chessLibrary.chessEngine.Board
+import uk.ac.kent.chessLibrary.chessEngine.Colour
 import uk.ac.kent.chessLibrary.chessEngine.Colour.*
+import uk.ac.kent.chessLibrary.chessEngine.Move
+import uk.ac.kent.chessLibrary.chessEngine.PieceType
+import uk.ac.kent.chessLibrary.chessEngine.Square
+import uk.ac.kent.chessLibrary.chessEngine.toSquare
 import uk.ac.kent.chessLibrary.playerModels.Player
 import uk.ac.kent.gameserver.models.MatchState
 import uk.ac.kent.gameserver.models.messages.JoinMatchMessage
@@ -9,7 +15,7 @@ import uk.ac.kent.gameserver.models.messages.MatchStateMessage
 import uk.ac.kent.gameserver.models.messages.MoveMessage
 import uk.ac.kent.gameserver.models.messages.MoveNotification
 import uk.ac.kent.gameserver.models.messages.TimeUpdateMessage
-import uk.ac.kent.playerModels.TimeControl
+import uk.ac.kent.chessLibrary.playerModels.TimeControl
 import java.util.Timer
 import java.util.TimerTask
 import java.util.concurrent.ConcurrentHashMap
@@ -40,12 +46,18 @@ class MatchService {
             ?: throw IllegalArgumentException("Match not found: $matchId")
         val board = match.board
             ?: throw IllegalStateException("Board not initialized")
+        /*
+        TODO: Implement validation from chess engine to detect illicit moves. Waiting for chess engine implementation first though
+        */
 
-            //execute move here as a placeholder needs to be implemented
-        val moveSuccess = board.executeMove(
-            from = moveMessage.from,
-            to = moveMessage.to,
-            promotion = moveMessage.promotion
+        // execute the move on the local board
+        board.applyMove(
+            Move(
+                from = moveMessage.from.toSquare() ?: throw IllegalArgumentException("Invalid from square"),
+                to = moveMessage.to.toSquare() ?: throw IllegalArgumentException("Invalid to square"),
+                promotion = moveMessage.promotion as PieceType?
+            )
+
         )
         //needs to be re-enabled when move execution is enabled
         //if (!moveSuccess) {
@@ -55,6 +67,10 @@ class MatchService {
 
         // Update time with increment
         updateTimeAfterMove(match, board)
+
+        //flip the active turn
+        if (match.activeTurn == WHITE) match.activeTurn = BLACK
+        if (match.activeTurn == BLACK) match.activeTurn = WHITE
 
         // Create move notification
         val moveNotification = MoveNotification(
@@ -70,7 +86,7 @@ class MatchService {
 
     private fun updateTimeAfterMove(
         match: MatchState,
-        board: uk.ac.kent.chessLibrary.chessEngine.Board
+        board: Board
     ) {
         val increment = match.timeControl.increment
 
