@@ -1,96 +1,277 @@
-package uk.ac.kent.chessLibrary.chessEngine
+data class Board(
+    val squares: Array<Piece?> = Array(64) { null },
+    val sideToMove: Colour = Colour.WHITE,
+    val castlingRights: CastlingRights = CastlingRights(),
+    val enPassantSquare: Square? = null,
+    val halfMoveClock: Int = 0,
+    val fullMoveNumber: Int = 1
+) {
 
-class Board{
-    private val squares: Array<Piece?> = Array(64) { null }
-    var sideToMove = Colour.WHITE
-    var castlingRights = CastlingRights()
-    var enPassantSquare: Square? = null
-    var halfMoveClock = 0
-    var fullMoveNumber = 1
+    fun applyMove(move: Move): Board {
+        val newSquares = squares.copyOf()
+        val piece = newSquares[move.from]
+            ?: throw IllegalArgumentException("No piece on square ${move.from}")
 
-    init{
-        setupStartPosition()
-    }
-
-    private fun setupStartPosition() {
-        //Clear the board
-        for (i in 0 until 64) squares[i] = null
-
-        //Input Pawns
-        for (file in 0..7){
-            squares[Pair(file,1).toSquare()] = Piece(PieceType.PAWN, Colour.WHITE)
-            squares[Pair(file,6).toSquare()] = Piece(PieceType.PAWN, Colour.BLACK)
+        newSquares[move.from] = null
+        newSquares[move.to] = if (move.promotion!= null){
+            Piece(move.promotion, piece.color)
+        } else{
+            piece
         }
 
-        val backRank = listOf(
-            PieceType.ROOK, PieceType.KNIGHT, PieceType.BISHOP,
-            PieceType.QUEEN, PieceType.KING, PieceType.BISHOP,
-            PieceType.KNIGHT, PieceType.ROOK
+        val newEnPassantSquare = if (piece.type == PieceType.PAWN && kotlin.math.abs(move.to - move.from)==16){
+            (move.from + move.to)/2
+        }else{
+            null
+        }
+
+        val isCapture = squares[move.to] != null
+        val newHalfMoveClock = if (isCapture|| piece.type == PieceType.PAWN) {
+            0
+        }else{
+            halfMoveClock +1
+        }
+
+        val newFullMoveNumber = if (sideToMove == Colour.BLACK){
+            fullMoveNumber+1
+        }else {
+            fullMoveNumber
+        }
+        //castling to be completed
+
+        return Board(
+            squares = newSquares,
+            sideToMove = sideToMove.opposite(),
+            castlingRights = castlingRights,
+            enPassantSquare = newEnPassantSquare,
+            halfMoveClock = newHalfMoveClock,
+            fullMoveNumber = newFullMoveNumber
         )
-        //Fill in back ranks
-        for (file in 0..7){
-            squares[Pair(file,0).toSquare()] = Piece(backRank[file], Colour.WHITE)
-            squares[Pair(file,7).toSquare()] = Piece(backRank[file], Colour.BLACK)
-
-        }
-
-        sideToMove = Colour.WHITE
-        castlingRights = CastlingRights()
-        enPassantSquare = null
-        halfMoveClock = 0
-        fullMoveNumber = 1
-
     }
-
 
     fun generatePawnMoves(from: Square, color: Colour): List<Move> {
         val moves = mutableListOf<Move>()
-        val direction = if(color == Colour.WHITE) 8 else -8
-        val startRank = if(color == Colour.WHITE) 1 else 6
+        val direction = if (color == Colour.WHITE) 8 else -8
+        val startRank = if (color == Colour.WHITE) 1 else 6
         val forward = from + direction
 
         //Move forward 1 square
-        if (forward in 0..63 && squares[forward] == null){
+        if (forward in 0..63 && squares[forward] == null) {
             moves.add(Move(from, forward))
 
             //Move forward 2 squares from starting position
             val doubleForward = from + 2 * direction
-            if ((from / 8 == startRank) && squares[doubleForward] == null && squares[forward]==null){
+            if ((from / 8 == startRank) && squares[doubleForward] == null && squares[forward] == null) {
                 moves.add(Move(from, doubleForward))
             }
         }
 
         //Capture
-        val captureOffsets = if (color == Colour.WHITE) listOf(7,9) else listOf(-7, -9)
-        for (offset in captureOffsets){
+        val captureOffsets = if (color == Colour.WHITE) listOf(7, 9) else listOf(-7, -9)
+        for (offset in captureOffsets) {
             val target = from + offset
-            if (target in 0..63){
+            if (target in 0..63) {
                 val piece = squares[target]
-                if(piece != null && piece.color != color){
-                    moves.add(Move(from, target, isCapture = true))
+                if (piece != null && piece.color != color) {
+                    moves.add(Move(from, target))
                 }
             }
         }
 
+        return moves
+    }
+
+    //knight moves
+    fun generateKnightMoves(from: Square, color: Colour): List<Move> {
+        val moves = mutableListOf<Move>()
+        val knightMoves = listOf(-17, -15, -10, -6, 6, 10, 15, 17)
+
+        val (fromFile, fromRank) = from.toFileRank()
+
+        for(offset in knightMoves){
+            val target = from+offset
+            if (target in 0..63){
+                val (toFile, toRank) = target.toFileRank()
+                //ensure knight doesnt wrap around board
+                val fileDiff = kotlin.math.abs(toFile - fromFile)
+                val rankDiff = kotlin.math.abs(toRank - fromRank)
+
+                if((fileDiff==2 && rankDiff == 1)||(fileDiff == 1 && rankDiff == 2)){
+                    val piece = squares[target]
+                    if(piece == null){
+                        moves.add(Move(from, target))
+                    } else if (piece.color!= color){
+                        moves.add(Move(from, target))
+                    }
+
+                }
+
+            }
+        }
 
 
         return moves
     }
 
-    //to be completed
-    fun generateKnightMoves(from: Square, color: Colour): List<Move> {
+    fun generateBishopMoves(from: Square, color: Colour): List<Move> {
         val moves = mutableListOf<Move>()
-        val knightMoves = listOf(-17, -15, -10, -6, 6, 10, 15, 17)
+        val directions = listOf(-9, -7, 7, 9)
+        val (fromFile, fromRank) = from.toFileRank()
+
+        for (direction in directions){
+            var target = from + direction
+            var currentFile = fromFile
+            var currentRank = fromRank
+
+            while(target in 0..63){
+                val(toFile, toRank) = target.toFileRank()
+                val fileDiff = kotlin.math.abs(toFile - currentFile)
+                val rankDiff = kotlin.math.abs(toRank - currentRank)
+                if(fileDiff!=1 || rankDiff!=1){
+                    break
+                }
+                val piece = squares[target]
+                if(piece == null){
+                    moves.add(Move(from, target))
+                } else{
+                    if (piece.color != color){
+                        moves.add(Move(from, target))
+                    }
+                    break
+                }
+
+                currentFile = toFile
+                currentRank = toRank
+                target += direction
+            }
+        }
+        return moves
+    }
+
+    fun generateRookMoves(from: Square, color: Colour): List<Move> {
+        val moves = mutableListOf<Move>()
+        val directions = listOf(-8, -1, 1, 8)
+
+        for (direction in directions){
+            var target = from + direction
+            val (fromFile, _) = from.toFileRank()
+
+            while(target in 0..63){
+                val (toFile, _) = target.toFileRank()
+
+                if(direction == 1 || direction == -1){
+                    if (kotlin.math.abs(toFile - fromFile) >1){
+                        break
+                    }
+                }
+                val piece = squares[target]
+                if(piece == null){
+                    moves.add(Move(from, target))
+                    target+= direction
+                } else{
+                    if(piece.color != color){
+                        moves.add(Move(from, target))
+                    }
+                    break
+                }
+            }
+
+        }
+        return moves
+    }
+
+    fun generateQueenMoves(from: Square, color: Colour): List<Move> {
+        val moves = mutableListOf<Move>()
+        moves.addAll(generateBishopMoves(from, color))
+        moves.addAll(generateRookMoves(from, color))
+        return moves
+    }
+
+    fun generateKingMoves(from: Square, color: Colour): List<Move> {
+        val moves = mutableListOf<Move>()
+        val kingMoves = listOf(-9, -8, -7, -1, 1, 7, 8, 9)
+        val (fromFile, fromRank) = from.toFileRank()
+
+        for (offset in kingMoves) {
+            val target = from + offset
+            if (target in 0..63) {
+                val (toFile, toRank) = target.toFileRank()
+
+                // Check king didn't wrap around board
+                val fileDiff = kotlin.math.abs(toFile - fromFile)
+                val rankDiff = kotlin.math.abs(toRank - fromRank)
+
+                if (fileDiff <= 1 && rankDiff <= 1) {
+                    val piece = squares[target]
+                    if (piece == null || piece.color != color) {
+                        moves.add(Move(from, target))
+                    }
+                }
+            }
+        }
+
+        // TODO: Add castling moves later
 
         return moves
+    }
 
+
+
+
+    companion object {
+        fun startingPosition(): Board {
+            val squares = Array<Piece?>(64) { null }
+
+            //input pawns on row 1 and 6
+            for (file in 0..7) {
+                squares[Pair(file, 1).toSquare()] = Piece(PieceType.PAWN, Colour.WHITE)
+                squares[Pair(file, 6).toSquare()] = Piece(PieceType.PAWN, Colour.BLACK)
+            }
+
+            val backRank = listOf(
+                PieceType.ROOK, PieceType.KNIGHT, PieceType.BISHOP, PieceType.QUEEN,
+                PieceType.KING, PieceType.BISHOP, PieceType.KNIGHT, PieceType.ROOK,
+            )
+
+            for (file in 0..7) {
+                squares[Pair(file, 0).toSquare()] = Piece(backRank[file], Colour.WHITE)
+                squares[Pair(file, 7).toSquare()] = Piece(backRank[file], Colour.BLACK)
+            }
+
+            return Board(squares = squares)
+        }
+    }
+
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Board) return false
+
+        if (!squares.contentEquals(other.squares)) return false
+        if (sideToMove != other.sideToMove) return false
+        if (castlingRights != other.castlingRights) return false
+        if (enPassantSquare != other.enPassantSquare) return false
+        if (halfMoveClock != other.halfMoveClock) return false
+        if (fullMoveNumber != other.fullMoveNumber) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = squares.contentHashCode()
+        result = 31 * result + sideToMove.hashCode()
+        result = 31 * result + castlingRights.hashCode()
+        result = 31 * result + (enPassantSquare ?: 0)
+        result = 31 * result + halfMoveClock
+        result = 31 * result + fullMoveNumber
+        return result
     }
 
 
 
     //temp testing function
     fun printBoard() {
-        println("  a b c d e f g h")
+        println(" a b c d e f g h")
         for (rank in 7 downTo 0) {
             print("${rank + 1} ")
             for (file in 0..7) {
@@ -110,11 +291,12 @@ class Board{
             }
             println("${rank + 1}")
         }
-        println("  a b c d e f g h")
+        println(" a b c d e f g h")
         println("Side to move: $sideToMove")
     }
-
-    fun executeMove(from: String, to: String, promotion: String?) {}
-
-
 }
+
+
+
+
+
