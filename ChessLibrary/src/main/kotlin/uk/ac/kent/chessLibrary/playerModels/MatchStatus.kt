@@ -1,4 +1,4 @@
-package uk.ac.kent.playerModels
+package uk.ac.kent.chessLibrary.playerModels
 
 import kotlinx.serialization.Serializable
 
