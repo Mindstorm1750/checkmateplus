@@ -185,3 +185,34 @@ David emphasis it to be done soon.
 
 Will be just 1 to 5 star rating for "How much did you enjoy the game?" and an *optional* text input for any other comments. This same format will be used in the poster fair survey except done using pen and paper to free up the computer for more people to play.
 
+# 19-1-2026 meeting
+
+## Things to ask David
+
+- [x] Include movetimes training data in corpus on raptor? It's 115 GB.
+- [x] Guidance documentation asks for the poster to be submitted as a .PDF. Can the poster still be made in GIMP? It's set to an appropriate resolution for large prints.
+- [x] Shall we just add David to the existing repo?
+
+## Things to inform David of
+
+- [x] We're planning to work in 2-week sprints. We'll have 4 sprints before the poster fair and we've written out tasks (under *issues* in gitlab) and associated some of them to specific sprints.
+- [x] Old ethics form no longer needs to be completed as there's now some "WorkTribe" portal to submit the ethics stuff to.
+
+## Running the project
+
+David wants this project to be easily runnable (like something could be given to the second marker and they can just run it). David says the current plan of having it run on kubernetes is fine (but it needs to be justified).
+
+Emphasis on every member of the group knowing why it's justified and desired for the way the project is run the way it is.
+
+## Frequency of future meetings
+
+Luke, James, and Ainan agree that weekly meetings works fine, but we'll try fortnightly as of today. Therefore next meeting will be **2nd February**.
+
+## The training data and corpus problem
+
+Include the python work that shows how the training data was modified from the lichess link so **that the 115 GB file doesn't need to be included in the corpus**.
+
+## The poster question
+
+David does say working in GIMP is fine if we can export it to a filetype they need (.pdf).
+
