@@ -48,18 +48,24 @@ fun FenToBoard(fen: String): Board {
     val boardFEN = fenParts[0].trim().split('/').reversed().joinToString("")
 
     var i = 0
-    while(i < squares.size) {
-        val squareChar = boardFEN[i]
-        val square = charToPieceMap[squareChar]
+    for(char in boardFEN) {
+        val square = charToPieceMap[char]
 
         if (square != null) {
             squares[i] = square
+            i++
         }
-        else { // if square is null then squareChar must be a number representing a series of empty squares
-            i += squareChar.digitToInt()
+        else { // if square is null then char must be a number representing a series of empty squares
+            i += char.digitToInt()
         }
-        i++
     }
 
-    return Board() // placeholder until Board class allows parameters in its constructor
+    return Board(
+        squares,
+        sideToMove,
+        castlingRights,
+        enPassantSquare,
+        halfMoveClock,
+        fullMoveNumber
+    )
 }
