@@ -48,7 +48,31 @@ data class Board(
             fullMoveNumber = newFullMoveNumber
         )
     }
+    //Evaluation function - Represents how good position is for white (+-)
+    fun evaluate(): Int {
+        var score = 0
 
+        for (square in 0..63){
+            val piece = squares[square] ?: continue
+            val pieceValue = when (piece.type){
+                PieceType.PAWN -> 100
+                PieceType.KNIGHT -> 320
+                PieceType.BISHOP -> 330
+                PieceType.ROOK -> 500
+                PieceType.QUEEN -> 900
+                PieceType.KING -> 20000
+            }
+
+            if(piece.color == Colour.WHITE){
+                score+= pieceValue
+            } else {
+                score -= pieceValue
+            }
+        }
+        return score
+    }
+
+    //Pawn move generation
     fun generatePawnMoves(from: Square, color: Colour): List<Move> {
         val moves = mutableListOf<Move>()
         val direction = if (color == Colour.WHITE) 8 else -8
