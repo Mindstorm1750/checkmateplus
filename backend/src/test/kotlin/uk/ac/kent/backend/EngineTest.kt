@@ -192,4 +192,54 @@ class EngineTest {
         val boardAfterMove = board.applyMove(Move(36, 43))
         assertEquals(expectedBoardAfterMove, boardAfterMove)
     }
+
+    /**
+     * Regardless of whose turn it is,
+     * white having an extra pawn should result in a higher output from .evaluate()
+     */
+    @Test
+    fun testEvaluateExtraPawn() {
+        val whiteToPlayWithExtraPawn = FenToBoard("r3k1nr/pppp1ppp/8/8/8/8/PPPPPPPP/R3K1NR w KQkq - 0 1")
+        val whiteToPlayAPawnDown = FenToBoard("r3k1nr/pppppppp/8/8/8/8/PPPP1PPP/R3K1NR w KQkq - 0 1")
+        val blackToPlayAPawnDown = FenToBoard("r3k1nr/pppp1ppp/8/8/8/8/PPPPPPPP/R3K1NR b KQkq - 0 1")
+        val blackToPlayWithExtraPawn = FenToBoard("r3k1nr/pppppppp/8/8/8/8/PPPP1PPP/R3K1NR b KQkq - 0 1")
+        assert(whiteToPlayWithExtraPawn.evaluate() > whiteToPlayAPawnDown.evaluate())
+        assert(whiteToPlayWithExtraPawn.evaluate() > blackToPlayWithExtraPawn.evaluate())
+        assert(blackToPlayAPawnDown.evaluate() > whiteToPlayAPawnDown.evaluate())
+        assert(blackToPlayAPawnDown.evaluate() > blackToPlayWithExtraPawn.evaluate())
+    }
+
+    /**
+     * The "exchange" means a trade of a rook for a bishop or knight.
+     * This tests the majority case where the side "up the exchange" should be better.
+     */
+    @Test
+    fun testEvaluateExchangeImbalance() {
+        val whiteHasRookForKnight = FenToBoard("1n2k3/pp3ppp/2p5/3p4/3P4/4P3/PP3PPP/1R2K3 b - - 0 1")
+        val blackHasRookForBishop = FenToBoard("r3k3/2p2ppp/p2p4/1p2p3/3PP3/2P5/PPB2PPP/4K3 w q - 0 1")
+        assert(whiteHasRookForKnight.evaluate() > 0)
+        assert(blackHasRookForBishop.evaluate() < 0)
+    }
+
+    /**
+     * A queen is worth more than a rook and bishop/knight.
+     */
+    @Test
+    fun testEvaluateQueenVsRookAndMinor() {
+        val blackHasQueenForRookAndBishop = FenToBoard("3qk3/pp3ppp/4p3/2ppP3/3P4/2P5/PP3PPP/R3KB2 w Q - 0 1")
+        val whiteHasQueenForRookAndKnight = FenToBoard("r3k3/pp3ppp/2n1p3/3p4/3P4/4P3/PP3PPP/3QK3 w q - 0 1")
+        assert(blackHasQueenForRookAndBishop.evaluate() < 0)
+        assert(whiteHasQueenForRookAndKnight.evaluate() > 0)
+    }
+
+    /**
+     * A bishop or knight is worth more than 2 pawns.
+     */
+    @Test
+    fun testEvaluateMinorVsTwoPawns() {
+        val blackHasKnightForTwoPawns = FenToBoard("r1bqkb1r/pppn1p2/3p1n2/4p1B1/4P3/3P4/PPP2PPP/RN1QKB1R b KQkq - 0 1")
+        val whiteHasBishopForTwoPawns = FenToBoard("r1bqk2r/ppp2ppp/3ppn2/8/1n1PP3/2N5/2P2PPP/R1BQKBNR b KQkq - 0 1")
+        assert(blackHasKnightForTwoPawns.evaluate() < 0)
+        assert(whiteHasBishopForTwoPawns.evaluate() > 0)
+    }
 }
