@@ -8,7 +8,7 @@ plugins {
 }
 
 allprojects {
-    group = "uk.ac.kent"
+    group = "org.chessmateplus"
     version = "0.0.1-SNAPSHOT"
 
     repositories {

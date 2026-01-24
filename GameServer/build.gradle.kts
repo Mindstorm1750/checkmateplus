@@ -41,7 +41,7 @@ dependencies {
     implementation("io.grpc:grpc-services")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j")
-    implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
+    //implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
     implementation("org.springframework.grpc:spring-grpc-server-web-spring-boot-starter")
     implementation("tools.jackson.module:jackson-module-kotlin")
     compileOnly("org.projectlombok:lombok")

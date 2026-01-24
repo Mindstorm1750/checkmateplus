@@ -1,6 +1,6 @@
-import uk.ac.kent.chessLibrary.chessEngine.Colour
-import uk.ac.kent.chessLibrary.chessEngine.toFileRank
-import uk.ac.kent.chessLibrary.chessEngine.toSquare
+import org.chessmateplus.chessLibrary.chessEngine.Colour
+import org.chessmateplus.chessLibrary.chessEngine.toFileRank
+import org.chessmateplus.chessLibrary.chessEngine.toSquare
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

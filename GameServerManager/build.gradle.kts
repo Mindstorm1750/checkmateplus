@@ -37,7 +37,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("io.grpc:grpc-services")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
+    //implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
     implementation("org.springframework.grpc:spring-grpc-spring-boot-starter")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
