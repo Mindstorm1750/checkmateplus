@@ -242,4 +242,30 @@ class EngineTest {
         assert(whiteHasBishopForTwoPawns.evaluate() > 0)
     }
 
+    /**
+     * Testing that Board.legalMoves() works by recursively calling legalMoves()
+     * until a fixed depth and comparing the total number of positions reached
+     * with a known correct number.
+     * The position used is not the starting position, but instead a famous position
+     * for engine testing called "kiwipete".
+     */
+    @Test
+    fun testLegalMovesPerft() {
+        val board = FenToBoard("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1")
+        val expectedResultForDepthFive = 193690690
+
+        fun perft(board: Board, depth: Int): Int {
+            val moves = board.legalMoves()
+            if(depth == 1) {
+                return moves.size
+            }
+            var count = 0
+            for (move in moves) {
+                count += perft(board.applyMove(move), depth - 1)
+            }
+
+            return count
+        }
+        assertEquals(expectedResultForDepthFive, perft(board, 5))
+    }
 }
