@@ -19,11 +19,35 @@ data class Board(
             piece
         }
 
+        //En passant
+        if (piece.type == PieceType.PAWN && move.to == enPassantSquare) {
+            val capturedPawnSquare = if(piece.color == Colour.WHITE) {
+                move.to - 8
+            } else{
+                move.to + 8
+            }
+            newSquares[capturedPawnSquare] = null
+        }
+
+        //Castling
+        if (piece.type == PieceType.KING && kotlin.math.abs(move.to - move.from) == 2){
+            val (rookFrom, rookTo) = when (move.to){
+                6 -> Pair(7, 5)
+                2 -> Pair(0, 3)
+                62 -> Pair(63, 61)
+                58 -> Pair(56, 59)
+                else -> throw IllegalArgumentException("Invalid Castling Move")
+            }
+            newSquares[rookTo] = newSquares[rookFrom]
+            newSquares[rookFrom] = null
+        }
+
         val newEnPassantSquare = if (piece.type == PieceType.PAWN && kotlin.math.abs(move.to - move.from)==16){
             (move.from + move.to)/2
         }else{
             null
         }
+        val newCastlingRights = updateCastlingRights(move, piece)
 
         val isCapture = squares[move.to] != null
         val newHalfMoveClock = if (isCapture|| piece.type == PieceType.PAWN) {
@@ -37,12 +61,11 @@ data class Board(
         }else {
             fullMoveNumber
         }
-        //castling to be completed
 
         return Board(
             squares = newSquares,
             sideToMove = sideToMove.opposite(),
-            castlingRights = castlingRights,
+            castlingRights = newCastlingRights,
             enPassantSquare = newEnPassantSquare,
             halfMoveClock = newHalfMoveClock,
             fullMoveNumber = newFullMoveNumber
@@ -237,6 +260,39 @@ data class Board(
         // TODO: Add castling moves later
 
         return moves
+    }
+
+    private fun updateCastlingRights(move: Move, piece: Piece): CastlingRights {
+        var rights = castlingRights.copy()
+
+        //king moves - lose castling rights
+        if (piece.type == PieceType.KING) {
+            if (piece.color == Colour.WHITE) {
+                rights = rights.copy(whiteKingSide = false, whiteQueenSide = false)
+            } else {
+                rights = rights.copy(blackKingSide = false, blackQueenSide = false)
+            }
+        }
+
+        //rook moves - lose castling rights
+        if (piece.type == PieceType.ROOK) {
+            when (move.from) {
+                0 -> rights = rights.copy(whiteQueenSide = false)  // a1
+                7 -> rights = rights.copy(whiteKingSide = false)   // h1
+                56 -> rights = rights.copy(blackQueenSide = false) // a8
+                63 -> rights = rights.copy(blackKingSide = false)  // h8
+            }
+        }
+
+        //rook captured - lose castling rights
+        when (move.to) {
+            0 -> rights = rights.copy(whiteQueenSide = false)
+            7 -> rights = rights.copy(whiteKingSide = false)
+            56 -> rights = rights.copy(blackQueenSide = false)
+            63 -> rights = rights.copy(blackKingSide = false)
+        }
+
+        return rights
     }
 
 
