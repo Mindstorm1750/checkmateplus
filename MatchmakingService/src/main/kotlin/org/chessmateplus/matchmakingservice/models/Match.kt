@@ -12,7 +12,7 @@ import kotlin.time.Instant
 /**
  * Represents a matched set of players ready to start a game
  * Generic design supports future game variants (e.g., 4-player chess, teams)
- * Color/side assignment is handled by the game server
+ * Colour/side assignment is handled by the game server
  */
 @Serializable
 @OptIn(ExperimentalTime::class)
