@@ -13,25 +13,25 @@ data class Board(
             ?: throw IllegalArgumentException("No piece on square ${move.from}")
 
         newSquares[move.from] = null
-        newSquares[move.to] = if (move.promotion!= null){
+        newSquares[move.to] = if (move.promotion != null) {
             Piece(move.promotion, piece.color)
-        } else{
+        } else {
             piece
         }
 
         //En passant
         if (piece.type == PieceType.PAWN && move.to == enPassantSquare) {
-            val capturedPawnSquare = if(piece.color == Colour.WHITE) {
+            val capturedPawnSquare = if (piece.color == Colour.WHITE) {
                 move.to - 8
-            } else{
+            } else {
                 move.to + 8
             }
             newSquares[capturedPawnSquare] = null
         }
 
         //Castling
-        if (piece.type == PieceType.KING && kotlin.math.abs(move.to - move.from) == 2){
-            val (rookFrom, rookTo) = when (move.to){
+        if (piece.type == PieceType.KING && kotlin.math.abs(move.to - move.from) == 2) {
+            val (rookFrom, rookTo) = when (move.to) {
                 6 -> Pair(7, 5)
                 2 -> Pair(0, 3)
                 62 -> Pair(63, 61)
@@ -42,23 +42,23 @@ data class Board(
             newSquares[rookFrom] = null
         }
 
-        val newEnPassantSquare = if (piece.type == PieceType.PAWN && kotlin.math.abs(move.to - move.from)==16){
-            (move.from + move.to)/2
-        }else{
+        val newEnPassantSquare = if (piece.type == PieceType.PAWN && kotlin.math.abs(move.to - move.from) == 16) {
+            (move.from + move.to) / 2
+        } else {
             null
         }
         val newCastlingRights = updateCastlingRights(move, piece)
 
         val isCapture = squares[move.to] != null
-        val newHalfMoveClock = if (isCapture|| piece.type == PieceType.PAWN) {
+        val newHalfMoveClock = if (isCapture || piece.type == PieceType.PAWN) {
             0
-        }else{
-            halfMoveClock +1
+        } else {
+            halfMoveClock + 1
         }
 
-        val newFullMoveNumber = if (sideToMove == Colour.BLACK){
-            fullMoveNumber+1
-        }else {
+        val newFullMoveNumber = if (sideToMove == Colour.BLACK) {
+            fullMoveNumber + 1
+        } else {
             fullMoveNumber
         }
 
@@ -71,13 +71,14 @@ data class Board(
             fullMoveNumber = newFullMoveNumber
         )
     }
+
     //Evaluation function - Represents how good position is for white (+-)
     fun evaluate(): Int {
         var score = 0
 
-        for (square in 0..63){
+        for (square in 0..63) {
             val piece = squares[square] ?: continue
-            val pieceValue = when (piece.type){
+            val pieceValue = when (piece.type) {
                 PieceType.PAWN -> 100
                 PieceType.KNIGHT -> 320
                 PieceType.BISHOP -> 330
@@ -86,8 +87,8 @@ data class Board(
                 PieceType.KING -> 20000
             }
 
-            if(piece.color == Colour.WHITE){
-                score+= pieceValue
+            if (piece.color == Colour.WHITE) {
+                score += pieceValue
             } else {
                 score -= pieceValue
             }
@@ -135,19 +136,19 @@ data class Board(
 
         val (fromFile, fromRank) = from.toFileRank()
 
-        for(offset in knightMoves){
-            val target = from+offset
-            if (target in 0..63){
+        for (offset in knightMoves) {
+            val target = from + offset
+            if (target in 0..63) {
                 val (toFile, toRank) = target.toFileRank()
                 //ensure knight doesnt wrap around board
                 val fileDiff = kotlin.math.abs(toFile - fromFile)
                 val rankDiff = kotlin.math.abs(toRank - fromRank)
 
-                if((fileDiff==2 && rankDiff == 1)||(fileDiff == 1 && rankDiff == 2)){
+                if ((fileDiff == 2 && rankDiff == 1) || (fileDiff == 1 && rankDiff == 2)) {
                     val piece = squares[target]
-                    if(piece == null){
+                    if (piece == null) {
                         moves.add(Move(from, target))
-                    } else if (piece.color!= color){
+                    } else if (piece.color != color) {
                         moves.add(Move(from, target))
                     }
 
@@ -165,23 +166,23 @@ data class Board(
         val directions = listOf(-9, -7, 7, 9)
         val (fromFile, fromRank) = from.toFileRank()
 
-        for (direction in directions){
+        for (direction in directions) {
             var target = from + direction
             var currentFile = fromFile
             var currentRank = fromRank
 
-            while(target in 0..63){
-                val(toFile, toRank) = target.toFileRank()
+            while (target in 0..63) {
+                val (toFile, toRank) = target.toFileRank()
                 val fileDiff = kotlin.math.abs(toFile - currentFile)
                 val rankDiff = kotlin.math.abs(toRank - currentRank)
-                if(fileDiff!=1 || rankDiff!=1){
+                if (fileDiff != 1 || rankDiff != 1) {
                     break
                 }
                 val piece = squares[target]
-                if(piece == null){
+                if (piece == null) {
                     moves.add(Move(from, target))
-                } else{
-                    if (piece.color != color){
+                } else {
+                    if (piece.color != color) {
                         moves.add(Move(from, target))
                     }
                     break
@@ -199,24 +200,24 @@ data class Board(
         val moves = mutableListOf<Move>()
         val directions = listOf(-8, -1, 1, 8)
 
-        for (direction in directions){
+        for (direction in directions) {
             var target = from + direction
             val (fromFile, _) = from.toFileRank()
 
-            while(target in 0..63){
+            while (target in 0..63) {
                 val (toFile, _) = target.toFileRank()
 
-                if(direction == 1 || direction == -1){
-                    if (kotlin.math.abs(toFile - fromFile) >1){
+                if (direction == 1 || direction == -1) {
+                    if (kotlin.math.abs(toFile - fromFile) > 1) {
                         break
                     }
                 }
                 val piece = squares[target]
-                if(piece == null){
+                if (piece == null) {
                     moves.add(Move(from, target))
-                    target+= direction
-                } else{
-                    if(piece.color != color){
+                    target += direction
+                } else {
+                    if (piece.color != color) {
                         moves.add(Move(from, target))
                     }
                     break
@@ -296,8 +297,6 @@ data class Board(
     }
 
 
-
-
     companion object {
         fun startingPosition(): Board {
             val squares = Array<Piece?>(64) { null }
@@ -346,7 +345,6 @@ data class Board(
         result = 31 * result + fullMoveNumber
         return result
     }
-
 
 
     //temp testing function
