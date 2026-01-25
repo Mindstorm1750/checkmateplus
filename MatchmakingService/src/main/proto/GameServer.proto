@@ -1,0 +1,115 @@
+syntax = "proto3";
+option java_package = "org.chessmateplus.gameserver.proto";
+option java_outer_classname = "GameServerProto";
+
+// Service for Manager To Game Server
+service GameServer {
+  rpc AllocateMatch(AllocateMatchRequest) returns (AllocateMatchResponse);
+  rpc TerminateMatch(TerminateMatchRequest) returns (TerminateMatchResponse);
+}
+
+// Service for Game Server To Manager
+service GameManager {
+  rpc RegisterServer(RegisterServerRequest) returns (RegisterServerResponse);
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  rpc ReportMatchCompleted(MatchCompletedReport) returns (MatchCompletedResponse);
+  rpc UnregisterServer(UnRegisterServerRequest) returns (UnRegisterServerResponse);
+
+  // Matchmaker -> Manager
+  rpc RequestServer(ServerRequest) returns (ServerResponse);
+}
+message ServerRequest {
+  string match_id = 1;
+  string white_player_id = 2;
+  string white_player_name = 3;
+ // int32 white_player_rating = 4;
+  string black_player_id = 5;
+  string black_player_name = 6;
+ // int32 black_player_rating = 7;
+  int32 initial_time_minutes = 8;
+  int32 increment_seconds = 9;
+}
+
+message ServerResponse {
+  bool success = 1;
+  string message = 2;
+  AllocatedServer server = 3;
+}
+
+message AllocatedServer {
+  string server_id = 1;
+  string match_id = 2;
+  string websocket_url = 3;
+  int32 estimated_wait_seconds = 4;
+}
+// Ask gameserver to create a match
+message AllocateMatchRequest {
+  string match_id = 1;
+  string white_player_id = 2;
+  string white_player_name = 3;
+  bool white_player_registered = 4;
+  string black_player_id = 5;
+  string black_player_name = 6;
+  bool black_player_registered = 7;
+  int32 initial_time_seconds = 8;
+  int32 increment_seconds = 9;
+}
+///Server shutting down remove from pool
+message UnRegisterServerRequest {
+  string server_id = 1;
+}
+message UnRegisterServerResponse{
+  bool success = 1;
+}
+message AllocateMatchResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// Terminate a match on request from management
+message TerminateMatchRequest {
+  string match_id = 1;
+  string reason = 2;
+}
+
+message TerminateMatchResponse {
+  bool success = 1;
+}
+
+// Register a Server to the manager
+message RegisterServerRequest {
+  string server_id = 1;
+  string ip_address = 2;
+  int32 port = 3;
+  int32 max_concurrent_matches = 4;
+}
+
+message RegisterServerResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// Heartbeat to check the server state
+message HeartbeatRequest {
+  string server_id = 1;
+  int32 active_match_count = 2;
+  int32 connected_player_count = 3;
+}
+
+message HeartbeatResponse {
+  bool acknowledged = 1;
+}
+
+// report back to the manager with a completed report
+message MatchCompletedReport {
+  string server_id = 1;
+  string match_id = 2;
+  string winner_id = 3;  // possibly empty for draw
+  string reason = 4;     //  etc.. "checkmate", "resignation", "timeout", "draw"
+  int32 total_moves = 5;
+  int32 duration_seconds = 6;
+}
+
+message MatchCompletedResponse {
+  bool acknowledged = 1;
+}

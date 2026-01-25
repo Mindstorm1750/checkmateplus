@@ -90,7 +90,7 @@ class MatchService {
         match: MatchState,
         board: Board
     ) {
-        val increment = match.timeControl!!.increment
+        val increment = match.timeControl.increment
 
         // Add increment to the player who just moved
         // Current turn is now the OTHER player after the move
@@ -180,9 +180,11 @@ class MatchService {
         val resigningPlayer = match.players.find { it.playerId == playerId }
         return if (resigningPlayer == match.players[0]) {
             match.players[1].displayName
+
         } else {
             match.players[0].displayName
         }
+
     }
 
     fun acceptDraw(matchId: String): Boolean {
@@ -220,4 +222,14 @@ class MatchService {
             blackPlayer = match.players.getOrNull(1)
         )
     }
+
+    fun getActiveMatchCount(): Int {
+        return matches.size;
+    }
+    fun getActivePlayerCount(): Int {
+        var count = 0
+        matches.forEach { (_, matchstate) -> matchstate.players.forEach { _ -> count++ } }
+        return count
+    }
 }
+

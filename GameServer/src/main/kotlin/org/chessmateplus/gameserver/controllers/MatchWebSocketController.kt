@@ -132,7 +132,7 @@ class MatchWebSocketController(
         joinMessage: JoinMatchMessage
     ) {
 
-        //this need to be a reffered join from the matchmake manager
+        //this need to be a referred join from the matchmake manager
         val success = true
         if (success) {
             messagingTemplate.convertAndSend(

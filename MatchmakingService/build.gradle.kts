@@ -1,3 +1,5 @@
+import com.google.protobuf.gradle.id
+
 plugins {
     kotlin("jvm") version "2.2.21"
     kotlin("plugin.spring") version "2.2.21"
@@ -5,6 +7,7 @@ plugins {
     id("org.springframework.boot") version "4.0.1"
     id("io.spring.dependency-management") version "1.1.7"
     id("org.graalvm.buildtools.native") version "0.11.3"
+    id("com.google.protobuf") version "0.9.5"
 }
 description = "MatchmakingService"
 
@@ -40,9 +43,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-websocket")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springframework.boot:spring-boot-starter-cache")
-    implementation("org.springframework.grpc:spring-grpc-spring-boot-starter")
     testImplementation("org.springframework.security:spring-security-test")
     compileOnly("org.projectlombok:lombok")
+    implementation("org.springframework.grpc:spring-grpc-spring-boot-starter")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     runtimeOnly("io.micrometer:micrometer-registry-prometheus")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
@@ -52,6 +55,7 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     runtimeOnly("org.postgresql:postgresql")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    implementation("io.grpc:grpc-services")
 }
 
 dependencyManagement {
@@ -66,7 +70,35 @@ kotlin {
         freeCompilerArgs.addAll("-Xjsr305=strict", "-Xannotation-default-target=param-property")
     }
 }
-
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc"
+    }
+    plugins {
+        id("grpc") {
+            artifact = "io.grpc:protoc-gen-grpc-java"
+        }
+    }
+    generateProtoTasks {
+        all().forEach {
+            it.plugins {
+                id("grpc") {
+                    option("@generated=omit")
+                }
+            }
+        }
+    }
+}
+sourceSets {
+    named("main") {
+        java {
+            srcDirs(
+                "build/generated/source/proto/main/grpc",
+                "build/generated/source/proto/main/java"
+            )
+        }
+    }
+}
 tasks.withType<Test> {
     useJUnitPlatform()
 }

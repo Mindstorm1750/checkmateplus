@@ -91,6 +91,16 @@ protobuf {
         }
     }
 }
+sourceSets {
+    named("main") {
+        java {
+            srcDirs(
+                "build/generated/source/proto/main/grpc",
+                "build/generated/source/proto/main/java"
+            )
+        }
+    }
+}
 
 tasks.withType<Test> {
     useJUnitPlatform()
