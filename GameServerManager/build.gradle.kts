@@ -39,6 +39,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     //implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
     implementation("org.springframework.grpc:spring-grpc-spring-boot-starter")
+    implementation("org.springframework.boot:spring-boot-starter-web")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
     testImplementation("org.springframework.boot:spring-boot-starter-actuator-test")

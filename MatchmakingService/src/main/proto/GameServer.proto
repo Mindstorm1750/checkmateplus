@@ -9,23 +9,24 @@ service GameServer {
 }
 
 // Service for Game Server To Manager
-service GameManager {
+service MatchManager {
   rpc RegisterServer(RegisterServerRequest) returns (RegisterServerResponse);
   rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
   rpc ReportMatchCompleted(MatchCompletedReport) returns (MatchCompletedResponse);
   rpc UnregisterServer(UnRegisterServerRequest) returns (UnRegisterServerResponse);
-
-  // Matchmaker -> Manager
+}
+//Service for matchmaker to the manager
+service ServerAllocator {
   rpc RequestServer(ServerRequest) returns (ServerResponse);
 }
 message ServerRequest {
   string match_id = 1;
   string white_player_id = 2;
   string white_player_name = 3;
- // int32 white_player_rating = 4;
+  // int32 white_player_rating = 4;
   string black_player_id = 5;
   string black_player_name = 6;
- // int32 black_player_rating = 7;
+  // int32 black_player_rating = 7;
   int32 initial_time_minutes = 8;
   int32 increment_seconds = 9;
 }
@@ -64,6 +65,7 @@ message UnRegisterServerResponse{
 message AllocateMatchResponse {
   bool success = 1;
   string message = 2;
+  string websocket_url = 3;
 }
 
 // Terminate a match on request from management

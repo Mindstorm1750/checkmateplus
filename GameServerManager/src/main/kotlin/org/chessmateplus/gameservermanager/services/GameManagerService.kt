@@ -39,10 +39,8 @@ class GameManagerService : MatchManagerGrpc.MatchManagerImplBase() {
                 lastheartbeatTime = System.currentTimeMillis()
             )
 
-            val channel = ManagedChannelBuilder
-                .forAddress(request.ipAddress, 9090) // gRPC port
-                .usePlaintext()
-                .build()
+            val channel = ManagedChannelBuilder.forAddress(request.ipAddress,request.port)
+                .usePlaintext().build()
 
             serverChannels[request.serverId] = channel
             serverStubs[request.serverId] = GameServerGrpc.newBlockingStub(channel)
@@ -103,7 +101,7 @@ class GameManagerService : MatchManagerGrpc.MatchManagerImplBase() {
     fun requestServer(
         request: GameServerProto.ServerRequest,
         responseObserver: StreamObserver<GameServerProto.ServerResponse>
-    ) {
+    )  {
         try {
             logger.info("Server request for match ${request.matchId} ")
             logger.info("  White: ${request.whitePlayerName} ")

@@ -30,7 +30,7 @@ class GameServerService(
     @PostConstruct
     fun initialize() {
         channel = ManagedChannelBuilder
-            .forAddress("localhost", 8001) //this needs to be changed
+            .forAddress("localhost", 9090) //this needs to be changed
             .usePlaintext()
             .build()
 
@@ -49,8 +49,8 @@ class GameServerService(
         try {
             val request = GameServerProto.RegisterServerRequest.newBuilder()
                 .setServerId(serverId)
-                .setIpAddress(podName)
-                .setPort(443)
+                .setIpAddress("127.0.0.1")
+                .setPort(9091)
                 .setMaxConcurrentMatches(5)
                 .build()
 

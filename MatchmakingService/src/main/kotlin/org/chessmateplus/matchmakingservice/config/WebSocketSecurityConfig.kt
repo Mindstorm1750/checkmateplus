@@ -10,7 +10,6 @@ import org.springframework.messaging.Message
 @Configuration
 @EnableWebSocketSecurity
 class WebSocketSecurityConfig {
-
     @Bean
     fun messageAuthorizationManager(
         messages: MessageMatcherDelegatingAuthorizationManager.Builder
@@ -18,7 +17,8 @@ class WebSocketSecurityConfig {
         return messages
             .nullDestMatcher().permitAll()
             .simpDestMatchers("/app/join").permitAll()
-            .simpSubscribeDestMatchers("/user/queue/**").authenticated()
+
+            .simpSubscribeDestMatchers("/user/queue/**", "/topic/**").permitAll() //this needs to be "authenticated"
             .anyMessage().denyAll()
             .build()
     }

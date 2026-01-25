@@ -8,9 +8,10 @@ import kotlinx.serialization.json.Json
 import org.chessmateplus.chessLibrary.playerModels.MatchStatus
 import org.chessmateplus.chessLibrary.playerModels.Player
 import org.chessmateplus.chessLibrary.playerModels.TimeControl
-import org.chessmateplus.gameserver.proto.GameManagerGrpc
-import org.chessmateplus.gameserver.proto.GameManagerGrpc.newBlockingStub
+
 import org.chessmateplus.gameserver.proto.GameServerProto
+import org.chessmateplus.gameserver.proto.ServerAllocatorGrpc
+import org.chessmateplus.gameserver.proto.ServerAllocatorGrpc.newBlockingStub
 
 import org.chessmateplus.matchmakingservice.models.Match
 import org.chessmateplus.matchmakingservice.models.ServerAllocationResult
@@ -33,11 +34,11 @@ class MatchmakingService(
 
     private val logger = LoggerFactory.getLogger(javaClass)
     private lateinit var channel: ManagedChannel
-    private lateinit var stub: GameManagerGrpc.GameManagerBlockingStub
+    private lateinit var stub: ServerAllocatorGrpc.ServerAllocatorBlockingStub
 
     @PostConstruct
     fun initialize() {
-        channel = ManagedChannelBuilder.forAddress("game-manager-service", 9090) //this need to match a k8s instance
+        channel = ManagedChannelBuilder.forAddress("localhost", 9090) //this need to match a k8s instance
             .usePlaintext().build()
 
         stub = newBlockingStub(channel)
