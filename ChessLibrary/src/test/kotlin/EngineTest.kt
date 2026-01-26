@@ -1,10 +1,13 @@
+import org.chessmateplus.chessLibrary.chessEngine.Board
 import org.chessmateplus.chessLibrary.chessEngine.Colour
+import org.chessmateplus.chessLibrary.chessEngine.FenToBoard
+import org.chessmateplus.chessLibrary.chessEngine.Move
+import org.chessmateplus.chessLibrary.chessEngine.STARTING_FEN
 import org.chessmateplus.chessLibrary.chessEngine.toFileRank
 import org.chessmateplus.chessLibrary.chessEngine.toSquare
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import kotlin.test.expect
 
 class EngineTest {
     @Test
@@ -52,7 +55,7 @@ class EngineTest {
     fun testBoardEquals() {
         val startBoard = Board.startingPosition()
         val sameBoard = FenToBoard(STARTING_FEN)
-        assertTrue(sameBoard == startBoard)
+        assertEquals(sameBoard, startBoard)
     }
 
     @Test
