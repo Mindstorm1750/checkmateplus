@@ -15,12 +15,23 @@ import org.springframework.stereotype.Service
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
+/**
+ * Service for managing chess matches, including state, timers, and game logic.
+ */
 @Service
 class MatchService {
     private val matches = ConcurrentHashMap<String, MatchState>()
     private val timers = ConcurrentHashMap<String, Timer>()
 
 
+    /**
+     * Creates a new match with the given players and time control.
+     *
+     * @param matchId Unique identifier for the match.
+     * @param players List of players in the match.
+     * @param timeControl The time control settings for the match.
+     * @return The created [MatchState].
+     */
     fun createMatch(
         matchId: String,
         players: List<Player>,
@@ -37,8 +48,11 @@ class MatchService {
     }
 
     /**
-     * Process a move with the engine
-     * Need proper engine implementation
+     * Processes a move message and updates the match state.
+     *
+     * @param matchId The identifier of the match.
+     * @param moveMessage The move details.
+     * @return The updated [MatchStateMessage].
      */
     fun processMove(
         matchId: String,
@@ -107,6 +121,13 @@ class MatchService {
         }
     }
 
+    /**
+     * Starts the timer for a match.
+     *
+     * @param matchId The identifier of the match.
+     * @param onTimeUpdate Callback for time updates.
+     * @param onTimeExpired Callback when a player's time expires.
+     */
     fun startTimer(
         matchId: String,
         onTimeUpdate: (TimeUpdateMessage) -> Unit,

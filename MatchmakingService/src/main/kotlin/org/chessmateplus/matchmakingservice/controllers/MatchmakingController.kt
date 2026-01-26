@@ -14,6 +14,15 @@ import org.springframework.stereotype.Controller
 import java.security.Principal
 import kotlin.time.ExperimentalTime
 
+/**
+ * WebSocket controller for handling matchmaking requests.
+ *
+ * This controller manages the entry of players into the matchmaking queue
+ * and notifies them when a match is found and a server is allocated.
+ *
+ * @property matchmakingService Service for queue and match management.
+ * @property messagingTemplate Template for sending messages to specific users.
+ */
 @Controller
 class MatchmakingController(
     private val matchmakingService: MatchmakingService,
@@ -22,6 +31,13 @@ class MatchmakingController(
     private val logger = LoggerFactory.getLogger(javaClass)
 
 
+    /**
+     * Handles a request to join the matchmaking queue.
+     * If a match is formed, it immediately requests a server allocation and notifies players.
+     *
+     * @param request Details of the join request, including display name.
+     * @param principal The authenticated user joining the queue.
+     */
     @OptIn(ExperimentalTime::class)
     @MessageMapping("/join")
     fun joinGame(@Payload request: JoinRequest, principal: Principal) {
@@ -69,6 +85,12 @@ class MatchmakingController(
         }
     }
 
+    /**
+     * Notifies both players in a match about the match details and allocated server.
+     *
+     * @param match The match that was formed.
+     * @param allocation The server allocation details.
+     */
     private fun notifyPlayers(match: Match, allocation: ServerAllocationResult) {
         match.players.forEachIndexed { index, player ->
             val opponent = match.players[if (index == 0) 1 else 0]

@@ -13,6 +13,12 @@ import org.springframework.grpc.server.service.GrpcService
 import org.springframework.stereotype.Service
 import java.util.concurrent.ConcurrentHashMap
 
+/**
+ * Core service for managing the lifecycle and health of game server instances.
+ *
+ * This service handles server registration, heartbeat monitoring, and the allocation
+ * of matches to available servers based on their current load.
+ */
 @Service
 @GrpcService
 class GameManagerService : MatchManagerGrpc.MatchManagerImplBase() {
@@ -22,6 +28,12 @@ class GameManagerService : MatchManagerGrpc.MatchManagerImplBase() {
     private val serverStubs = ConcurrentHashMap<String, GameServerGrpc.GameServerBlockingStub>()
 
 
+    /**
+     * Registers a new game server instance into the matchmaking pool.
+     *
+     * @param request Registration details including IP, port, and capacity.
+     * @param responseObserver Observer for sending the registration response.
+     */
     override fun registerServer(
         request: GameServerProto.RegisterServerRequest,
         responseObserver: StreamObserver<GameServerProto.RegisterServerResponse>
@@ -66,6 +78,12 @@ class GameManagerService : MatchManagerGrpc.MatchManagerImplBase() {
         }
     }
 
+    /**
+     * Processes heartbeats from registered game servers to monitor health and update load statistics.
+     *
+     * @param request Heartbeat details containing active matches and players.
+     * @param responseObserver Observer for acknowledging the heartbeat.
+     */
     override fun heartbeat(
         request: GameServerProto.HeartbeatRequest,
         responseObserver: StreamObserver<GameServerProto.HeartbeatResponse>
@@ -98,6 +116,13 @@ class GameManagerService : MatchManagerGrpc.MatchManagerImplBase() {
         }
     }
 
+    /**
+     * Requests a game server for a new match.
+     * Selects an available server from the pool and communicates with it to allocate the match.
+     *
+     * @param request Server request containing player and match configuration details.
+     * @param responseObserver Observer for sending the allocated server details or error.
+     */
     fun requestServer(
         request: GameServerProto.ServerRequest,
         responseObserver: StreamObserver<GameServerProto.ServerResponse>
@@ -197,6 +222,12 @@ class GameManagerService : MatchManagerGrpc.MatchManagerImplBase() {
         }
     }
 
+    /**
+     * Removes a game server from the matchmaking pool.
+     *
+     * @param request The un-registration request.
+     * @param responseObserver Observer for acknowledging the un-registration.
+     */
     override fun unregisterServer(
         request: GameServerProto.UnRegisterServerRequest?,
         responseObserver: StreamObserver<GameServerProto.UnRegisterServerResponse?>?

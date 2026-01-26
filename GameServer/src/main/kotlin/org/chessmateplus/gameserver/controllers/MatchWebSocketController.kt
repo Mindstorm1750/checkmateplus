@@ -15,6 +15,15 @@ import org.chessmateplus.gameserver.models.messages.ResignMessage
 import org.chessmateplus.gameserver.service.MatchService
 import java.security.Principal
 
+/**
+ * WebSocket controller for handling real-time chess match interactions.
+ *
+ * This controller manages moves, game state updates, and match-related events
+ * such as joining, starting, draw offers, and resignations.
+ *
+ * @property messagingTemplate Template for sending messages to WebSocket topics.
+ * @property matchService Service for processing match logic and state.
+ */
 @Controller
 class MatchWebSocketController(
     private val messagingTemplate: SimpMessagingTemplate,
@@ -22,9 +31,14 @@ class MatchWebSocketController(
 ) {
     //TODO: Need to add disconnect/reconnect support incase of connection drop
 
-
-
-
+    /**
+     * Handles a move made by a player in a specific match.
+     *
+     * @param matchId The unique identifier of the match.
+     * @param principal The authenticated user making the move.
+     * @param moveMessage The details of the move being made.
+     * @throws IllegalAccessException if the player attempts to move for someone else.
+     */
     @MessageMapping("/match/{matchId}/move")
     fun makeMove(
         @DestinationVariable matchId: String,
@@ -80,6 +94,12 @@ class MatchWebSocketController(
         }
     }
 
+    /**
+     * Handles game end conditions such as checkmate, stalemate, or other draws.
+     *
+     * @param matchId The unique identifier of the match.
+     * @param matchState The current state of the match.
+     */
     private fun handleGameEndConditions(matchId: String, matchState: MatchStateMessage) {
         when {
             matchState.isCheckmate -> {
@@ -126,6 +146,12 @@ class MatchWebSocketController(
         }
     }
 
+    /**
+     * Handles a player joining a match.
+     *
+     * @param matchId The unique identifier of the match.
+     * @param joinMessage Message containing player details joining the match.
+     */
     @MessageMapping("/match/{matchId}/join")
     fun joinMatch(
         @DestinationVariable matchId: String,
@@ -159,8 +185,11 @@ class MatchWebSocketController(
             }
         }
     }
-    //might depreciate this in favour of automated start system once players have joined.
-    //Can use this for a pause incase of disconnect feature
+    /**
+     * Starts the match timer and broadcasts the match start event.
+     *
+     * @param matchId The unique identifier of the match.
+     */
     @MessageMapping("/match/{matchId}/start")
     fun startMatch(@DestinationVariable matchId: String) {
         matchService.startTimer(
@@ -197,6 +226,12 @@ class MatchWebSocketController(
         )
     }
 
+    /**
+     * Broadcasts a draw offer to the other player.
+     *
+     * @param matchId The unique identifier of the match.
+     * @param drawOffer The draw offer message.
+     */
     @MessageMapping("/match/{matchId}/draw/offer")
     fun offerDraw(
         @DestinationVariable matchId: String,
@@ -208,6 +243,12 @@ class MatchWebSocketController(
         )
     }
 
+    /**
+     * Responds to a draw offer.
+     *
+     * @param matchId The unique identifier of the match.
+     * @param response The response to the draw offer.
+     */
     @MessageMapping("/match/{matchId}/draw/respond")
     fun respondToDraw(
         @DestinationVariable matchId: String,
@@ -236,6 +277,12 @@ class MatchWebSocketController(
         }
     }
 
+    /**
+     * Handles a player resignation.
+     *
+     * @param matchId The unique identifier of the match.
+     * @param resignMessage Message containing details about the resignation.
+     */
     @MessageMapping("/match/{matchId}/resign")
     fun resign(
         @DestinationVariable matchId: String,

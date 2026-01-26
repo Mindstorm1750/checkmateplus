@@ -3,6 +3,10 @@ package org.chessmateplus.gameservermanager
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
+/**
+ * Main entry point for the Game Server Manager application.
+ * This service manages a pool of Game Servers and handles match allocation requests.
+ */
 @SpringBootApplication
 class GameServerManagerApplication
 

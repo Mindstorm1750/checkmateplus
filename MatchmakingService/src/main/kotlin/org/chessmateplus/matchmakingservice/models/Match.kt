@@ -10,9 +10,15 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
 /**
- * Represents a matched set of players ready to start a game
- * Generic design supports future game variants (e.g., 4-player chess, teams)
- * Colour/side assignment is handled by the game server
+ * Represents a matched set of players ready to start a game.
+ * Generic design supports future game variants (e.g., 4-player chess, teams).
+ * Colour/side assignment is handled by the game server.
+ *
+ * @property matchId Unique identifier for the match.
+ * @property players List of players participating in the match.
+ * @property timeControl The time control settings for the match.
+ * @property createdAt Timestamp when the match was created.
+ * @property status Current status of the match.
  */
 @Serializable
 @OptIn(ExperimentalTime::class)
@@ -33,14 +39,20 @@ data class Match(
     }
 
     /**
-     * Get a player by their ID
+     * Retrieves a player from the match by their unique ID.
+     *
+     * @param playerId The ID of the player to find.
+     * @return The [Player] if found, null otherwise.
      */
     fun getPlayer(playerId: String): Player? {
         return players.find { it.playerId == playerId }
     }
 
     /**
-     * Check if a player is part of this match
+     * Checks if a player with the given ID is part of this match.
+     *
+     * @param playerId The ID of the player to check.
+     * @return true if the player is in the match, false otherwise.
      */
     fun hasPlayer(playerId: String): Boolean {
         return players.any { it.playerId == playerId }

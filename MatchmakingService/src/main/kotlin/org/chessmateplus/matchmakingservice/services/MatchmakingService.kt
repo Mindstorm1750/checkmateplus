@@ -21,6 +21,14 @@ import org.springframework.stereotype.Service
 import java.util.concurrent.TimeUnit
 import kotlin.time.ExperimentalTime
 
+/**
+ * Service responsible for player matchmaking and match state management.
+ *
+ * This service uses Redis to manage matchmaking queues and active match states,
+ * and communicates with the Game Manager via gRPC to allocate server resources for matches.
+ *
+ * @property redisTemplate Template for Redis operations.
+ */
 @Service
 class MatchmakingService(
     private val redisTemplate: RedisTemplate<String, String>
@@ -36,6 +44,9 @@ class MatchmakingService(
     private lateinit var channel: ManagedChannel
     private lateinit var stub: ServerAllocatorGrpc.ServerAllocatorBlockingStub
 
+    /**
+     * Initialises the gRPC connection to the Game Manager.
+     */
     @PostConstruct
     fun initialize() {
         channel = ManagedChannelBuilder.forAddress("localhost", 9090) //this need to match a k8s instance
@@ -46,13 +57,21 @@ class MatchmakingService(
         logger.info("Connected to Game Manager at localhost:9090")
     }
 
+    /**
+     * Shuts down the gRPC channel.
+     */
     @PreDestroy
     fun shutdown() {
         channel.shutdown().awaitTermination(5, TimeUnit.SECONDS)
     }
 
     /**
-     * Add a player to the matchmaking queue
+     * Adds a player to the matchmaking queue for a specific time control.
+     * If an opponent is found, a match is created immediately.
+     *
+     * @param player The player joining the queue.
+     * @return A [Match] if an opponent was found and a match created, null otherwise.
+     * @throws IllegalStateException if the player is already in a queue.
      */
     fun joinQueue(player: Player): Match? {
         val timeControl: TimeControl = TimeControl.CLASSICAL_30_0
@@ -87,7 +106,10 @@ class MatchmakingService(
     }
 
     /**
-     * Remove a player from queue
+     * Removes a player from their current matchmaking queue.
+     *
+     * @param playerId The unique identifier of the player.
+     * @return true if the player was successfully removed, false if not found in any queue.
      */
     fun leaveQueue(playerId: String): Boolean {
         val timeControlName = redisTemplate.opsForHash<String, String>().get(PLAYER_QUEUE_MAP, playerId) ?: return false
@@ -115,7 +137,9 @@ class MatchmakingService(
     }
 
     /**
-     * Get queue sizes for all time controls
+     * Retrieves the current number of players waiting in queue for each time control.
+     *
+     * @return A map of [TimeControl] to queue size.
      */
     fun getQueueSizes(): Map<TimeControl, Int> {
         return TimeControl.entries.associateWith { timeControl ->
@@ -125,14 +149,20 @@ class MatchmakingService(
     }
 
     /**
-     * Check if player is in queue
+     * Checks if a player is currently in any matchmaking queue.
+     *
+     * @param playerId The unique identifier of the player.
+     * @return true if the player is in a queue, false otherwise.
      */
     fun isInQueue(playerId: String): Boolean {
         return redisTemplate.opsForHash<String, String>().hasKey(PLAYER_QUEUE_MAP, playerId)
     }
 
     /**
-     * Get active match
+     * Retrieves an active match by its ID.
+     *
+     * @param matchId The unique identifier of the match.
+     * @return The [Match] if found, null otherwise.
      */
     fun getMatch(matchId: String): Match? {
         val matchJson = redisTemplate.opsForHash<String, String>().get(ACTIVE_MATCHES, matchId) ?: return null
@@ -140,7 +170,12 @@ class MatchmakingService(
     }
 
     /**
-     * Update match status
+     * Updates the status of an active match.
+     * If the match is completed or cancelled, it is removed from active matches.
+     *
+     * @param matchId The unique identifier of the match.
+     * @param status The new status to apply.
+     * @return The updated [Match] object.
      */
     @OptIn(ExperimentalTime::class)
     fun updateMatchStatus(matchId: String, status: MatchStatus): Match? {
@@ -158,6 +193,9 @@ class MatchmakingService(
         return updatedMatch
     }
 
+    /**
+     * Internal helper to create a match and store it in Redis.
+     */
     @OptIn(ExperimentalTime::class)
     private fun createMatch(players: List<Player>, timeControl: TimeControl): Match {
         val match = Match(
@@ -187,7 +225,13 @@ class MatchmakingService(
     }
 
     /**
-     * Request a game server for a match
+     * Requests a game server allocation for a match from the Game Manager.
+     *
+     * @param matchId The ID of the match to allocate.
+     * @param whitePlayer The player assigned to play white.
+     * @param blackPlayer The player assigned to play black.
+     * @param timeControl The match's time control.
+     * @return A [ServerAllocationResult] indicating success or failure and server details.
      */
     fun requestServerForMatch(
         matchId: String, whitePlayer: Player, blackPlayer: Player, timeControl: TimeControl

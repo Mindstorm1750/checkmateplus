@@ -18,6 +18,10 @@ import java.net.InetAddress
 import java.util.concurrent.TimeUnit
 import kotlin.time.ExperimentalTime
 
+/**
+ * gRPC service for managing the game server's lifecycle and match allocations.
+ * This service communicates with a Match Manager to register itself and allocate/terminate matches.
+ */
 @GrpcService
 class GameServerService(
     private val matchService: MatchService,
@@ -65,6 +69,12 @@ class GameServerService(
             logger.error("Failed to register", e)
         }
     }
+    /**
+     * Allocates a new match on this server based on a request from the Match Manager.
+     *
+     * @param request The allocation request containing match and player details.
+     * @param responseObserver Observer for sending the allocation response.
+     */
     @OptIn(ExperimentalTime::class)
     override fun allocateMatch(
         request: GameServerProto.AllocateMatchRequest,
@@ -134,6 +144,12 @@ class GameServerService(
         }
     }
 
+    /**
+     * Terminates an existing match.
+     *
+     * @param request The termination request.
+     * @param responseObserver Observer for sending the termination response.
+     */
     override fun terminateMatch(
         request: GameServerProto.TerminateMatchRequest,
         responseObserver: StreamObserver<GameServerProto.TerminateMatchResponse>
@@ -155,6 +171,9 @@ class GameServerService(
             responseObserver.onError(e)
         }
     }
+    /**
+     * Periodically sends a heartbeat to the Match Manager with server statistics.
+     */
     @Scheduled(fixedDelay = 30000) // Every 30 seconds
     fun sendHeartbeat() {
         try {
