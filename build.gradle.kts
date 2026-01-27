@@ -8,7 +8,7 @@ plugins {
 }
 
 allprojects {
-    group = "org.chessmateplus"
+    group = "org.checkmateplus"
     version = "0.0.1-SNAPSHOT"
 
     repositories {

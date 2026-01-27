@@ -1,10 +1,10 @@
-import org.chessmateplus.chessLibrary.chessEngine.Board
-import org.chessmateplus.chessLibrary.chessEngine.Colour
-import org.chessmateplus.chessLibrary.chessEngine.FenToBoard
-import org.chessmateplus.chessLibrary.chessEngine.Move
-import org.chessmateplus.chessLibrary.chessEngine.STARTING_FEN
-import org.chessmateplus.chessLibrary.chessEngine.toFileRank
-import org.chessmateplus.chessLibrary.chessEngine.toSquare
+import org.checkmateplus.chessLibrary.chessEngine.Board
+import org.checkmateplus.chessLibrary.chessEngine.Colour
+import org.checkmateplus.chessLibrary.chessEngine.FenToBoard
+import org.checkmateplus.chessLibrary.chessEngine.Move
+import org.checkmateplus.chessLibrary.chessEngine.STARTING_FEN
+import org.checkmateplus.chessLibrary.chessEngine.toFileRank
+import org.checkmateplus.chessLibrary.chessEngine.toSquare
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
