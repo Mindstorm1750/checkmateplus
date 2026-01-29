@@ -1,13 +1,22 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import App from './App.tsx'
+import App from './pages/App.tsx'
 import { ThemeProvider } from './components/theme-provider.tsx'
+import { BrowserRouter, Route, Routes } from 'react-router'
+import MatchmakerTestApp from './pages/MatchmakerTestApp.tsx'
+import Play from './pages/Play.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-      <App />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<App />} />
+          <Route path='/test' element={<MatchmakerTestApp />} />
+          <Route path='/play/:colour' element={<Play />} />
+        </Routes>
+      </BrowserRouter>
     </ThemeProvider>
-  </StrictMode>,
+  </StrictMode>
 )

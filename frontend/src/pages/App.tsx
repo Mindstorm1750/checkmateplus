@@ -1,11 +1,10 @@
 import { Button } from "@/components/ui/button"
-import Layout from "./components/Layout"
-import { Dialog, DialogContent, DialogFooter, DialogHeader } from "./components/ui/dialog"
+import Layout from "../components/Layout"
+import { Dialog, DialogContent, DialogFooter, DialogHeader } from "../components/ui/dialog"
 import { DialogClose, DialogDescription, DialogTitle, DialogTrigger } from "@radix-ui/react-dialog"
 import { useState, type ComponentProps } from "react"
-import { DropdownMenu } from "./components/ui/dropdown-menu"
-import { DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu"
-import { ToggleGroup, ToggleGroupItem } from "./components/ui/toggle-group"
+import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group"
+import { useNavigate } from "react-router"
 
 function App() {
   return (
@@ -23,6 +22,7 @@ function App() {
 const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
   const titleText = "Play against humans";
   const descriptionText = "Get matched with other players";
+  const navigate = useNavigate();
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -37,7 +37,7 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
           <DialogClose asChild>
             <Button variant='outline'>Cancel</Button>
           </DialogClose>
-          <Button>Join queue</Button>
+          <Button onClick={() => navigate('/test')}>Join queue</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -48,6 +48,7 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
   const titleText = "Play against a computer";
   const descriptionText = "Play against a computer opponent as the colour of your choice";
   const [colour, setColour] = useState('Random');
+  const navigate = useNavigate();
   return (
     <Dialog>
       <form>
@@ -79,7 +80,7 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
             <DialogClose asChild>
               <Button variant='outline'>Cancel</Button>
             </DialogClose>
-            <Button type='submit'>Play</Button>
+            <Button onClick={() => navigate(`/play/${colour}`)}>Play</Button>
           </DialogFooter>
         </DialogContent>
       </form>
