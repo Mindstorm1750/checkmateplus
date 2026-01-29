@@ -2,7 +2,10 @@ import org.checkmateplus.chessLibrary.chessEngine.Board
 import org.checkmateplus.chessLibrary.chessEngine.Colour
 import org.checkmateplus.chessLibrary.chessEngine.FenToBoard
 import org.checkmateplus.chessLibrary.chessEngine.Move
+import org.checkmateplus.chessLibrary.chessEngine.PieceType
 import org.checkmateplus.chessLibrary.chessEngine.STARTING_FEN
+import org.checkmateplus.chessLibrary.chessEngine.Square
+import org.checkmateplus.chessLibrary.chessEngine.toAlgebraic
 import org.checkmateplus.chessLibrary.chessEngine.toFileRank
 import org.checkmateplus.chessLibrary.chessEngine.toSquare
 import kotlin.test.Test
@@ -46,6 +49,24 @@ class EngineTest {
         assertEquals(a8.toSquare(), 56)
         assertEquals(h8.toSquare(), 63)
         assertEquals(d4.toSquare(), 27)
+    }
+
+    @Test
+    fun testStringToSquare() {
+        assertEquals("a1".toSquare(), 0)
+        assertEquals("h1".toSquare(), 7)
+        assertEquals("a8".toSquare(), 56)
+        assertEquals("h8".toSquare(), 63)
+        assertEquals("d4".toSquare(), 27)
+    }
+
+    @Test
+    fun testSquareToAlgebraic() {
+        assertEquals("a1", 0.toAlgebraic())
+        assertEquals("h1", 7.toAlgebraic())
+        assertEquals("a8", 56.toAlgebraic())
+        assertEquals("h8", 63.toAlgebraic())
+        assertEquals("d4", 27.toAlgebraic())
     }
 
     /**
@@ -243,11 +264,12 @@ class EngineTest {
     }
 
     /**
-     * Testing that Board.legalMoves() works by recursively calling legalMoves()
+     * Extensively testing that Board.legalMoves() works by recursively calling legalMoves()
      * until a fixed depth and comparing the total number of positions reached
      * with a known correct number.
      * The position used is not the starting position, but instead a famous position
      * for engine testing called "kiwipete".
+     * This recursive function is called "perft".
      */
     @Test
     fun testLegalMovesPerft() {
@@ -267,5 +289,101 @@ class EngineTest {
             return count
         }
         assertEquals(expectedResultForDepthFive, perft(board, 5))
+    }
+
+    /**
+     * Test that legalMoves() works on a near-middlegame position
+     */
+    @Test
+    fun testLegalMovesMiddleGame() {
+        val board = FenToBoard("r3k2r/2qbbppp/p1nppn2/1p3P2/3NP3/2N1B2P/PPPQB1P1/R3K2R w KQkq - 0 12")
+        val expectedLegalMoves: Set<Move> = setOf(
+            Move("a2".toSquare()!!, "a3".toSquare()!!),
+            Move("b2".toSquare()!!, "b3".toSquare()!!),
+            Move("g2".toSquare()!!, "g3".toSquare()!!),
+            Move("h3".toSquare()!!, "h4".toSquare()!!),
+            Move("e4".toSquare()!!, "e5".toSquare()!!),
+            Move("a2".toSquare()!!, "a4".toSquare()!!),
+            Move("b2".toSquare()!!, "b4".toSquare()!!),
+            Move("g2".toSquare()!!, "g4".toSquare()!!),
+            Move("f5".toSquare()!!, "e6".toSquare()!!),
+            Move("c3".toSquare()!!, "b1".toSquare()!!),
+            Move("c3".toSquare()!!, "d1".toSquare()!!),
+            Move("c3".toSquare()!!, "a4".toSquare()!!),
+            Move("c3".toSquare()!!, "b5".toSquare()!!),
+            Move("c3".toSquare()!!, "d5".toSquare()!!),
+            Move("d4".toSquare()!!, "b3".toSquare()!!),
+            Move("d4".toSquare()!!, "f3".toSquare()!!),
+            Move("d4".toSquare()!!, "b5".toSquare()!!),
+            Move("d4".toSquare()!!, "c6".toSquare()!!),
+            Move("d4".toSquare()!!, "e6".toSquare()!!),
+            Move("e2".toSquare()!!, "d1".toSquare()!!),
+            Move("e2".toSquare()!!, "f1".toSquare()!!),
+            Move("e2".toSquare()!!, "d3".toSquare()!!),
+            Move("e2".toSquare()!!, "f3".toSquare()!!),
+            Move("e2".toSquare()!!, "c4".toSquare()!!),
+            Move("e2".toSquare()!!, "g4".toSquare()!!),
+            Move("e2".toSquare()!!, "b5".toSquare()!!),
+            Move("e2".toSquare()!!, "h5".toSquare()!!),
+            Move("e3".toSquare()!!, "g1".toSquare()!!),
+            Move("e3".toSquare()!!, "f2".toSquare()!!),
+            Move("e3".toSquare()!!, "f4".toSquare()!!),
+            Move("e3".toSquare()!!, "g5".toSquare()!!),
+            Move("e3".toSquare()!!, "h6".toSquare()!!),
+            Move("a1".toSquare()!!, "b1".toSquare()!!),
+            Move("a1".toSquare()!!, "c1".toSquare()!!),
+            Move("a1".toSquare()!!, "d1".toSquare()!!),
+            Move("h1".toSquare()!!, "f1".toSquare()!!),
+            Move("h1".toSquare()!!, "g1".toSquare()!!),
+            Move("h1".toSquare()!!, "h2".toSquare()!!),
+            Move("d2".toSquare()!!, "c1".toSquare()!!),
+            Move("d2".toSquare()!!, "d1".toSquare()!!),
+            Move("d2".toSquare()!!, "d3".toSquare()!!),
+            Move("e1".toSquare()!!, "d1".toSquare()!!),
+            Move("e1".toSquare()!!, "f1".toSquare()!!),
+            Move("e1".toSquare()!!, "f2".toSquare()!!),
+            Move("e1".toSquare()!!, "g1".toSquare()!!),
+            Move("e1".toSquare()!!, "c1".toSquare()!!)
+        )
+    // If .legalMoves() returns a list, then add .toSet() to board.legalMoves() to make the test work.
+    assertEquals(board.legalMoves(), expectedLegalMoves)
+    }
+
+    /**
+     * Test that legalMoves() works with pawn promotion moves as white
+     */
+    @Test
+    fun testLegalMovesWhitePromotion() {
+        val board = FenToBoard("8/1P6/7k/8/7K/8/8/8 w - - 0 1")
+        val expectedLegalMoves: Set<Move> = setOf(
+            Move("b7".toSquare()!!, "b8".toSquare()!!, PieceType.QUEEN),
+            Move("b7".toSquare()!!, "b8".toSquare()!!, PieceType.ROOK),
+            Move("b7".toSquare()!!, "b8".toSquare()!!, PieceType.BISHOP),
+            Move("b7".toSquare()!!, "b8".toSquare()!!, PieceType.KNIGHT),
+            Move("h4".toSquare()!!, "g3".toSquare()!!),
+            Move("h4".toSquare()!!, "h3".toSquare()!!),
+            Move("h4".toSquare()!!, "g4".toSquare()!!)
+        )
+        // If .legalMoves() returns a list, then add .toSet() to board.legalMoves() to make the test work.
+        assertEquals(board.legalMoves(), expectedLegalMoves)
+    }
+
+    /**
+     * Test that legalMoves() works with pawn promotion moves as black
+     */
+    @Test
+    fun testLegalMovesBlackPromotion() {
+        val board = FenToBoard("8/8/7k/8/7K/8/1p6/8 b - - 0 1")
+        val expectedLegalMoves: Set<Move> = setOf(
+            Move("b2".toSquare()!!, "b1".toSquare()!!, PieceType.QUEEN),
+            Move("b2".toSquare()!!, "b1".toSquare()!!, PieceType.ROOK),
+            Move("b2".toSquare()!!, "b1".toSquare()!!, PieceType.BISHOP),
+            Move("b2".toSquare()!!, "b1".toSquare()!!, PieceType.KNIGHT),
+            Move("h6".toSquare()!!, "h7".toSquare()!!),
+            Move("h6".toSquare()!!, "g7".toSquare()!!),
+            Move("h6".toSquare()!!, "g6".toSquare()!!)
+        )
+        // If .legalMoves() returns a list, then add .toSet() to board.legalMoves() to make the test work.
+        assertEquals(board.legalMoves(), expectedLegalMoves)
     }
 }
