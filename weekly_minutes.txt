@@ -189,8 +189,8 @@ Will be just 1 to 5 star rating for "How much did you enjoy the game?" and an *o
 
 ## Things to ask David
 
-- [x] Include movetimes training data in corpus on raptor? It's 115 GB.
-- [x] Guidance documentation asks for the poster to be submitted as a .PDF. Can the poster still be made in GIMP? It's set to an appropriate resolution for large prints.
+- [x] Include movetimes training data in corpus on raptor? It's 115 GB. 
+- [x] Guidance documentation asks for the poster to be submitted as a .PDF. Can the poster still be made in GIMP? It's set to an appropriate resolution for large prints. 
 - [x] Shall we just add David to the existing repo?
 
 ## Things to inform David of
@@ -215,4 +215,30 @@ Include the python work that shows how the training data was modified from the l
 ## The poster question
 
 David does say working in GIMP is fine if we can export it to a filetype they need (.pdf).
+
+# 2-2-2026 meeting
+
+## Architecture documentation
+
+James has created an architecture chart. He's working on a document as well.
+
+## Site analytics
+
+James wants to collect site behaviour data (analytics). As long as the data is anonymous, it isn't personal data. Just include a mention in the site's terms and conditions.
+
+## Ethics application 
+
+- [x] David asks for a link to be sent for the worktribe application.
+
+## "Account creation" stretch goal
+
+James asks if we allow users to create accounts, what ethics and personal data considerations are there?
+
+David recommends to go with OAuth and generate a random username (so users can't choose their username) and sandbox everything.
+
+This will avoid ethics/personal data problems.
+
+## David making a git repo
+
+Apparently, the supervisor needs to make a repository on `git.cs.kent.ac.uk`. For now, we won't change anything with our current repo. Later, we may copy everything over into the repo he makes.
 
