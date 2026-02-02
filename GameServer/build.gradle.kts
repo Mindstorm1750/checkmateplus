@@ -10,6 +10,7 @@ plugins {
     id("com.google.protobuf") version "0.9.5"
 }
 
+
 version = "0.0.1-SNAPSHOT"
 description = "GameServer"
 
