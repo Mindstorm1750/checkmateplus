@@ -213,6 +213,22 @@ class EngineTest {
         assertEquals(expectedBoardAfterMove, boardAfterMove)
     }
 
+    @Test
+    fun testApplyMovePromotion() {
+        val board = FenToBoard("8/k2PN3/1nK5/8/8/8/8/8 w - - 0 1")
+        val expectedBoard = FenToBoard("3Q4/k3N3/1nK5/8/8/8/8/8 b - - 0 1")
+        val boardAfterPromotion = board.applyMove(Move("d7".toSquare()!!, "d8".toSquare()!!, PieceType.QUEEN))
+        assertEquals(expectedBoard, boardAfterPromotion)
+    }
+
+    @Test
+    fun testApplyMoveUnderpromotion() {
+        val board = FenToBoard("8/8/8/1p6/1P6/4Q3/2kp1K2/8 b - - 0 1")
+        val expectedBoard = FenToBoard("8/8/8/1p6/1P6/4Q3/2k2K2/3n4 w - - 0 2")
+        val boardAfterUnderpromotion = board.applyMove(Move("d2".toSquare()!!, "d1".toSquare()!!, PieceType.KNIGHT))
+        assertEquals(expectedBoard, boardAfterUnderpromotion)
+    }
+
     /**
      * Regardless of whose turn it is,
      * white having an extra pawn should result in a higher output from .evaluate()
