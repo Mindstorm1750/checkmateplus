@@ -29,7 +29,7 @@ const MatchmakerTestApp: React.FC = () => {
 
   const connect = () => {
     // Note: use the URL of your Spring Boot WebSocket endpoint
-    const socket = new SockJS('http://localhost:8080/matchmaking');
+    const socket = new SockJS(import.meta.env.VITE_BASE_URL + 'matchmaking');
 
     const client = new Client({
       webSocketFactory: () => socket,
