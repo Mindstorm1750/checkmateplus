@@ -129,7 +129,7 @@ data class Board(
         return moves
     }
 
-    //knight moves
+    //knight moves - L shape
     fun generateKnightMoves(from: Square, color: Colour): List<Move> {
         val moves = mutableListOf<Move>()
         val knightMoves = listOf(-17, -15, -10, -6, 6, 10, 15, 17)
@@ -161,6 +161,7 @@ data class Board(
         return moves
     }
 
+    //generate bishop moves - diagonals
     fun generateBishopMoves(from: Square, color: Colour): List<Move> {
         val moves = mutableListOf<Move>()
         val directions = listOf(-9, -7, 7, 9)
@@ -196,6 +197,7 @@ data class Board(
         return moves
     }
 
+    //generate rook moves - up down left right only
     fun generateRookMoves(from: Square, color: Colour): List<Move> {
         val moves = mutableListOf<Move>()
         val directions = listOf(-8, -1, 1, 8)
@@ -235,6 +237,7 @@ data class Board(
         return moves
     }
 
+    //king moves generation
     fun generateKingMoves(from: Square, color: Colour): List<Move> {
         val moves = mutableListOf<Move>()
         val kingMoves = listOf(-9, -8, -7, -1, 1, 7, 8, 9)
@@ -295,6 +298,63 @@ data class Board(
 
         return rights
     }
+
+    fun generateAllMoves(): List<Move> {
+        val moves = mutableListOf<Move>()
+        for ( square in 0..63){
+            val piece = squares[square] ?:continue
+            if (piece.color!= sideToMove) continue
+
+            when (piece.type) {
+                PieceType.PAWN -> moves.addAll(generatePawnMoves(square, piece.color))
+                PieceType.KNIGHT -> moves.addAll(generateKnightMoves(square, piece.color))
+                PieceType.BISHOP -> moves.addAll(generateBishopMoves(square, piece.color))
+                PieceType.ROOK -> moves.addAll(generateRookMoves(square, piece.color))
+                PieceType.QUEEN -> moves.addAll(generateQueenMoves(square, piece.color))
+                PieceType.KING -> moves.addAll(generateKingMoves(square, piece.color))
+
+            }
+        }
+
+        return moves
+    }
+    //generate all legal moves
+    fun generateLegalMoves(): List<Move> {
+        val legalMoves = generateAllMoves()
+        return legalMoves.filter{ move ->
+            val newBoard = applyMove(move)
+            !newBoard.isInCheck(sideToMove)
+        }
+    }
+
+    //check if given colors king is in check
+    fun isInCheck(color: Colour): Boolean {
+        val kingSquare = squares.indexOfFirst {
+            it?.type == PieceType.KING && it.color == color
+        }
+        if (kingSquare == -1) return false
+        return isSquareAttacked(kingSquare, color.opposite())
+    }
+
+    //check if square is attacked by any piece
+    fun isSquareAttacked(square: Square, byColour: Colour): Boolean {
+        for (sqr in 0..63){
+            val piece = squares[sqr] ?: continue
+            if (piece.color != byColour) continue
+
+            val moves = when(piece.type){
+                PieceType.PAWN -> generatePawnMoves(sqr, piece.color)
+                PieceType.KNIGHT -> generateKnightMoves(sqr, piece.color)
+                PieceType.BISHOP -> generateBishopMoves(sqr, piece.color)
+                PieceType.ROOK -> generateRookMoves(sqr, piece.color)
+                PieceType.QUEEN -> generateQueenMoves(sqr, piece.color)
+                PieceType.KING -> generateKingMoves(sqr, piece.color)
+            }
+            if (moves.any {it.to == square}) return true
+        }
+        return false
+    }
+
 
 
     companion object {
