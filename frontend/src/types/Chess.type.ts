@@ -1,15 +1,16 @@
 /**
  * As horrific as this looks, this is the way in TypeScript to define a Array type of specific size.
+ * "Piece | null" instead of "Piece?" makes it so that an empty array isn't of type Squares.
  */
 export type Squares = [
-    Piece, Piece, Piece, Piece, Piece, Piece, Piece, Piece,
-    Piece, Piece, Piece, Piece, Piece, Piece, Piece, Piece,
-    Piece, Piece, Piece, Piece, Piece, Piece, Piece, Piece,
-    Piece, Piece, Piece, Piece, Piece, Piece, Piece, Piece,
-    Piece, Piece, Piece, Piece, Piece, Piece, Piece, Piece,
-    Piece, Piece, Piece, Piece, Piece, Piece, Piece, Piece,
-    Piece, Piece, Piece, Piece, Piece, Piece, Piece, Piece,
-    Piece, Piece, Piece, Piece, Piece, Piece, Piece, Piece,
+    Piece | null, Piece | null, Piece | null, Piece | null, Piece | null, Piece | null, Piece | null, Piece | null,
+    Piece | null, Piece | null, Piece | null, Piece | null, Piece | null, Piece | null, Piece | null, Piece | null,
+    Piece | null, Piece | null, Piece | null, Piece | null, Piece | null, Piece | null, Piece | null, Piece | null,
+    Piece | null, Piece | null, Piece | null, Piece | null, Piece | null, Piece | null, Piece | null, Piece | null,
+    Piece | null, Piece | null, Piece | null, Piece | null, Piece | null, Piece | null, Piece | null, Piece | null,
+    Piece | null, Piece | null, Piece | null, Piece | null, Piece | null, Piece | null, Piece | null, Piece | null,
+    Piece | null, Piece | null, Piece | null, Piece | null, Piece | null, Piece | null, Piece | null, Piece | null,
+    Piece | null, Piece | null, Piece | null, Piece | null, Piece | null, Piece | null, Piece | null, Piece | null,
 ]
 
 /**
@@ -22,6 +23,10 @@ export type Piece = {
     colour: Colour
 }
 
+
+/**
+ * Can't use enums because of TSConfig option 'erasableSyntaxOnly'
+ */
 export type Colour = 'WHITE' | 'BLACK';
 
 export type PieceType = 'PAWN' | 'KNIGHT' | 'BISHOP' | 'ROOK' | 'QUEEN' | 'KING';
@@ -42,10 +47,31 @@ export type Board = {
     fullMoveNumber: number,
 }
 
+export const EMPTY_BOARD: Board = {
+    squares: [
+        null, null, null, null, null, null, null, null,
+        null, null, null, null, null, null, null, null,
+        null, null, null, null, null, null, null, null,
+        null, null, null, null, null, null, null, null,
+        null, null, null, null, null, null, null, null,
+        null, null, null, null, null, null, null, null,
+        null, null, null, null, null, null, null, null,
+        null, null, null, null, null, null, null, null,
+    ],
+    sideToMove: 'WHITE',
+    castlingRights: {
+        whiteKingSide: false,
+        whiteQueenSide: false,
+        blackKingSide: false,
+        blackQueenSide: false
+    },
+    enPassantSquare: null,
+    halfMoveClock: 0,
+    fullMoveNumber: 1,
+}
 
-
-
-
-
-
-
+export type Move = {
+    from: Square,
+    to: Square,
+    promotion: PieceType | null
+}

@@ -6,6 +6,7 @@ import { ThemeProvider } from './components/theme-provider.tsx'
 import { BrowserRouter, Route, Routes } from 'react-router'
 import MatchmakerTestApp from './pages/MatchmakerTestApp.tsx'
 import Play from './pages/Play.tsx'
+import Test from './pages/Test.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -15,6 +16,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/" element={<App />} />
           <Route path='/test' element={<MatchmakerTestApp />} />
           <Route path='/play/:colour' element={<Play />} />
+          <Route path='/testBoard' element={<Test />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>
