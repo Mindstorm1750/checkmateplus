@@ -1,16 +1,28 @@
-import type { Board, Move } from "@/types/Chess.type"
+import { pieceToSvg } from "@/lib/chess.helpers";
+import type { Board, Move, Piece } from "@/types/Chess.type"
 
-const ChessBoard = ({ moveCallback, boardState }: { moveCallback: (move: Move) => null, boardState: Board }) => {
+type chessBoardProps = {
+    moveCallback: (move: Move) => null,
+    boardState: Board,
+    whitePerspective?: Boolean,
+}
 
-    return (<div className='grid grid-cols-8 w-full aspect-square'>
+const ChessBoard = ({ moveCallback, boardState, whitePerspective = true }: chessBoardProps) => {
+
+    return (<div className='grid grid-cols-8 grid-rows-8 w-full aspect-square'>
         {boardState.squares.map((piece, index) => {
             const row = Math.floor(index / 8);
             const column = index % 8;
             const isLightSquare = (row + column) % 2 === 0;
 
             return (
-                <div className={`${isLightSquare ? 'bg-amber-200' : 'bg-amber-800'} ''`}>
-                    {index}
+                <div key={`square-${index}`} className={`${isLightSquare ? 'bg-amber-200' : 'bg-amber-800'} flex items-center justify-center select-none`}>
+                    {piece && <img
+                        src={pieceToSvg(piece)}
+                        alt={`${piece.colour} ${piece.pieceType}`}
+                        className="w-4/5 h-4/5 pointer-events-none"
+                        draggable="false"
+                    />}
                 </div>
             )
         })
