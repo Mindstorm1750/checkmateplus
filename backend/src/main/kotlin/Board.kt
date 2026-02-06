@@ -355,6 +355,20 @@ data class Board(
         return false
     }
 
+    //Check game state - return checkmate/stalemate if no legal moves
+    fun getGameState(): GameState{
+        val legalMoves = generateLegalMoves()
+
+        if(legalMoves.isNotEmpty()){
+            return GameState.IN_PROGRESS
+        }
+
+        return if(isInCheck(sideToMove)){
+            GameState.CHECKMATE
+        } else{
+            GameState.STALEMATE
+        }
+    }
 
 
     companion object {
