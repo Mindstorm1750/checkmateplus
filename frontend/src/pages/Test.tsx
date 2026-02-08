@@ -1,12 +1,16 @@
 import Layout from "@/components/Layout"
+import { Button } from "@/components/ui/button"
 import ChessBoard from "@/components/ui/ChessBoard"
 import { fenToBoard, STARTING_FEN } from "@/lib/chess.helpers"
-import { EMPTY_BOARD } from "@/types/Chess.type"
+import { useState } from "react"
 
 function Test() {
+    const [whitePerspective, setWhitePerspective] = useState<Boolean>(true);
+
     return (
         <Layout>
-            <ChessBoard boardState={fenToBoard(STARTING_FEN)} moveCallback={(move) => null} />
+            <Button onClick={() => setWhitePerspective(!whitePerspective)}>Flip orientation</Button>
+            <ChessBoard boardState={fenToBoard(STARTING_FEN)} moveCallback={(move) => null} whitePerspective={whitePerspective} />
         </Layout>
     )
 

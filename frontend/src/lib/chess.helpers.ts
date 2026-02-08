@@ -84,8 +84,11 @@ export const fenToBoard: (fen: string) => Board = (fen) => {
         enPassantSquare = fileRankToSquare(epSquareFile, epSquareRank);
     }
 
-    // fen starts from the 8th rank, we want to iterate starting from the 1st rank, hence reversed()
-    const boardFEN = fenParts[0].trim().split('/').reverse().join('');
+    /**
+     * .reversed() is not used here, differing from the implementation in the backend
+     * because square 0 is a8 here whereas it's a1 in the backend.
+     */
+    const boardFEN = fenParts[0].trim().split('/').join('');
 
     let i = 0;
     for (const char of boardFEN) {
