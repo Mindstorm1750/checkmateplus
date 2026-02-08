@@ -86,7 +86,7 @@ export const fenToBoard: (fen: string) => Board = (fen) => {
 
     /**
      * .reversed() is not used here, differing from the implementation in the backend
-     * because square 0 is a8 here whereas it's a1 in the backend.
+     * because the frontend fills in the chessboard top-to-bottom instead of bottom-to-top (which the backend does)
      */
     const boardFEN = fenParts[0].trim().split('/').join('');
 
@@ -110,4 +110,21 @@ export const fenToBoard: (fen: string) => Board = (fen) => {
         halfMoveClock,
         fullMoveNumber
     };
+}
+
+export const squareToAlgebraic: (square: Square) => string = (square) => {
+    const rank = 8 - (Math.floor(square / 8));
+    const file = square % 8;
+    const fileToLetterMap: Map<number, string> = new Map([
+        [0,'a'],
+        [1,'b'],
+        [2,'c'],
+        [3,'d'],
+        [4,'e'],
+        [5,'f'],
+        [6,'g'],
+        [7,'h'],
+    ])
+
+    return fileToLetterMap.get(file)! + rank;
 }
