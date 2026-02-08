@@ -360,17 +360,17 @@ data class Board(
     }
 
     //Check game state - return checkmate/stalemate if no legal moves
-    fun getGameState(): GameState{
+    fun getBoardState(): BoardState{
         val legalMoves = generateLegalMoves()
 
         if(legalMoves.isNotEmpty()){
-            return GameState.IN_PROGRESS
+            return BoardState.IN_PROGRESS
         }
 
         return if(isInCheck(sideToMove)){
-            GameState.CHECKMATE
+            BoardState.CHECKMATE
         } else{
-            GameState.STALEMATE
+            BoardState.STALEMATE
         }
     }
 
