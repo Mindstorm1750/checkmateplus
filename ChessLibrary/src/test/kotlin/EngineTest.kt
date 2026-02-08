@@ -293,7 +293,7 @@ class EngineTest {
         val expectedResultForDepthFive = 193690690
 
         fun perft(board: Board, depth: Int): Int {
-            val moves = board.legalMoves()
+            val moves = board.generateLegalMoves()
             if(depth == 1) {
                 return moves.size
             }
@@ -361,8 +361,7 @@ class EngineTest {
             Move("e1".toSquare()!!, "g1".toSquare()!!),
             Move("e1".toSquare()!!, "c1".toSquare()!!)
         )
-    // If .legalMoves() returns a list, then add .toSet() to board.legalMoves() to make the test work.
-    assertEquals(board.legalMoves(), expectedLegalMoves)
+    assertEquals(expectedLegalMoves, board.generateLegalMoves().toSet())
     }
 
     /**
@@ -380,8 +379,7 @@ class EngineTest {
             Move("h4".toSquare()!!, "h3".toSquare()!!),
             Move("h4".toSquare()!!, "g4".toSquare()!!)
         )
-        // If .legalMoves() returns a list, then add .toSet() to board.legalMoves() to make the test work.
-        assertEquals(board.legalMoves(), expectedLegalMoves)
+        assertEquals(expectedLegalMoves, board.generateLegalMoves().toSet())
     }
 
     /**
@@ -399,7 +397,6 @@ class EngineTest {
             Move("h6".toSquare()!!, "g7".toSquare()!!),
             Move("h6".toSquare()!!, "g6".toSquare()!!)
         )
-        // If .legalMoves() returns a list, then add .toSet() to board.legalMoves() to make the test work.
-        assertEquals(board.legalMoves(), expectedLegalMoves)
+        assertEquals(expectedLegalMoves, board.generateLegalMoves().toSet())
     }
 }

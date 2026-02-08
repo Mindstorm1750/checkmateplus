@@ -1,5 +1,6 @@
 package org.checkmateplus.chessLibrary.chessEngine
 
+import BoardState
 import kotlin.math.abs
 
 data class Board(
@@ -109,8 +110,16 @@ data class Board(
 
         //Move forward 1 square
         if (forward in 0..63 && squares[forward] == null) {
-            moves.add(Move(from, forward))
-
+            if((color == Colour.WHITE && forward in 54..63) || (color == Colour.BLACK && forward in 0..7)) {
+                //Promotion moves
+                moves.add(Move(from, forward, PieceType.KNIGHT))
+                moves.add(Move(from, forward, PieceType.BISHOP))
+                moves.add(Move(from, forward, PieceType.ROOK))
+                moves.add(Move(from, forward, PieceType.QUEEN))
+            }
+            else {
+                moves.add(Move(from, forward))
+            }
             //Move forward 2 squares from starting position
             val doubleForward = from + 2 * direction
             if ((from / 8 == startRank) && squares[doubleForward] == null && squares[forward] == null) {
