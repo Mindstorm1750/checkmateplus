@@ -11,6 +11,10 @@ type chessBoardProps = {
 
 const ChessBoard = ({ moveCallback, boardState, whitePerspective = true }: chessBoardProps) => {
     const [squareClicked, setSquareClicked] = useState<Square | null>();
+
+    // Used in layoutId to animate pieces. Identifies pieces as they move from boardState to boardState.
+    const [pieceOrigins, setPieceOrigins] = useState<Map<Square, Square>>(new Map());
+
     const squaresView = whitePerspective ? boardState.squares : boardState.squares.toReversed();
 
     /**
@@ -25,11 +29,19 @@ const ChessBoard = ({ moveCallback, boardState, whitePerspective = true }: chess
             setSquareClicked(null);
         }
         else {
-            moveCallback({
+            const move = {
                 from: squareClicked,
                 to: square,
                 promotion: null // TODO HANDLE PROMOTION POSSIBILITY
+            };
+            setPieceOrigins(prev => {
+                const newPieceOrigins = new Map(prev);
+                const origin = prev.get(squareClicked) ?? squareClicked;
+                newPieceOrigins.set(square, origin);
+                newPieceOrigins.delete(squareClicked);
+                return newPieceOrigins;
             })
+            moveCallback(move);
             setSquareClicked(null);
         }
     }
@@ -43,25 +55,28 @@ const ChessBoard = ({ moveCallback, boardState, whitePerspective = true }: chess
                     const row = Math.floor(index / 8);
                     const column = index % 8;
                     const isLightSquare = (row + column) % 2 === 0;
+                    const origin = pieceOrigins.get(square as Square) ?? square;
 
                     return (
                         <div
                             key={`square-${index}`}
-                            className={`${isLightSquare ? 'bg-amber-200' : 'bg-amber-800'} flex items-center justify-center select-none`}
+                            className={`${isLightSquare ? 'bg-amber-200' : 'bg-amber-800'} flex items-center justify-center select-none relative`}
                             onClick={() => handleClick(square as Square)}>
                             <AnimatePresence>
-                                {piece && <motion.img
-                                    key={`piece-at-square-${index}`}
-                                    layoutId={`piece-${square}`}
-                                    initial={{ opacity: 0, scale: 0 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0 }}
-                                    transition={{ duration: 0.2 }}
-                                    src={pieceToSvg(piece)}
-                                    alt={`${piece.colour} ${piece.pieceType}`}
-                                    className="w-4/5 h-4/5 pointer-events-none"
-                                    draggable="false"
-                                />}
+                                {piece && (
+                                    <motion.img
+                                        key={`${piece.colour}-${piece.pieceType}-${square}`}
+                                        layoutId={`piece-${piece.colour}-${piece.pieceType}-${origin}`}
+                                        src={pieceToSvg(piece)}
+                                        alt={`${piece.colour} ${piece.pieceType}`}
+                                        className="w-4/5 h-4/5 pointer-events-none absolute"
+                                        draggable="false"
+                                        initial={{ opacity: 0, scale: 1 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 1 }}
+                                        transition={{ duration: 0.2 }}
+                                    />
+                                )}
                             </AnimatePresence>
                         </div>
                     )
