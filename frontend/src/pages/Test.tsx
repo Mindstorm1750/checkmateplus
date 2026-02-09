@@ -20,7 +20,7 @@ function Test() {
     return (
         <Layout>
             <Button onClick={() => setWhitePerspective(!whitePerspective)}>Flip orientation</Button>
-            <p>{chessBoardMove ? `Move: ${squareToAlgebraic(chessBoardMove.from)} to ${squareToAlgebraic(chessBoardMove.to)}${chessBoardMove.promotion && ` promote to ${chessBoardMove.promotion}`}` : 'No move yet'}</p>
+            <p>{chessBoardMove ? `Move: ${squareToAlgebraic(chessBoardMove.from)} to ${squareToAlgebraic(chessBoardMove.to)}${chessBoardMove.promotion ? ` promote to ${chessBoardMove.promotion}` : ''}` : 'No move yet'}</p>
             <ChessBoard boardState={boardState} moveCallback={handleMove} whitePerspective={whitePerspective} />
         </Layout>
     )
