@@ -1,6 +1,7 @@
 import { pieceToSvg } from "@/lib/chess.helpers";
 import type { Board, Move, Square } from "@/types/Chess.type"
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion"
 
 type chessBoardProps = {
     moveCallback: (move: Move) => void,
@@ -14,13 +15,13 @@ const ChessBoard = ({ moveCallback, boardState, whitePerspective = true }: chess
 
     /**
      * TODO have legal move checks
-     * @param square 
      */
     const handleClick = (square: Square) => {
         if (!squareClicked) {
             setSquareClicked(square);
         }
         else if (square == squareClicked) {
+            // unselect a square if clicked twice
             setSquareClicked(null);
         }
         else {
@@ -37,7 +38,7 @@ const ChessBoard = ({ moveCallback, boardState, whitePerspective = true }: chess
         <div className='grid grid-cols-8 grid-rows-8 w-full aspect-square'>
             {
                 squaresView.map((piece, index) => {
-                    const square = whitePerspective ? index : 63 - index; 
+                    const square = whitePerspective ? index : 63 - index;
                     // changing perspective changes the index number of the same square. This is to correct for that.
                     const row = Math.floor(index / 8);
                     const column = index % 8;
@@ -48,12 +49,20 @@ const ChessBoard = ({ moveCallback, boardState, whitePerspective = true }: chess
                             key={`square-${index}`}
                             className={`${isLightSquare ? 'bg-amber-200' : 'bg-amber-800'} flex items-center justify-center select-none`}
                             onClick={() => handleClick(square as Square)}>
-                            {piece && <img
-                                src={pieceToSvg(piece)}
-                                alt={`${piece.colour} ${piece.pieceType}`}
-                                className="w-4/5 h-4/5 pointer-events-none"
-                                draggable="false"
-                            />}
+                            <AnimatePresence>
+                                {piece && <motion.img
+                                    key={`piece-at-square-${index}`}
+                                    layoutId={`piece-${square}`}
+                                    initial={{ opacity: 0, scale: 0 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    src={pieceToSvg(piece)}
+                                    alt={`${piece.colour} ${piece.pieceType}`}
+                                    className="w-4/5 h-4/5 pointer-events-none"
+                                    draggable="false"
+                                />}
+                            </AnimatePresence>
                         </div>
                     )
                 })
