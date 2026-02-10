@@ -399,4 +399,15 @@ class EngineTest {
         )
         assertEquals(expectedLegalMoves, board.generateLegalMoves().toSet())
     }
+
+    @Test
+    fun testGetBoardState() {
+        val boardInProgress = FenToBoard("rn1q1rk1/ppp1bppp/3pp3/4Pb2/3P4/2P2NP1/P1P1BP1P/R1BQ1RK1 b - - 0 9")
+        val boardStalemate = FenToBoard("2k5/2P5/2K5/8/8/8/8/8 b - - 0 1")
+        val boardCheckmate = FenToBoard("kr6/pp6/1N6/8/8/8/8/R1K5 b - - 0 1")
+
+        assertEquals(BoardState.IN_PROGRESS, boardInProgress.getBoardState())
+        assertEquals(BoardState.STALEMATE, boardStalemate.getBoardState())
+        assertEquals(BoardState.CHECKMATE, boardCheckmate.getBoardState())
+    }
 }
