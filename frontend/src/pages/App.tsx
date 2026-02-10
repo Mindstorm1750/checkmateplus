@@ -7,11 +7,14 @@ import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group"
 import { useNavigate } from "react-router"
 
 function App() {
+  const navigate = useNavigate();
+  
   return (
     <Layout>
       <div className="flex flex-col gap-4 items-center">
         <PlayHumanButton className='min-w-3xs' />
         <PlayComputerButton className='min-w-3xs' />
+        <Button className='min-w-3xs' onClick={() => navigate('/settings')}>Settings</Button>
       </div>
     </Layout>)
 }

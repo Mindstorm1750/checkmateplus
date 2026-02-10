@@ -2,8 +2,8 @@ import { pieceToSvg } from "@/lib/chess.helpers";
 import type { Board, Move, Square } from "@/types/Chess.type"
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion"
-
-const funAnimations: Boolean = false; // TODO MOVE INTO PROVIDER MANAGED BY SETTINGS PAGE
+import { usePreferences } from "@/lib/PreferencesContext";
+import { BOARD_THEMES } from "@/lib/board.theme";
 
 type chessBoardProps = {
     moveCallback: (move: Move) => void,
@@ -16,6 +16,9 @@ const ChessBoard = ({ moveCallback, boardState, whitePerspective = true }: chess
 
     // Used in layoutId to animate pieces. Identifies pieces as they move from boardState to boardState.
     const [pieceOrigins, setPieceOrigins] = useState<Map<Square, Square>>(new Map());
+
+    const { preferences } = usePreferences();
+    const { lightSquare, lightSquareSelected, darkSquare, darkSquareSelected } = BOARD_THEMES[preferences.boardColor];
 
     const squaresView = whitePerspective ? boardState.squares : boardState.squares.toReversed();
 
@@ -63,10 +66,14 @@ const ChessBoard = ({ moveCallback, boardState, whitePerspective = true }: chess
                         const row = Math.floor(index / 8);
                         const column = index % 8;
                         const isLightSquare = (row + column) % 2 === 0;
+                        const isClickedSquare = squareClicked === square;
+                        const squareColourTheme = isClickedSquare ?
+                            (isLightSquare ? lightSquareSelected : darkSquareSelected) :
+                            (isLightSquare ? lightSquare : darkSquare);
 
                         return (
                             <div key={`square-${square}`}
-                                className={`select-none ${isLightSquare ? 'bg-amber-200' : 'bg-amber-800'}`}
+                                className={`select-none ${squareColourTheme}`}
                                 onClick={() => handleClick(square as Square)} />
                         )
                     })
@@ -82,7 +89,7 @@ const ChessBoard = ({ moveCallback, boardState, whitePerspective = true }: chess
 
                         // for the fun animations
                         const randomAngle = Math.random() * 360;
-                        const randomX = Math.cos(randomAngle) * 333; 
+                        const randomX = Math.cos(randomAngle) * 333;
                         const randomY = Math.sin(randomAngle) * 333;
                         // 333 is arbitrary. It's just a decent looking distance for the pieces to fly away
 
@@ -101,7 +108,7 @@ const ChessBoard = ({ moveCallback, boardState, whitePerspective = true }: chess
                                             draggable="false"
                                             initial={{ opacity: 0, scale: 1 }}
                                             animate={{ opacity: 1, scale: 1 }}
-                                            exit={funAnimations ? {
+                                            exit={preferences.animationType === 'FUN' ? {
                                                 x: randomX,
                                                 y: randomY,
                                                 rotate: 360,
