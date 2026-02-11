@@ -1,17 +1,15 @@
 stages:          # List of stages for jobs, and their order of execution
   - build
   - test
+  - secret-detection
   - native-build
-
-
-cache:
-  key: "$CI_COMMIT_REF_NAME"
-  paths:
-    - build
-    - .gradle
+  - security-test
+before_script:
+  - GRADLE_USER_HOME="$(pwd)/.gradle"
+  - export GRADLE_USER_HOME
 
 build-job:       # This job runs in the build stage, which runs first.
-  image: gradle:9.2.0-jdk24-graal
+  image: gradle:jdk24-graal
   stage: build
   script:
     - gradle --build-cache assemble
@@ -19,25 +17,66 @@ build-job:       # This job runs in the build stage, which runs first.
     paths:
       - build/libs/*.jar
     expire_in: 1 hour
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: push
+    paths:
+      - build
+      - .gradle
 
 test:
-  image: gradle:9.2.0-jdk24-graal
+  image: gradle:jdk24-graal
   stage: test
   script:
     - gradle check
   artifacts:
     reports:
       junit: "**/build/test-results/test/TEST-*.xml"
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull
+    paths:
+      - build
+      - .gradle
 
 native-docker-image:
-  image: gradle:9.2.0-jdk24-graal
+  image: gradle:jdk24-graal
   stage: native-build
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull
+    paths:
+      - build
+      - .gradle
   services:
     - docker:dind
   before_script:
     - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
   script:
-    gradle bootBuildImage --publishImage
-    -PregistryUrl=$CI_REGISTRY
-    -PregistryUsername=$CI_REGISTRY_USER
-    -PregistryPassword=$CI_REGISTRY_PASSWORD
+    - gradle bootBuildImage --publishImage 
+      -PregistryUrl=$CI_REGISTRY 
+      -PregistryUsername=$CI_REGISTRY_USER 
+      -PregistryPassword=$CI_REGISTRY_PASSWORD
+
+
+
+include:
+  - template: Jobs/SAST.gitlab-ci.yml
+  - template: Jobs/Secret-Detection.gitlab-ci.yml
+  - template: Jobs/Container-Scanning.gitlab-ci.yml
+  - template: Jobs/Dependency-Scanning.gitlab-ci.yml
+
+variables:
+  SECRET_DETECTION_ENABLED: 'true'
+
+sast:
+  stage: security-test
+
+dependency_scanning:
+  stage: security-test
+
+container_scanning:
+  stage: security-test
+
+secret_detection:
+  stage: security-test
