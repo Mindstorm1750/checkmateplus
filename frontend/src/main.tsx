@@ -22,7 +22,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path='/play/:colour' element={<Play />} />
           <Route path='/testBoard' element={<Test />} />
           <Route path='/settings' element={<Settings />} />
-          <Route path='/match/:matchId' element={<Match />} />
+          <Route path='/match' element={<Match />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

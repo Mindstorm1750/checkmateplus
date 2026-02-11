@@ -37,6 +37,7 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
   const stompClient = useRef<Client | null>(null);
 
   const connect = () => {
+    console.log("FE(*HEWF(*EWH(F*HWE(F*HEF: " + import.meta.env.VITE_BASE_URL + 'matchmaking');
     const socket = new SockJS(import.meta.env.VITE_BASE_URL + 'matchmaking');
 
     const client = new Client({
@@ -45,13 +46,11 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
       onConnect: () => {
         setConnected(true);
         setStatus('Connected');
-        console.log('STOMP connected');
 
         // Subscribe to your specific user queue for status updates
         client.subscribe('/user/queue/status', (message: IMessage) => {
           const body: QueueStatus = JSON.parse(message.body);
           setStatus(`Status: ${body.status}`);
-          console.log(`Queue Update: ${body.message}`);
         });
 
         // Subscribe to match found events
@@ -59,14 +58,12 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
           const match: MatchFoundEvent = JSON.parse(message.body);
           setMatchData(match);
           setStatus('MATCH FOUND!');
-          navigate(`/match/${match.matchId}`)
-          console.log(`Match Created: ${match.matchId}`);
+          navigate(`/match`, { state: match })
         });
 
         joinQueue(); // send join request immediately after connecting
       },
       onStompError: (frame: { headers: { [x: string]: string; }; }) => {
-        console.log('Broker Error: ' + frame.headers['message']);
       },
     });
 
@@ -75,11 +72,8 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
   };
 
   const joinQueue = () => {
-    console.log('entered joinQueue logic')
-    console.log({stompClientCurrent: stompClient.current})
     if (stompClient.current?.connected) {
       const joinRequest: JoinRequest = { displayName: `UserWhoJoinedAt${Date.now()}` }; // TODO use player's displayName (or playerId if types/classes have changed)
-      console.log(`Sending Join Request for: ${joinRequest.displayName}`);
 
       stompClient.current.publish({
         destination: "/app/join",

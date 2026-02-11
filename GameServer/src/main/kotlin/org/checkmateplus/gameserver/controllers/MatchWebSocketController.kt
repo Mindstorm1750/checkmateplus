@@ -13,6 +13,7 @@ import org.checkmateplus.gameserver.models.messages.MatchStateMessage
 import org.checkmateplus.gameserver.models.messages.MoveMessage
 import org.checkmateplus.gameserver.models.messages.ResignMessage
 import org.checkmateplus.gameserver.service.MatchService
+import org.slf4j.LoggerFactory
 import java.security.Principal
 
 /**
@@ -29,6 +30,7 @@ class MatchWebSocketController(
     private val messagingTemplate: SimpMessagingTemplate,
     private val matchService: MatchService
 ) {
+    private val logger = LoggerFactory.getLogger(javaClass)
     //TODO: Need to add disconnect/reconnect support incase of connection drop
 
     /**
@@ -157,6 +159,7 @@ class MatchWebSocketController(
         @DestinationVariable matchId: String,
         joinMessage: JoinMatchMessage
     ) {
+        logger.info(joinMessage.toString());
 
         //this need to be a referred join from the matchmake manager
         val success = true

@@ -23,5 +23,6 @@ export type MoveNotification = {
 
 export type Player = {
     displayName: String,
+    playerId: String,
     skillRating?: number,
 }
