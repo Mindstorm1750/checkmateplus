@@ -1,4 +1,5 @@
 import com.google.protobuf.gradle.id
+import java.util.Locale
 
 plugins {
     kotlin("jvm") version "2.2.21"
@@ -100,6 +101,11 @@ sourceSets {
             )
         }
     }
+}
+tasks.bootBuildImage {
+    var projectname = project.name.lowercase(Locale.getDefault())
+    var projectVersion = project.version.toString().lowercase()
+    imageName = "git.cs.kent.ac.uk/jhl28/Checkmate/${projectname}:${projectVersion}"
 }
 tasks.withType<Test> {
     useJUnitPlatform()
