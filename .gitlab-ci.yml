@@ -29,19 +29,21 @@ npm:
   script:
     - npm install
   cache:
+    policy: push
     paths:
       - node_modules/
-    artifacts:
-      expire_in: 1 days
-      when: on_success
-      paths:
-        - node_modules/
+  
 frontend-test:
   stage: test
   dependencies:
     - npm
   script:
     - npm run test
+  artifacts:
+    expire_in: 1 days
+    when: on_success
+    paths:
+      - node_modules/
 test:
   image: gradle:9.3.1-jdk25-graal
   stage: test
