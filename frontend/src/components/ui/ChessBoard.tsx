@@ -1,4 +1,4 @@
-import { legalMoves, pieceToSvg } from "@/lib/chess.helpers";
+import { isMoveInMoves, legalMoves, pieceToSvg } from "@/lib/chess.helpers";
 import type { Board, Move, Square } from "@/types/Chess.type"
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion"
@@ -23,9 +23,6 @@ const ChessBoard = ({ moveCallback, boardState, whitePerspective = true }: chess
     const squaresView = whitePerspective ? boardState.squares : boardState.squares.toReversed();
     const moves = legalMoves(boardState);
 
-    /**
-     * TODO have legal move checks
-     */
     const handleClick = (square: Square) => {
         if (!squareClicked) {
             setSquareClicked(square);
@@ -35,20 +32,27 @@ const ChessBoard = ({ moveCallback, boardState, whitePerspective = true }: chess
             setSquareClicked(null);
         }
         else {
-            const move = {
+            const attemptedMove: Move = {
                 from: squareClicked,
                 to: square,
                 promotion: null // TODO HANDLE PROMOTION POSSIBILITY
             };
-            setPieceOrigins(prev => {
-                const newPieceOrigins = new Map(prev);
-                const origin = prev.get(squareClicked) ?? squareClicked;
-                newPieceOrigins.set(square, origin);
-                newPieceOrigins.delete(squareClicked);
-                return newPieceOrigins;
-            })
-            moveCallback(move);
-            setSquareClicked(null);
+            if (isMoveInMoves(attemptedMove, moves)) {
+                setPieceOrigins(prev => {
+                    const newPieceOrigins = new Map(prev);
+                    const origin = prev.get(squareClicked) ?? squareClicked;
+                    newPieceOrigins.set(square, origin);
+                    newPieceOrigins.delete(squareClicked);
+                    return newPieceOrigins;
+                })
+                moveCallback(attemptedMove);
+                setSquareClicked(null);
+            }
+            else {
+                // move is illegal / invalid
+                setSquareClicked(null);
+            }
+
         }
     }
 

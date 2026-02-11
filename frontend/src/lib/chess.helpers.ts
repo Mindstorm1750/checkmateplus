@@ -278,7 +278,7 @@ function generatePawnMoves(board: Board, from: Square, colour: Colour): Move[] {
 
     // Move forward 1 square
     if (forward >= 0 && forward <= 63 && board.squares[forward] === null) {
-        if ((colour === 'WHITE' && forward >= 0 && forward <= 7) || 
+        if ((colour === 'WHITE' && forward >= 0 && forward <= 7) ||
             (colour === 'BLACK' && forward >= 56 && forward <= 63)) {
             // Promotion moves
             moves.push({ from, to: forward, promotion: 'KNIGHT' });
@@ -309,7 +309,7 @@ function generatePawnMoves(board: Board, from: Square, colour: Colour): Move[] {
 
         // Regular capture
         if (piece !== null && piece.colour !== colour) {
-            if ((colour === 'WHITE' && target >= 0 && target <= 7) || 
+            if ((colour === 'WHITE' && target >= 0 && target <= 7) ||
                 (colour === 'BLACK' && target >= 56 && target <= 63)) {
                 moves.push({ from, to: target as Square, promotion: 'KNIGHT' });
                 moves.push({ from, to: target as Square, promotion: 'BISHOP' });
@@ -459,8 +459,8 @@ function generateKingMoves(board: Board, from: Square, colour: Colour, includeCa
     // Castling - White
     if (colour === 'WHITE' && from === 60) {
         // Kingside
-        if (board.castlingRights.whiteKingSide && 
-            board.squares[61] === null && 
+        if (board.castlingRights.whiteKingSide &&
+            board.squares[61] === null &&
             board.squares[62] === null &&
             !isSquareAttacked(board, 60, 'BLACK') &&
             !isSquareAttacked(board, 61, 'BLACK') &&
@@ -468,9 +468,9 @@ function generateKingMoves(board: Board, from: Square, colour: Colour, includeCa
             moves.push({ from: 60, to: 62, promotion: null });
         }
         // Queenside
-        if (board.castlingRights.whiteQueenSide && 
-            board.squares[57] === null && 
-            board.squares[58] === null && 
+        if (board.castlingRights.whiteQueenSide &&
+            board.squares[57] === null &&
+            board.squares[58] === null &&
             board.squares[59] === null &&
             !isSquareAttacked(board, 60, 'BLACK') &&
             !isSquareAttacked(board, 59, 'BLACK') &&
@@ -482,8 +482,8 @@ function generateKingMoves(board: Board, from: Square, colour: Colour, includeCa
     // Castling - Black
     if (colour === 'BLACK' && from === 4) {
         // Kingside
-        if (board.castlingRights.blackKingSide && 
-            board.squares[5] === null && 
+        if (board.castlingRights.blackKingSide &&
+            board.squares[5] === null &&
             board.squares[6] === null &&
             !isSquareAttacked(board, 4, 'WHITE') &&
             !isSquareAttacked(board, 5, 'WHITE') &&
@@ -491,9 +491,9 @@ function generateKingMoves(board: Board, from: Square, colour: Colour, includeCa
             moves.push({ from: 4, to: 6, promotion: null });
         }
         // Queenside
-        if (board.castlingRights.blackQueenSide && 
-            board.squares[1] === null && 
-            board.squares[2] === null && 
+        if (board.castlingRights.blackQueenSide &&
+            board.squares[1] === null &&
+            board.squares[2] === null &&
             board.squares[3] === null &&
             !isSquareAttacked(board, 4, 'WHITE') &&
             !isSquareAttacked(board, 3, 'WHITE') &&
@@ -613,4 +613,12 @@ export function getBoardState(board: Board): BoardState {
     }
 
     return isInCheck(board, board.sideToMove) ? 'CHECKMATE' : 'STALEMATE';
+}
+
+/**
+ * Simply using Array.includes doesn't work because .includes doesn't work with arrays of objects (due to strict equality checks)
+ */
+export function isMoveInMoves(move: Move, moves: Array<Move>): boolean {
+    const moveString = JSON.stringify(move);
+    return moves.map((move) => JSON.stringify(move)).includes(moveString);
 }
