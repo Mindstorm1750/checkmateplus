@@ -213,6 +213,22 @@ class EngineTest {
         assertEquals(expectedBoardAfterMove, boardAfterMove)
     }
 
+    @Test
+    fun testApplyMovePromotion() {
+        val board = FenToBoard("8/k2PN3/1nK5/8/8/8/8/8 w - - 0 1")
+        val expectedBoard = FenToBoard("3Q4/k3N3/1nK5/8/8/8/8/8 b - - 0 1")
+        val boardAfterPromotion = board.applyMove(Move("d7".toSquare()!!, "d8".toSquare()!!, PieceType.QUEEN))
+        assertEquals(expectedBoard, boardAfterPromotion)
+    }
+
+    @Test
+    fun testApplyMoveUnderpromotion() {
+        val board = FenToBoard("8/8/8/1p6/1P6/4Q3/2kp1K2/8 b - - 0 1")
+        val expectedBoard = FenToBoard("8/8/8/1p6/1P6/4Q3/2k2K2/3n4 w - - 0 2")
+        val boardAfterUnderpromotion = board.applyMove(Move("d2".toSquare()!!, "d1".toSquare()!!, PieceType.KNIGHT))
+        assertEquals(expectedBoard, boardAfterUnderpromotion)
+    }
+
     /**
      * Regardless of whose turn it is,
      * white having an extra pawn should result in a higher output from .evaluate()
@@ -277,7 +293,7 @@ class EngineTest {
         val expectedResultForDepthFive = 193690690
 
         fun perft(board: Board, depth: Int): Int {
-            val moves = board.legalMoves()
+            val moves = board.generateLegalMoves()
             if(depth == 1) {
                 return moves.size
             }
@@ -345,8 +361,7 @@ class EngineTest {
             Move("e1".toSquare()!!, "g1".toSquare()!!),
             Move("e1".toSquare()!!, "c1".toSquare()!!)
         )
-    // If .legalMoves() returns a list, then add .toSet() to board.legalMoves() to make the test work.
-    assertEquals(board.legalMoves(), expectedLegalMoves)
+    assertEquals(expectedLegalMoves, board.generateLegalMoves().toSet())
     }
 
     /**
@@ -364,8 +379,7 @@ class EngineTest {
             Move("h4".toSquare()!!, "h3".toSquare()!!),
             Move("h4".toSquare()!!, "g4".toSquare()!!)
         )
-        // If .legalMoves() returns a list, then add .toSet() to board.legalMoves() to make the test work.
-        assertEquals(board.legalMoves(), expectedLegalMoves)
+        assertEquals(expectedLegalMoves, board.generateLegalMoves().toSet())
     }
 
     /**
@@ -383,7 +397,17 @@ class EngineTest {
             Move("h6".toSquare()!!, "g7".toSquare()!!),
             Move("h6".toSquare()!!, "g6".toSquare()!!)
         )
-        // If .legalMoves() returns a list, then add .toSet() to board.legalMoves() to make the test work.
-        assertEquals(board.legalMoves(), expectedLegalMoves)
+        assertEquals(expectedLegalMoves, board.generateLegalMoves().toSet())
+    }
+
+    @Test
+    fun testGetBoardState() {
+        val boardInProgress = FenToBoard("rn1q1rk1/ppp1bppp/3pp3/4Pb2/3P4/2P2NP1/P1P1BP1P/R1BQ1RK1 b - - 0 9")
+        val boardStalemate = FenToBoard("2k5/2P5/2K5/8/8/8/8/8 b - - 0 1")
+        val boardCheckmate = FenToBoard("kr6/pp6/1N6/8/8/8/8/R1K5 b - - 0 1")
+
+        assertEquals(BoardState.IN_PROGRESS, boardInProgress.getBoardState())
+        assertEquals(BoardState.STALEMATE, boardStalemate.getBoardState())
+        assertEquals(BoardState.CHECKMATE, boardCheckmate.getBoardState())
     }
 }

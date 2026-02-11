@@ -1,5 +1,6 @@
 package org.checkmateplus.chessLibrary.chessEngine
 
+import BoardState
 import kotlin.math.abs
 
 data class Board(
@@ -100,21 +101,33 @@ data class Board(
         return score
     }
 
-    //Pawn move generation
+
     fun generatePawnMoves(from: Square, color: Colour): List<Move> {
         val moves = mutableListOf<Move>()
         val direction = if (color == Colour.WHITE) 8 else -8
         val startRank = if (color == Colour.WHITE) 1 else 6
         val forward = from + direction
 
+        val (fromFile, fromRank) = from.toFileRank()
+
         //Move forward 1 square
         if (forward in 0..63 && squares[forward] == null) {
-            moves.add(Move(from, forward))
+            if((color == Colour.WHITE && forward in 56..63) || (color == Colour.BLACK && forward in 0..7)) {
+                //promo moves
+                moves.add(Move(from, forward, PieceType.KNIGHT))
+                moves.add(Move(from, forward, PieceType.BISHOP))
+                moves.add(Move(from, forward, PieceType.ROOK))
+                moves.add(Move(from, forward, PieceType.QUEEN))
+            }
 
-            //Move forward 2 squares from starting position
-            val doubleForward = from + 2 * direction
-            if ((from / 8 == startRank) && squares[doubleForward] == null && squares[forward] == null) {
-                moves.add(Move(from, doubleForward))
+            else {
+                moves.add(Move(from, forward))
+
+                //pawn forward 2 from start
+                val doubleForward = from + 2 * direction
+                if ((fromRank == startRank) && squares[doubleForward] == null) {
+                    moves.add(Move(from, doubleForward))
+                }
             }
         }
 
@@ -122,18 +135,37 @@ data class Board(
         val captureOffsets = if (color == Colour.WHITE) listOf(7, 9) else listOf(-7, -9)
         for (offset in captureOffsets) {
             val target = from + offset
-            if (target in 0..63) {
-                val piece = squares[target]
-                if (piece != null && piece.color != color) {
+            if (target !in 0..63) continue
+
+            val (toFile, _) = target.toFileRank()
+            if (abs(toFile - fromFile) != 1) continue
+
+            val piece = squares[target]
+
+            //regular capture
+            if (piece != null && piece.color != color) {
+                if((color == Colour.WHITE && target in 56..63) || (color == Colour.BLACK && target in 0..7)) {
+                    moves.add(Move(from, target, PieceType.KNIGHT))
+                    moves.add(Move(from, target, PieceType.BISHOP))
+                    moves.add(Move(from, target, PieceType.ROOK))
+                    moves.add(Move(from, target, PieceType.QUEEN))
+                } else {
                     moves.add(Move(from, target))
                 }
             }
+
+            //En passant capture
+            else if (target == enPassantSquare) {
+                moves.add(Move(from, target))
+            }
+
         }
 
         return moves
     }
 
-    //knight moves
+
+    //knight moves - L shape
     fun generateKnightMoves(from: Square, color: Colour): List<Move> {
         val moves = mutableListOf<Move>()
         val knightMoves = listOf(-17, -15, -10, -6, 6, 10, 15, 17)
@@ -165,6 +197,7 @@ data class Board(
         return moves
     }
 
+    //generate bishop moves - diagonals
     fun generateBishopMoves(from: Square, color: Colour): List<Move> {
         val moves = mutableListOf<Move>()
         val directions = listOf(-9, -7, 7, 9)
@@ -200,37 +233,35 @@ data class Board(
         return moves
     }
 
+    //generate rook moves - up down left right only
     fun generateRookMoves(from: Square, color: Colour): List<Move> {
         val moves = mutableListOf<Move>()
         val directions = listOf(-8, -1, 1, 8)
 
         for (direction in directions) {
             var target = from + direction
-            val (fromFile, _) = from.toFileRank()
+            val isHorizontal = (direction == 1 || direction == -1)
 
             while (target in 0..63) {
-                val (toFile, _) = target.toFileRank()
+                //Stop wrapping around
+                if (isHorizontal && target / 8 != from / 8) break
 
-                if (direction == 1 || direction == -1) {
-                    if (abs(toFile - fromFile) > 1) {
-                        break
-                    }
-                }
                 val piece = squares[target]
                 if (piece == null) {
                     moves.add(Move(from, target))
-                    target += direction
                 } else {
                     if (piece.color != color) {
                         moves.add(Move(from, target))
                     }
                     break
                 }
+                target += direction
             }
-
         }
         return moves
     }
+
+
 
     fun generateQueenMoves(from: Square, color: Colour): List<Move> {
         val moves = mutableListOf<Move>()
@@ -239,7 +270,8 @@ data class Board(
         return moves
     }
 
-    fun generateKingMoves(from: Square, color: Colour): List<Move> {
+    //king moves generation - with/without castling
+    fun generateKingMoves(from: Square, color: Colour, includeCastling: Boolean = true): List<Move> {
         val moves = mutableListOf<Move>()
         val kingMoves = listOf(-9, -8, -7, -1, 1, 7, 8, 9)
         val (fromFile, fromRank) = from.toFileRank()
@@ -262,11 +294,55 @@ data class Board(
             }
         }
 
-        // TODO: Add castling moves later
+        //Skip castling if not needed
+        if (!includeCastling) return moves
+
+
+        //Castling
+        //White castle
+        if (color == Colour.WHITE && from == 4) {
+            //kingside
+            if (castlingRights.whiteKingSide && squares[5] == null && squares[6] == null &&
+                !isSquareAttacked(4, Colour.BLACK) &&
+                !isSquareAttacked(5, Colour.BLACK) &&
+                !isSquareAttacked(6, Colour.BLACK)
+            ) {
+                moves.add(Move(4, 6))
+            }
+            //queenside
+            if (castlingRights.whiteQueenSide && squares[1] == null && squares[2] == null && squares[3] == null &&
+                !isSquareAttacked(4, Colour.BLACK) &&
+                !isSquareAttacked(3, Colour.BLACK) &&
+                !isSquareAttacked(2, Colour.BLACK)
+            ) {
+                moves.add(Move(4, 2))
+            }
+        }
+
+        //Black castling
+        if (color == Colour.BLACK && from == 60) {
+            //kingside
+            if (castlingRights.blackKingSide && squares[61] == null && squares[62] == null &&
+                !isSquareAttacked(60, Colour.WHITE) &&
+                !isSquareAttacked(61, Colour.WHITE) &&
+                !isSquareAttacked(62, Colour.WHITE)
+            ) {
+                moves.add(Move(60, 62))
+            }
+            //queenside
+            if (castlingRights.blackQueenSide && squares[57] == null && squares[58] == null && squares[59] == null &&
+                !isSquareAttacked(60, Colour.WHITE) &&
+                !isSquareAttacked(59, Colour.WHITE) &&
+                !isSquareAttacked(58, Colour.WHITE)
+            ) {
+                moves.add(Move(60, 58))
+            }
+        }
 
         return moves
     }
 
+    //castling rights check - if king/rook moved castling disabled
     private fun updateCastlingRights(move: Move, piece: Piece): CastlingRights {
         var rights = castlingRights.copy()
 
@@ -298,6 +374,99 @@ data class Board(
         }
 
         return rights
+    }
+
+    //Generate all moves
+    fun generateAllMoves(): List<Move> {
+        val moves = mutableListOf<Move>()
+        for ( square in 0..63){
+            val piece = squares[square] ?:continue
+            if (piece.color!= sideToMove) continue
+
+            when (piece.type) {
+                PieceType.PAWN -> moves.addAll(generatePawnMoves(square, piece.color))
+                PieceType.KNIGHT -> moves.addAll(generateKnightMoves(square, piece.color))
+                PieceType.BISHOP -> moves.addAll(generateBishopMoves(square, piece.color))
+                PieceType.ROOK -> moves.addAll(generateRookMoves(square, piece.color))
+                PieceType.QUEEN -> moves.addAll(generateQueenMoves(square, piece.color))
+                PieceType.KING -> moves.addAll(generateKingMoves(square, piece.color))
+
+            }
+        }
+
+        return moves
+    }
+    //generate all legal moves
+    fun generateLegalMoves(): List<Move> {
+        val legalMoves = generateAllMoves()
+        return legalMoves.filter{ move ->
+            val newBoard = applyMove(move)
+            !newBoard.isInCheck(sideToMove)
+        }
+    }
+
+    //check if given colors king is in check
+    fun isInCheck(color: Colour): Boolean {
+        val kingSquare = squares.indexOfFirst {
+            it?.type == PieceType.KING && it.color == color
+        }
+        if (kingSquare == -1) return false
+        return isSquareAttacked(kingSquare, color.opposite())
+    }
+
+    //not sure if this is best way for this, but works for now (possibly create separate function for pawn?)
+    //check if square is attacked by any piece
+    fun isSquareAttacked(square: Square, byColour: Colour): Boolean {
+        for (sqr in 0..63){
+            val piece = squares[sqr] ?: continue
+            if (piece.color != byColour) continue //skip if not attacking colour
+            //pawn check
+            when(piece.type){
+                PieceType.PAWN -> {
+                    //pawns only attack diagonally
+                    val direction = if (piece.color == Colour.WHITE) 8 else -8
+                    val (pawnFile, _) = sqr.toFileRank()
+                    val (targetFile, _) = square.toFileRank()
+                    val captureSquares = listOf(sqr + direction - 1, sqr + direction + 1)
+                    if (square in captureSquares && abs(targetFile - pawnFile) == 1) {
+                        return true
+                    }
+                }
+
+                //check all other pieces
+                PieceType.KNIGHT -> {
+                    if (generateKnightMoves(sqr, piece.color).any { it.to == square }) return true
+                }
+                PieceType.BISHOP -> {
+                    if (generateBishopMoves(sqr, piece.color).any { it.to == square }) return true
+                }
+                PieceType.ROOK -> {
+                    if (generateRookMoves(sqr, piece.color).any { it.to == square }) return true
+                }
+                PieceType.QUEEN -> {
+                    if (generateQueenMoves(sqr, piece.color).any { it.to == square }) return true
+                }
+                PieceType.KING -> {
+                    if (generateKingMoves(sqr, piece.color, includeCastling = false).any { it.to == square }) return true
+                }
+            }
+        }
+        return false
+    }
+
+    //Check game state - return checkmate/stalemate if no legal moves
+    fun getBoardState(): BoardState{
+        val legalMoves = generateLegalMoves()
+
+        if(legalMoves.isNotEmpty()){
+            return BoardState.IN_PROGRESS
+        }
+
+        return if(isInCheck(sideToMove)){
+            BoardState.CHECKMATE
+        } else{
+            BoardState.STALEMATE
+        }
     }
 
 
