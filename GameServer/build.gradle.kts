@@ -52,6 +52,8 @@ dependencies {
     testImplementation("org.springframework.grpc:spring-grpc-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     implementation(project(":ChessLibrary"))
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.security:spring-security-messaging")
 }
 
 dependencyManagement {

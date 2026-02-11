@@ -127,7 +127,7 @@ class GameServerService(
                 players = listOf(whitePlayer, blackPlayer),
                 timeControl = timeControl
             )
-
+            logger.info("Created match: ${request.matchId} with players $whitePlayer & $blackPlayer")
             val response = GameServerProto.AllocateMatchResponse.newBuilder()
                 .setSuccess(true)
                 .setMessage("Match created")
