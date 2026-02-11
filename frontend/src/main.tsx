@@ -9,6 +9,7 @@ import Play from './pages/Play.tsx'
 import Test from './pages/Test.tsx'
 import { PreferencesProvider } from './lib/PreferencesContext.tsx'
 import Settings from './pages/Settings.tsx'
+import Match from './pages/Match.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -21,6 +22,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path='/play/:colour' element={<Play />} />
           <Route path='/testBoard' element={<Test />} />
           <Route path='/settings' element={<Settings />} />
+          <Route path='/match/:matchId' element={<Match />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>
