@@ -11,7 +11,7 @@ cache:
     - .gradle
 
 build-job:       # This job runs in the build stage, which runs first.
-  image: gradle:9.2.0-jdk24-graal
+  image: gradle:jdk24-graal
   stage: build
   script:
     - gradle --build-cache assemble
@@ -21,7 +21,7 @@ build-job:       # This job runs in the build stage, which runs first.
     expire_in: 1 hour
 
 test:
-  image: gradle:9.2.0-jdk24-graal
+  image: gradle:jdk24-graal
   stage: test
   script:
     - gradle check
@@ -30,7 +30,7 @@ test:
       junit: "**/build/test-results/test/TEST-*.xml"
 
 native-docker-image:
-  image: gradle:9.2.0-jdk24-graal
+  image: gradle:jdk24-graal
   stage: native-build
   services:
     - docker:dind
