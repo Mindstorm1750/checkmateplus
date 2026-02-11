@@ -52,7 +52,7 @@ function Match() {
             const joinRequest: JoinMatchMessage = { playerId: 'yoooooo', matchId: state.matchId, playerName: `UserWhoJoinedAt${Date.now()}` }; // TODO use player's displayName (or playerId if types/classes have changed)
 
             stompClient.current.publish({
-                destination: `/match/${state.matchId}/join`,
+                destination: `/app/match/${state.matchId}/join`,
                 body: JSON.stringify(joinRequest)
             });
         }

@@ -10,20 +10,28 @@ import org.springframework.messaging.Message
 @Configuration
 @EnableWebSocketSecurity
 class WebSocketSecurityConfig {
+
     @Bean
     fun messageAuthorizationManager(
         messages: MessageMatcherDelegatingAuthorizationManager.Builder
     ): AuthorizationManager<Message<*>> {
         return messages
+            // Allow connection handshake
             .nullDestMatcher().permitAll()
-            .simpDestMatchers("/match/**").permitAll()
 
-            .simpSubscribeDestMatchers("/user/queue/**", "/topic/**").permitAll() //this needs to be "authenticated"
+            // Allow subscription to topics and queues
+            .simpSubscribeDestMatchers("/topic/**").permitAll()
+            .simpSubscribeDestMatchers("/queue/**").permitAll()
+            .simpSubscribeDestMatchers("/user/queue/**").permitAll()
+
+            // Allow sending messages to /app/match/** endpoints
+            .simpDestMatchers("/app/match/**").permitAll()
+
+            // Deny everything else
             .anyMessage().denyAll()
             .build()
     }
 
-    // this disables csrf!
     @Bean("csrfChannelInterceptor")
     fun csrfChannelInterceptor(): ChannelInterceptor {
         return object : ChannelInterceptor {}
