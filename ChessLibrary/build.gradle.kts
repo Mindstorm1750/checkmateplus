@@ -1,16 +1,12 @@
 plugins {
-    kotlin("jvm") version "2.2.21"
+    kotlin("jvm") version "2.3.10"
     id("java-library")
-    kotlin("plugin.serialization") version "2.2.21"
+    kotlin("plugin.serialization") version "2.3.10"
 }
 repositories {
     mavenCentral()
 }
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(24)
-    }
-}
+
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
     testImplementation(kotlin("test"))
