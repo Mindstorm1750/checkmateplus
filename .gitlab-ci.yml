@@ -23,7 +23,25 @@ build-job:       # This job runs in the build stage, which runs first.
     paths:
       - build
       - .gradle
-
+npm:
+  image: node:24.10.9
+  stage: build
+  script:
+    - npm install
+  cache:
+    paths:
+      - node_modules/
+    artifacts:
+      expire_in: 1 days
+      when: on_success
+      paths:
+        - node_modules/
+frontend-test:
+  stage: test
+  dependencies:
+    - npm
+  script:
+    - npm run test
 test:
   image: gradle:9.3.1-jdk25-graal
   stage: test
