@@ -41,7 +41,7 @@ frontend-test:
     - npm
   script:
     - cd frontend
-    - npm run test
+    - npm test
   artifacts:
     expire_in: 1 days
     when: on_success
