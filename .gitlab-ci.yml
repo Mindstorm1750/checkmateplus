@@ -24,7 +24,7 @@ build-job:       # This job runs in the build stage, which runs first.
       - build
       - .gradle
 npm:
-  image: node:24.10.9
+  image: node:24-alpine
   stage: build
   script:
     - npm install
@@ -34,6 +34,7 @@ npm:
       - node_modules/
   
 frontend-test:
+  image: node:24-alpine
   stage: test
   dependencies:
     - npm
