@@ -1,4 +1,4 @@
-import { pieceToSvg } from "@/lib/chess.helpers";
+import { legalMoves, pieceToSvg } from "@/lib/chess.helpers";
 import type { Board, Move, Square } from "@/types/Chess.type"
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion"
@@ -21,6 +21,7 @@ const ChessBoard = ({ moveCallback, boardState, whitePerspective = true }: chess
     const { lightSquare, lightSquareSelected, darkSquare, darkSquareSelected } = BOARD_THEMES[preferences.boardColor];
 
     const squaresView = whitePerspective ? boardState.squares : boardState.squares.toReversed();
+    const moves = legalMoves(boardState);
 
     /**
      * TODO have legal move checks
@@ -70,11 +71,17 @@ const ChessBoard = ({ moveCallback, boardState, whitePerspective = true }: chess
                         const squareColourTheme = isClickedSquare ?
                             (isLightSquare ? lightSquareSelected : darkSquareSelected) :
                             (isLightSquare ? lightSquare : darkSquare);
+                        // canMoveHere is used for the "dots" showing where a selected piece can move.
+                        const canMoveHere = moves.filter((move) => move.from === squareClicked).some((move) => move.to === square);
 
                         return (
                             <div key={`square-${square}`}
-                                className={`select-none ${squareColourTheme}`}
-                                onClick={() => handleClick(square as Square)} />
+                                className={`select-none ${squareColourTheme} relative flex items-center justify-center`}
+                                onClick={() => handleClick(square as Square)}>
+                                {canMoveHere && (
+                                    <div className={`w-1/3 aspect-square rounded-full ${isLightSquare ? lightSquareSelected : darkSquareSelected}`} />
+                                )}
+                            </div>
                         )
                     })
                 }
