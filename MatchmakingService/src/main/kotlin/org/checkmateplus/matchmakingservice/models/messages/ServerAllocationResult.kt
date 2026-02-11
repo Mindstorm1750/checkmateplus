@@ -1,4 +1,4 @@
-package org.checkmateplus.matchmakingservice.models
+package org.checkmateplus.matchmakingservice.models.messages
 
 /**
  * Result of a game server allocation request.
