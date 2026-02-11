@@ -1,0 +1,43 @@
+stages:          # List of stages for jobs, and their order of execution
+  - build
+  - test
+  - native-build
+
+
+cache:
+  key: "$CI_COMMIT_REF_NAME"
+  paths:
+    - build
+    - .gradle
+
+build-job:       # This job runs in the build stage, which runs first.
+  image: gradle:9.2.0-jdk24-graal
+  stage: build
+  script:
+    - gradle --build-cache assemble
+  artifacts:
+    paths:
+      - build/libs/*.jar
+    expire_in: 1 hour
+
+test:
+  image: gradle:9.2.0-jdk24-graal
+  stage: test
+  script:
+    - gradle check
+  artifacts:
+    reports:
+      junit: "**/build/test-results/test/TEST-*.xml"
+
+native-docker-image:
+  image: gradle:9.2.0-jdk24-graal
+  stage: native-build
+  services:
+    - docker:dind
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
+  script:
+    gradle bootBuildImage --publishImage
+    -PregistryUrl=$CI_REGISTRY
+    -PregistryUsername=$CI_REGISTRY_USER
+    -PregistryPassword=$CI_REGISTRY_PASSWORD
