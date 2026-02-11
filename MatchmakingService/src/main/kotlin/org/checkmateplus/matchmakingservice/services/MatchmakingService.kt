@@ -14,7 +14,7 @@ import org.checkmateplus.gameserver.proto.ServerAllocatorGrpc
 import org.checkmateplus.gameserver.proto.ServerAllocatorGrpc.newBlockingStub
 
 import org.checkmateplus.matchmakingservice.models.Match
-import org.checkmateplus.matchmakingservice.models.ServerAllocationResult
+import org.checkmateplus.matchmakingservice.models.messages.ServerAllocationResult
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.redis.core.RedisTemplate

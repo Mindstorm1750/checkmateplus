@@ -410,4 +410,19 @@ class EngineTest {
         assertEquals(BoardState.STALEMATE, boardStalemate.getBoardState())
         assertEquals(BoardState.CHECKMATE, boardCheckmate.getBoardState())
     }
+    @Test
+    fun testBoardToFenString(){
+        val board = FenToBoard("rn1q1rk1/ppp1bppp/3pp3/4Pb2/3P4/2P2NP1/P1P1BP1P/R1BQ1RK1 b - - 0 9")
+        assertEquals(board.toFen(), "rn1q1rk1/ppp1bppp/3pp3/4Pb2/3P4/2P2NP1/P1P1BP1P/R1BQ1RK1 b - - 0 9")
+    }
+    @Test
+    fun testBoardToFenString_ComplexPosition() {
+        val board = FenToBoard("r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R w KQkq - 4 5")
+        assertEquals("r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R w KQkq - 4 5", board.toFen())
+    }
+    @Test
+    fun testBoardToFenString_ScholarsMate() {
+        val board = FenToBoard("r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 4")
+        assertEquals("r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 4", board.toFen())
+    }
 }

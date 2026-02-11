@@ -1,5 +1,6 @@
 package org.checkmateplus.gameserver.service
 
+import BoardState
 import org.checkmateplus.chessLibrary.chessEngine.Board
 import org.checkmateplus.chessLibrary.chessEngine.Colour.*
 import org.checkmateplus.chessLibrary.chessEngine.Move
@@ -228,16 +229,26 @@ class MatchService {
     ): MatchStateMessage {
         match.board
             ?: throw IllegalStateException("Board not initialized")
-
+        val boardState = match.board!!.getBoardState()
+        var isCheckmate = false
+        var isCheck = false
+        var isStalemate = false
+        var isDraw = false
+        if (boardState == BoardState.CHECKMATE) {
+            isCheckmate = true
+            isCheck = false
+            isStalemate = false
+            isDraw = false
+        }
         return MatchStateMessage(
             matchId = match.matchId,
-            fen = TODO("waiting for engine implementation"),
+            fen = match.board!!.toFen(),
             whitePlayerTime = match.whitePlayerTime,
             blackPlayerTime = match.blackPlayerTime,
-            isCheck = TODO("waiting for engine implementation"),
-            isCheckmate = TODO("waiting for engine implementation"),
-            isStalemate = TODO("waiting for engine implementation"),
-            isDraw = TODO("waiting for engine implementation"),
+            isCheck = isCheck,
+            isCheckmate = isCheckmate,
+            isStalemate = isStalemate,
+            isDraw = isDraw,
             lastMove = lastMove,
             whitePlayer = match.players.getOrNull(0),
             blackPlayer = match.players.getOrNull(1)
@@ -247,6 +258,7 @@ class MatchService {
     fun getActiveMatchCount(): Int {
         return matches.size;
     }
+
     fun getActivePlayerCount(): Int {
         var count = 0
         matches.forEach { (_, matchstate) -> matchstate.players.forEach { _ -> count++ } }

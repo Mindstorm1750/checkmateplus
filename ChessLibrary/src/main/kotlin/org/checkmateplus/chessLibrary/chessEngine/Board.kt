@@ -545,6 +545,66 @@ data class Board(
         println(" a b c d e f g h")
         println("Side to move: $sideToMove")
     }
+
+    fun toFen(): String {
+        val parts = mutableListOf<String>()
+
+        val rows = mutableListOf<String>()
+        for (rank in 7 downTo 0) {
+            var emptyCount = 0
+            val row = StringBuilder()
+
+            for (file in 0..7) {
+                val square = Pair(file, rank).toSquare()
+                val piece = squares[square]
+
+                if (piece == null) {
+                    emptyCount++
+                } else {
+                    if (emptyCount > 0) {
+                        row.append(emptyCount)
+                        emptyCount = 0
+                    }
+                    val symbol = when (piece.type) {
+                        PieceType.PAWN -> if (piece.color == Colour.WHITE) 'P' else 'p'
+                        PieceType.KNIGHT -> if (piece.color == Colour.WHITE) 'N' else 'n'
+                        PieceType.BISHOP -> if (piece.color == Colour.WHITE) 'B' else 'b'
+                        PieceType.ROOK -> if (piece.color == Colour.WHITE) 'R' else 'r'
+                        PieceType.QUEEN -> if (piece.color == Colour.WHITE) 'Q' else 'q'
+                        PieceType.KING -> if (piece.color == Colour.WHITE) 'K' else 'k'
+                    }
+                    row.append(symbol)
+                }
+            }
+            if (emptyCount > 0) {
+                row.append(emptyCount)
+            }
+            rows.add(row.toString())
+        }
+        parts.add(rows.joinToString("/"))
+
+        parts.add(if (sideToMove == Colour.WHITE) "w" else "b")
+
+        val castling = buildString {
+            if (castlingRights.whiteKingSide) append('K')
+            if (castlingRights.whiteQueenSide) append('Q')
+            if (castlingRights.blackKingSide) append('k')
+            if (castlingRights.blackQueenSide) append('q')
+        }.ifEmpty { "-" }
+        parts.add(castling)
+
+        val epSquare = enPassantSquare?.let {
+            val (file, rank) = it.toFileRank()
+            "${('a' + file)}${rank + 1}"
+        } ?: "-"
+        parts.add(epSquare)
+
+        parts.add(halfMoveClock.toString())
+
+        parts.add(fullMoveNumber.toString())
+
+        return parts.joinToString(" ")
+    }
 }
 
 
