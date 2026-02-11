@@ -27,6 +27,7 @@ npm:
   image: node:24-alpine
   stage: build
   script:
+    - cd frontend
     - npm install
   cache:
     policy: push
@@ -39,6 +40,7 @@ frontend-test:
   dependencies:
     - npm
   script:
+    - cd frontend
     - npm run test
   artifacts:
     expire_in: 1 days
