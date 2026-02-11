@@ -16,6 +16,7 @@ import org.checkmateplus.gameserver.proto.ServerAllocatorGrpc.newBlockingStub
 import org.checkmateplus.matchmakingservice.models.Match
 import org.checkmateplus.matchmakingservice.models.ServerAllocationResult
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Service
 import java.util.concurrent.TimeUnit
@@ -31,7 +32,9 @@ import kotlin.time.ExperimentalTime
  */
 @Service
 class MatchmakingService(
-    private val redisTemplate: RedisTemplate<String, String>
+    private val redisTemplate: RedisTemplate<String, String>,
+    @Value("\${gameservermanager.host}") private val managerHost: String,
+    @Value("\${gameservermanager.port}") private val managerPort: Int
 ) {
 
     companion object {
@@ -48,13 +51,13 @@ class MatchmakingService(
      * Initialises the gRPC connection to the Game Manager.
      */
     @PostConstruct
-    fun initialize() {
-        channel = ManagedChannelBuilder.forAddress("localhost", 9090) //this need to match a k8s instance
+    fun initialise() {
+        channel = ManagedChannelBuilder.forAddress(managerHost, managerPort) //this need to match a k8s instance
             .usePlaintext().build()
 
         stub = newBlockingStub(channel)
 
-        logger.info("Connected to Game Manager at localhost:9090")
+        logger.info("Connected to Game Manager at $managerHost:$managerPort")
     }
 
     /**

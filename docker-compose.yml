@@ -1,0 +1,48 @@
+services:
+  matchmakingservice:
+    image: matchmakingservice:0.0.1-snapshot
+    container_name: matchmakingservice
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    ports:
+      - "8080:8080"
+    networks:
+      - game-network
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - gameservermanager
+
+  gameserver:
+    image: gameserver:0.0.1-snapshot
+    container_name: gameserver
+    ports:
+      - "8090:8090"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - game-network
+    restart: unless-stopped
+    depends_on:
+      - gameservermanager
+
+  gameservermanager:
+    image: gameservermanager:0.0.1-snapshot
+    container_name: gameservermanager
+    networks:
+      - game-network
+    restart: unless-stopped
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  redis:
+    image: redis:8.6.0-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - game-network
+    restart: unless-stopped
+networks:
+  game-network:
+    driver: bridge

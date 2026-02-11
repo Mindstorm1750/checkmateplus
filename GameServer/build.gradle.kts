@@ -99,7 +99,7 @@ sourceSets {
 tasks.bootBuildImage {
     var projectname = project.name.lowercase(Locale.getDefault())
     var projectVersion = project.version.toString().lowercase()
-    imageName = "git.cs.kent.ac.uk/jhl28/Checkmate/${projectname}:${projectVersion}"
+    imageName = "git.cs.kent.ac.uk/jhl28/checkmate/${projectname}:${projectVersion}"
 }
 tasks.withType<Test> {
     useJUnitPlatform()

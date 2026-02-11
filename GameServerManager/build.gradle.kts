@@ -6,7 +6,7 @@ plugins {
     kotlin("plugin.spring") version "2.3.10"
     id("org.springframework.boot") version "4.0.2"
     id("io.spring.dependency-management") version "1.1.7"
-    id("org.graalvm.buildtools.native") version "0.11.4"
+    id("org.graalvm.buildtools.native") version "0.11.4" apply true
     id("com.google.protobuf") version "0.9.5"
 }
 
@@ -88,7 +88,7 @@ sourceSets {
 tasks.bootBuildImage {
     var projectname = project.name.lowercase(Locale.getDefault())
     var projectVersion = project.version.toString().lowercase()
-    imageName = "git.cs.kent.ac.uk/jhl28/Checkmate/${projectname}:${projectVersion}"
+    imageName = "git.cs.kent.ac.uk/jhl28/checkmate/${projectname}:${projectVersion}"
 }
 tasks.withType<Test> {
     useJUnitPlatform()
