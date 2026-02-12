@@ -14,7 +14,6 @@ import org.checkmateplus.gameserver.models.messages.MoveMessage
 import org.checkmateplus.gameserver.models.messages.ResignMessage
 import org.checkmateplus.gameserver.service.MatchService
 import org.slf4j.LoggerFactory
-import java.security.Principal
 
 /**
  * WebSocket controller for handling real-time chess match interactions.
@@ -185,6 +184,11 @@ class MatchWebSocketController(
             //when both players are connected start the match
             if (matchService.getMatch(matchId) != null && matchService.getMatch(matchId)!!.players.size == 2) {
                 startMatch(matchId)
+                val matchState = matchService.createMatchStateMessage(match)
+                messagingTemplate.convertAndSend(
+                    "/topic/match/$matchId/state",
+                    matchState
+                )
             }
         }
     }

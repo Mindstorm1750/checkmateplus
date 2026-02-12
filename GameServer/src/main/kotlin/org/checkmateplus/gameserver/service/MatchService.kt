@@ -226,10 +226,10 @@ class MatchService {
      * Send the MatchState
      */
     fun createMatchStateMessage(
-        match: MatchState,
+        match: MatchState?,
         lastMove: MoveNotification? = null
     ): MatchStateMessage {
-        match.board
+        match?.board
             ?: throw IllegalStateException("Board not initialized")
         val boardState = match.board!!.getBoardState()
         var isCheckmate = false
