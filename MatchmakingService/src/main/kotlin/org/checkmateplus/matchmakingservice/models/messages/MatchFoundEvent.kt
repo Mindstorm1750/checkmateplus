@@ -11,4 +11,5 @@ data class MatchFoundEvent(
     val matchId: String,
     val websocketUrl: String,
     val opponentName: String,
+    val playerId: String,
 )

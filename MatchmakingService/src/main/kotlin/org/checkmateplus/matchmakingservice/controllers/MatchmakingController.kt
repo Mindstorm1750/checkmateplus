@@ -102,6 +102,7 @@ class MatchmakingController(
                     matchId = match.matchId,
                     websocketUrl = allocation.websocketUrl,
                     opponentName = opponent.displayName,
+                    playerId = player.playerId,
                 )
             )
         }

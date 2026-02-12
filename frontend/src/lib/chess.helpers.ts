@@ -53,7 +53,7 @@ export const charToPieceMap: Record<string, Piece> = {
     'k': { pieceType: 'KING', colour: 'BLACK' },
 };
 
-export const fenToBoard: (fen: string) => Board = (fen) => {
+export const fenToBoard: (fen: string | String) => Board = (fen) => {
     const fenParts = fen.trim().split(' ');
 
     const squares: Squares = Array(64).fill(null) as Squares;

@@ -7,23 +7,25 @@ import type { MatchStateMessage } from "@/lib/stompMessageTypes/GameServer/model
 import type { MoveMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MoveMessage";
 import type { JoinRequest } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/JoinRequest";
 import type { MatchFoundEvent } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/MatchFoundEvent";
-import { EMPTY_BOARD, type Board, type Move } from "@/types/Chess.type";
+import { EMPTY_BOARD, type Board, type Move, type Piece } from "@/types/Chess.type";
 import { Client, Stomp, type IMessage } from "@stomp/stompjs";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router";
 import SockJS from 'sockjs-client/dist/sockjs';
 
 function Match() {
-    const [boardState, setBoardState] = useState<Board>(fenToBoard(STARTING_FEN));
-    const [isPlayersTurn, setIsPlayersTurn] = useState<Boolean>(true); // TODO initialise false and update it from the initial match state
+    const [boardState, setBoardState] = useState<Board>(EMPTY_BOARD);
+    const [isPlayersTurn, setIsPlayersTurn] = useState<Boolean>(false); // TODO initialise false and update it from the initial match state
     const stompClient = useRef<Client | null>(null);
-    const playerId = 'yoooo'; // TODO actually use a persistent and unique playerId;
+    useEffect(() => {
+        connect();
+    }, []);
     /**
      * using browser History state property to store the match information.
      * Might be a temporary solution OR copy this data to a more persistent form like localStorage.
      */
     const { state }: { state: MatchFoundEvent } = useLocation();
-    const { matchId, websocketUrl } = state;
+    const { matchId, websocketUrl, playerId } = state; // TODO make playerId persistent
 
     const connect = () => {
         const socket = new SockJS(`http://${websocketUrl}:8090/match`);
@@ -40,10 +42,23 @@ function Match() {
                     console.log("Got match event message: " + body.message);
                 });
 
-                // Subscribe to match found events
+                // TODO figure out if unneeded as it never seems to receive messages
                 client.subscribe(`/user/queue/match/${matchId}/state`, (message: IMessage) => {
                     const match: MatchStateMessage = JSON.parse(message.body);
-                    console.log("Got match state message: ");
+                    console.log("Got initial match state message fen: " + match.fen);
+                    setBoardState(fenToBoard(match.fen));
+                });
+
+                // Subscribe to the match state. This will update our board
+                client.subscribe(`/topic/match/${matchId}/state`, (message: IMessage) => {
+                    const match: MatchStateMessage = JSON.parse(message.body);
+                    console.log("Got match state message: " + match.fen);
+                    const newBoard = fenToBoard(match.fen)
+                    const playerWithTurn = newBoard.sideToMove === 'WHITE' ? match.whitePlayer : match.blackPlayer;
+                    if( playerWithTurn?.playerId === playerId) {
+                        setIsPlayersTurn(true)
+                    }
+                    setBoardState(newBoard);
                 });
 
                 joinGame();
@@ -82,8 +97,6 @@ function Match() {
             });
         }
     }
-
-    connect();
 
     return (
         <Layout>

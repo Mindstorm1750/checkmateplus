@@ -9,4 +9,5 @@ export type MatchFoundEvent = {
     matchId: String,
     websocketUrl: String,
     opponentName: String,
+    playerId: String,
 }
