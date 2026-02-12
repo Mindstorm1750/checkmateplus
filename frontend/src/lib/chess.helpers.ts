@@ -132,7 +132,7 @@ export const applyMove: (board: Board, move: Move) => Board = (board, move) => {
     }
 
     newSquares[move.from] = null;
-    newSquares[move.to] = move.promotion !== null
+    newSquares[move.to] = move.promotion !== undefined
         ? { pieceType: move.promotion, colour: piece.colour }
         : piece;
 
@@ -286,12 +286,12 @@ function generatePawnMoves(board: Board, from: Square, colour: Colour): Move[] {
             moves.push({ from, to: forward, promotion: 'ROOK' });
             moves.push({ from, to: forward, promotion: 'QUEEN' });
         } else {
-            moves.push({ from, to: forward, promotion: null });
+            moves.push({ from, to: forward });
 
             // Pawn forward 2 from start
             const doubleForward = (from + 2 * direction) as Square;
             if (fromRank === startRank && board.squares[doubleForward] === null) {
-                moves.push({ from, to: doubleForward, promotion: null });
+                moves.push({ from, to: doubleForward });
             }
         }
     }
@@ -316,12 +316,12 @@ function generatePawnMoves(board: Board, from: Square, colour: Colour): Move[] {
                 moves.push({ from, to: target as Square, promotion: 'ROOK' });
                 moves.push({ from, to: target as Square, promotion: 'QUEEN' });
             } else {
-                moves.push({ from, to: target as Square, promotion: null });
+                moves.push({ from, to: target as Square });
             }
         }
         // En passant capture
         else if (target === board.enPassantSquare) {
-            moves.push({ from, to: target as Square, promotion: null });
+            moves.push({ from, to: target as Square });
         }
     }
 
@@ -346,9 +346,9 @@ function generateKnightMoves(board: Board, from: Square, colour: Colour): Move[]
             if ((fileDiff === 2 && rankDiff === 1) || (fileDiff === 1 && rankDiff === 2)) {
                 const piece = board.squares[target];
                 if (piece === null) {
-                    moves.push({ from, to: target as Square, promotion: null });
+                    moves.push({ from, to: target as Square });
                 } else if (piece.colour !== colour) {
-                    moves.push({ from, to: target as Square, promotion: null });
+                    moves.push({ from, to: target as Square });
                 }
             }
         }
@@ -377,10 +377,10 @@ function generateBishopMoves(board: Board, from: Square, colour: Colour): Move[]
             }
             const piece = board.squares[target];
             if (piece === null) {
-                moves.push({ from, to: target as Square, promotion: null });
+                moves.push({ from, to: target as Square });
             } else {
                 if (piece.colour !== colour) {
-                    moves.push({ from, to: target as Square, promotion: null });
+                    moves.push({ from, to: target as Square });
                 }
                 break;
             }
@@ -408,10 +408,10 @@ function generateRookMoves(board: Board, from: Square, colour: Colour): Move[] {
 
             const piece = board.squares[target];
             if (piece === null) {
-                moves.push({ from, to: target as Square, promotion: null });
+                moves.push({ from, to: target as Square });
             } else {
                 if (piece.colour !== colour) {
-                    moves.push({ from, to: target as Square, promotion: null });
+                    moves.push({ from, to: target as Square });
                 }
                 break;
             }
@@ -447,7 +447,7 @@ function generateKingMoves(board: Board, from: Square, colour: Colour, includeCa
             if (fileDiff <= 1 && rankDiff <= 1) {
                 const piece = board.squares[target];
                 if (piece === null || piece.colour !== colour) {
-                    moves.push({ from, to: target as Square, promotion: null });
+                    moves.push({ from, to: target as Square });
                 }
             }
         }
@@ -465,7 +465,7 @@ function generateKingMoves(board: Board, from: Square, colour: Colour, includeCa
             !isSquareAttacked(board, 60, 'BLACK') &&
             !isSquareAttacked(board, 61, 'BLACK') &&
             !isSquareAttacked(board, 62, 'BLACK')) {
-            moves.push({ from: 60, to: 62, promotion: null });
+            moves.push({ from: 60, to: 62 });
         }
         // Queenside
         if (board.castlingRights.whiteQueenSide &&
@@ -475,7 +475,7 @@ function generateKingMoves(board: Board, from: Square, colour: Colour, includeCa
             !isSquareAttacked(board, 60, 'BLACK') &&
             !isSquareAttacked(board, 59, 'BLACK') &&
             !isSquareAttacked(board, 58, 'BLACK')) {
-            moves.push({ from: 60, to: 58, promotion: null });
+            moves.push({ from: 60, to: 58 });
         }
     }
 
@@ -488,7 +488,7 @@ function generateKingMoves(board: Board, from: Square, colour: Colour, includeCa
             !isSquareAttacked(board, 4, 'WHITE') &&
             !isSquareAttacked(board, 5, 'WHITE') &&
             !isSquareAttacked(board, 6, 'WHITE')) {
-            moves.push({ from: 4, to: 6, promotion: null });
+            moves.push({ from: 4, to: 6 });
         }
         // Queenside
         if (board.castlingRights.blackQueenSide &&
@@ -498,7 +498,7 @@ function generateKingMoves(board: Board, from: Square, colour: Colour, includeCa
             !isSquareAttacked(board, 4, 'WHITE') &&
             !isSquareAttacked(board, 3, 'WHITE') &&
             !isSquareAttacked(board, 2, 'WHITE')) {
-            moves.push({ from: 4, to: 2, promotion: null });
+            moves.push({ from: 4, to: 2 });
         }
     }
 

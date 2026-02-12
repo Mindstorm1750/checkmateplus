@@ -9,9 +9,10 @@ type chessBoardProps = {
     moveCallback: (move: Move) => void,
     boardState: Board,
     whitePerspective?: Boolean,
+    isInteractable: Boolean // used for stopping the player from making moves when it isn't their turn
 }
 
-const ChessBoard = ({ moveCallback, boardState, whitePerspective = true }: chessBoardProps) => {
+const ChessBoard = ({ moveCallback, boardState, whitePerspective = true, isInteractable }: chessBoardProps) => {
     const [squareClicked, setSquareClicked] = useState<Square | null>();
 
     // Used in layoutId to animate pieces. Identifies pieces as they move from boardState to boardState.
@@ -24,6 +25,9 @@ const ChessBoard = ({ moveCallback, boardState, whitePerspective = true }: chess
     const moves = legalMoves(boardState);
 
     const handleClick = (square: Square) => {
+        if(!isInteractable) {
+            return;
+        }
         if (!squareClicked) {
             setSquareClicked(square);
         }
@@ -34,8 +38,8 @@ const ChessBoard = ({ moveCallback, boardState, whitePerspective = true }: chess
         else {
             const attemptedMove: Move = {
                 from: squareClicked,
-                to: square,
-                promotion: null // TODO HANDLE PROMOTION POSSIBILITY
+                to: square
+                // TODO HANDLE PROMOTION POSSIBILITY
             };
             if (isMoveInMoves(attemptedMove, moves)) {
                 setPieceOrigins(prev => {

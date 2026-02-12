@@ -5,5 +5,5 @@ export type MoveMessage = {
     playerId: String,
     from: String,  // e.g., "e2"
     to: String,    // e.g., "e4"
-    promotion: PieceType 
+    promotion?: PieceType 
 }

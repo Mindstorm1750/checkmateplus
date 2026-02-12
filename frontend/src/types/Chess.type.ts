@@ -73,5 +73,5 @@ export const EMPTY_BOARD: Board = {
 export type Move = {
     from: Square,
     to: Square,
-    promotion: PieceType | null
+    promotion?: PieceType
 }
