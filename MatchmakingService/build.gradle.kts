@@ -25,7 +25,7 @@ repositories {
 }
 
 extra["springCloudVersion"] = "2025.1.0"
-val springGrpcVersion by extra("1.0.1")
+val springGrpcVersion by extra("1.0.2")
 
 dependencies {
     implementation(project(":ChessLibrary"))

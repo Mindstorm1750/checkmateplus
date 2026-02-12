@@ -24,7 +24,7 @@ repositories {
 }
 
 extra["springCloudVersion"] = "2025.1.0"
-extra["springGrpcVersion"] = "1.0.1"
+extra["springGrpcVersion"] = "1.0.2"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")

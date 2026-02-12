@@ -61,14 +61,14 @@ class MatchService {
     ): MatchStateMessage {
         val match = matches[matchId]
             ?: throw IllegalArgumentException("Match not found: $matchId")
-        val board = match.board
+        var board = match.board
             ?: throw IllegalStateException("Board not initialized")
         /*
         TODO: Implement validation from chess engine to detect illicit moves. Waiting for chess engine implementation first though
         */
 
         // execute the move on the local board
-        board.applyMove(
+        match.board = board.applyMove(
             Move(
                 from = moveMessage.from.toSquare() ?: throw IllegalArgumentException("Invalid from square"),
                 to = moveMessage.to.toSquare() ?: throw IllegalArgumentException("Invalid to square"),
@@ -83,7 +83,7 @@ class MatchService {
 
 
         // Update time with increment
-        updateTimeAfterMove(match, board)
+        updateTimeAfterMove(match, match.board)
 
         //flip the active turn
         if (match.activeTurn == WHITE) match.activeTurn = BLACK
@@ -103,13 +103,13 @@ class MatchService {
 
     private fun updateTimeAfterMove(
         match: MatchState,
-        board: Board
+        board: Board?
     ) {
         val increment = match.timeControl.increment
 
         // Add increment to the player who just moved
         // Current turn is now the OTHER player after the move
-        when (board.sideToMove) {
+        when (board?.sideToMove) {
             BLACK -> {
                 // White just moved
                 match.whitePlayerTime += increment
@@ -119,6 +119,8 @@ class MatchService {
                 // Black just moved
                 match.blackPlayerTime += increment
             }
+
+            else -> {}
         }
     }
 
