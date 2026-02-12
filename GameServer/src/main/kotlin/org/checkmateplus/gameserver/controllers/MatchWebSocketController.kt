@@ -44,14 +44,14 @@ class MatchWebSocketController(
     @MessageMapping("/match/{matchId}/move")
     fun makeMove(
         @DestinationVariable matchId: String,
-        principal: Principal,
+        //principal: Principal,
         moveMessage: MoveMessage
     ) {
         try {
-            if (principal.name != moveMessage.playerId) { //this implementation needs further work as the
+           // if (principal.name != moveMessage.playerId) { //this implementation needs further work as the
                 //principal is not really defined yet...
-                throw IllegalAccessException("You cannot move for another player")
-            }
+          //      throw IllegalAccessException("You cannot move for another player")
+         //   }
             // Process the move
             val matchState = matchService.processMove(matchId, moveMessage)
 

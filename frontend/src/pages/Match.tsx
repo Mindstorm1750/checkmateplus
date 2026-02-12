@@ -77,7 +77,7 @@ function Match() {
             }
 
             stompClient.current.publish({
-                destination: `app/match/${matchId}/move`,
+                destination: `/app/match/${matchId}/move`,
                 body: JSON.stringify(moveRequest)
             });
         }
