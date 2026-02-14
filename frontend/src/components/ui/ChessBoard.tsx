@@ -7,7 +7,6 @@ import { BOARD_THEMES } from "@/lib/board.theme";
 import { Dialog, DialogContent, DialogHeader } from "./dialog";
 import { DialogDescription } from "@radix-ui/react-dialog";
 import type { MatchStateMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchStateMessage";
-import { Item } from "./item";
 
 export type ChessBoardProps = {
     moveCallback: (move: Move) => void,
@@ -15,15 +14,14 @@ export type ChessBoardProps = {
     whitePerspective?: Boolean,
     isInteractable: Boolean // used for stopping the player from making moves when it isn't their turn
     clockState?: Pick<MatchStateMessage, "whitePlayerTime" | "blackPlayerTime">
+    pieceOrigins: Map<Square, Square>,
+    setPieceOrigins: React.Dispatch<React.SetStateAction<Map<Square, Square>>>
 }
 
-const ChessBoard = ({ moveCallback, boardState, whitePerspective = true, isInteractable, clockState = { whitePlayerTime: 0, blackPlayerTime: 0 } }: ChessBoardProps) => {
+const ChessBoard = ({ moveCallback, boardState, whitePerspective = true, isInteractable, clockState = { whitePlayerTime: 0, blackPlayerTime: 0 }, pieceOrigins, setPieceOrigins }: ChessBoardProps) => {
     const [squareClicked, setSquareClicked] = useState<Square | null>();
     const [askForPromotion, setAskForPromotion] = useState<boolean>(false);
     const [localClockState, setLocalClockState] = useState(clockState);
-
-    // Used in layoutId to animate pieces. Identifies pieces as they move from boardState to boardState.
-    const [pieceOrigins, setPieceOrigins] = useState<Map<Square, Square>>(new Map());
 
     const { preferences } = usePreferences();
     const { lightSquare, lightSquareSelected, darkSquare, darkSquareSelected } = BOARD_THEMES[preferences.boardColor];

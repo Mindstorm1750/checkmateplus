@@ -117,7 +117,7 @@ export const squareToAlgebraic: (square: Square) => string = (square) => {
     return fileToLetterMap.get(file)! + rank;
 }
 
-export const algebraicToSquare: (square: string) => Square = (square) => {
+export const algebraicToSquare: (square: string | String) => Square = (square) => {
     const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
     const rank = parseInt(square[1]);
     return (8 - rank) * 8 + file as Square;

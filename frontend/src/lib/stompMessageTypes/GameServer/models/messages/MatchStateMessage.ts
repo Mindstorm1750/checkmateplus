@@ -1,3 +1,4 @@
+import type { PieceType } from "@/types/Chess.type"
 
 export type MatchStateMessage = {
     matchId: String,
@@ -17,7 +18,7 @@ export type MoveNotification = {
     matchId: String,
     from: String,
     to: String,
-    promotion?: String,
+    promotion?: PieceType,
     movedBy: String,
 }
 

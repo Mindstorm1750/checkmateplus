@@ -1,13 +1,12 @@
 import Layout from "@/components/Layout";
-import { Button } from "@/components/ui/button";
 import ChessBoard, { type ChessBoardProps } from "@/components/ui/ChessBoard";
-import { fenToBoard, squareToAlgebraic } from "@/lib/chess.helpers";
+import { algebraicToSquare, fenToBoard, squareToAlgebraic } from "@/lib/chess.helpers";
 import type { JoinMatchMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/JoinMatchMessage";
 import type { MatchEventMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchEventMessage";
 import type { MatchStateMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchStateMessage";
 import type { MoveMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MoveMessage";
 import type { MatchFoundEvent } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/MatchFoundEvent";
-import { EMPTY_BOARD, type Board, type Move } from "@/types/Chess.type";
+import { EMPTY_BOARD, type Board, type Move, type Square } from "@/types/Chess.type";
 import { Client, type IMessage } from "@stomp/stompjs";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router";
@@ -21,6 +20,11 @@ function Match() {
     const { state }: { state: MatchFoundEvent } = useLocation();
     const { matchId, websocketUrl, playerId } = state; // TODO make playerId persistent
     const [boardState, setBoardState] = useState<Board>(EMPTY_BOARD);
+    /**
+     * pieceOrigins is used in ChessBoard to animate pieces via framer motion's layoutId. 
+     * Identifies pieces as they move from boardState to boardState.
+     */
+    const [pieceOrigins, setPieceOrigins] = useState<Map<Square, Square>>(new Map());
     const [clockState, setClockState] = useState<ChessBoardProps['clockState']>();
     const [isPlayersTurn, setIsPlayersTurn] = useState<Boolean>(false);
     const [isPlayerWhite, setIsPlayerWhite] = useState<Boolean>(true);
@@ -62,6 +66,16 @@ function Match() {
                     }
                     setClockState({ whitePlayerTime: match.whitePlayerTime, blackPlayerTime: match.blackPlayerTime });
                     setBoardState(newBoard);
+                    if (match.lastMove) {
+                        const move = { from: algebraicToSquare(match.lastMove.from), to: algebraicToSquare(match.lastMove.to), promotion: match.lastMove.promotion };
+                        setPieceOrigins(prev => {
+                            const newPieceOrigins = new Map(prev);
+                            const origin = prev.get(move.from) ?? move.from;
+                            newPieceOrigins.set(move.to, origin);
+                            newPieceOrigins.delete(move.from);
+                            return newPieceOrigins;
+                        });
+                    }
                     setIsPlayerWhite(match.whitePlayer?.playerId === playerId);
                 });
 
@@ -106,7 +120,14 @@ function Match() {
         <Layout>
             <div className='w-full flex justify-center'>
                 <div className='w-3/4'>
-                    <ChessBoard isInteractable={isPlayersTurn} boardState={boardState} clockState={clockState} moveCallback={handleMove} whitePerspective={isPlayerWhite} />
+                    <ChessBoard
+                        isInteractable={isPlayersTurn}
+                        boardState={boardState}
+                        clockState={clockState}
+                        moveCallback={handleMove}
+                        whitePerspective={isPlayerWhite}
+                        pieceOrigins={pieceOrigins}
+                        setPieceOrigins={setPieceOrigins} />
                 </div>
             </div>
         </Layout>
