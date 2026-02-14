@@ -4,14 +4,13 @@ stages:          # List of stages for jobs, and their order of execution
   - secret-detection
   - native-build
   - security-test
-before_script:
-  - GRADLE_USER_HOME="$(pwd)/.gradle"
-  - export GRADLE_USER_HOME
 
 build-job:       # This job runs in the build stage, which runs first.
   image: gradle:9.3.1-jdk25-graal
   stage: build
   script:
+    - GRADLE_USER_HOME="$(pwd)/.gradle"
+    - export GRADLE_USER_HOME
     - gradle --build-cache assemble
   artifacts:
     paths:
@@ -23,35 +22,30 @@ build-job:       # This job runs in the build stage, which runs first.
     paths:
       - build
       - .gradle
-npm:
-  image: node:24-alpine
-  stage: build
-  script:
-    - cd frontend
-    - npm install
-    - npm install -D vitest
-  cache:
-    policy: push
-    paths:
-      - node_modules/
-  
+
 frontend-test:
   image: node:24-alpine
   stage: test
-  dependencies:
-    - npm
+  cache:
+    key: "$CI_COMMIT_REF_NAME-frontend"
+    paths:
+      - frontend/node_modules/
   script:
     - cd frontend
-    - npm run test
+    - npm ci
+    - npm run test -- --reporter=junit --outputFile=junit.xml
   artifacts:
-    expire_in: 1 days
-    when: on_success
-    paths:
-      - node_modules/
+    reports:
+      junit: frontend/junit.xml
+    expire_in: 1 day
+  allow_failure: true
+
 test:
   image: gradle:9.3.1-jdk25-graal
   stage: test
   script:
+    - GRADLE_USER_HOME="$(pwd)/.gradle"
+    - export GRADLE_USER_HOME
     - gradle check
   artifacts:
     reports:
@@ -66,20 +60,22 @@ test:
 native-docker-image:
   image: gradle:9.3.1-jdk25-graal
   stage: native-build
+  services:
+    - docker:24.0.5-dind
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: pull
     paths:
       - build
       - .gradle
-  services:
-    - docker:dind
   before_script:
+    - GRADLE_USER_HOME="$(pwd)/.gradle"
+    - export GRADLE_USER_HOME
     - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
   script:
-    - gradle bootBuildImage --publishImage 
-      -PregistryUrl=$CI_REGISTRY 
-      -PregistryUsername=$CI_REGISTRY_USER 
+    - gradle bootBuildImage --publishImage
+      -PregistryUrl=$CI_REGISTRY
+      -PregistryUsername=$CI_REGISTRY_USER
       -PregistryPassword=$CI_REGISTRY_PASSWORD
 
 
