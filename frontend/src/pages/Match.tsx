@@ -1,31 +1,33 @@
 import Layout from "@/components/Layout";
-import ChessBoard from "@/components/ui/ChessBoard";
-import { fenToBoard, squareToAlgebraic, STARTING_FEN } from "@/lib/chess.helpers";
+import { Button } from "@/components/ui/button";
+import ChessBoard, { type ChessBoardProps } from "@/components/ui/ChessBoard";
+import { fenToBoard, squareToAlgebraic } from "@/lib/chess.helpers";
 import type { JoinMatchMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/JoinMatchMessage";
 import type { MatchEventMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchEventMessage";
 import type { MatchStateMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchStateMessage";
 import type { MoveMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MoveMessage";
-import type { JoinRequest } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/JoinRequest";
 import type { MatchFoundEvent } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/MatchFoundEvent";
-import { EMPTY_BOARD, type Board, type Move, type Piece } from "@/types/Chess.type";
-import { Client, Stomp, type IMessage } from "@stomp/stompjs";
+import { EMPTY_BOARD, type Board, type Move } from "@/types/Chess.type";
+import { Client, type IMessage } from "@stomp/stompjs";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router";
 import SockJS from 'sockjs-client/dist/sockjs';
 
 function Match() {
-    const [boardState, setBoardState] = useState<Board>(EMPTY_BOARD);
-    const [isPlayersTurn, setIsPlayersTurn] = useState<Boolean>(false); // TODO initialise false and update it from the initial match state
-    const stompClient = useRef<Client | null>(null);
-    useEffect(() => {
-        connect();
-    }, []);
     /**
      * using browser History state property to store the match information.
      * Might be a temporary solution OR copy this data to a more persistent form like localStorage.
      */
     const { state }: { state: MatchFoundEvent } = useLocation();
     const { matchId, websocketUrl, playerId } = state; // TODO make playerId persistent
+    const [boardState, setBoardState] = useState<Board>(EMPTY_BOARD);
+    const [clockState, setClockState] = useState<ChessBoardProps['clockState']>();
+    const [isPlayersTurn, setIsPlayersTurn] = useState<Boolean>(false);
+    const [whitePerspective, setWhitePerspective] = useState<Boolean>(true);
+    const stompClient = useRef<Client | null>(null);
+    useEffect(() => {
+        connect();
+    }, [matchId]);
 
     const connect = () => {
         const socket = new SockJS(`http://${websocketUrl}:8090/match`);
@@ -55,9 +57,10 @@ function Match() {
                     console.log("Got match state message: " + match.fen);
                     const newBoard = fenToBoard(match.fen)
                     const playerWithTurn = newBoard.sideToMove === 'WHITE' ? match.whitePlayer : match.blackPlayer;
-                    if( playerWithTurn?.playerId === playerId) {
+                    if (playerWithTurn?.playerId === playerId) {
                         setIsPlayersTurn(true)
                     }
+                    setClockState({ whitePlayerTime: match.whitePlayerTime, blackPlayerTime: match.blackPlayerTime });
                     setBoardState(newBoard);
                 });
 
@@ -100,8 +103,12 @@ function Match() {
 
     return (
         <Layout>
-            <h1>{`MatchId: ${matchId}, WebsocketUrl: ${websocketUrl}`}</h1>;
-            <ChessBoard isInteractable={isPlayersTurn} boardState={boardState} moveCallback={handleMove} />
+            <div className='w-full flex justify-center'>
+                <div className='w-3/4'>
+                    <ChessBoard isInteractable={isPlayersTurn} boardState={boardState} clockState={clockState} moveCallback={handleMove} whitePerspective={whitePerspective} />
+                </div>
+            </div>
+            <Button onClick={() => setWhitePerspective(!whitePerspective)}>Flip orientation</Button>
         </Layout>
     )
 }
