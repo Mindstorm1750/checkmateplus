@@ -23,7 +23,7 @@ function Match() {
     const [boardState, setBoardState] = useState<Board>(EMPTY_BOARD);
     const [clockState, setClockState] = useState<ChessBoardProps['clockState']>();
     const [isPlayersTurn, setIsPlayersTurn] = useState<Boolean>(false);
-    const [whitePerspective, setWhitePerspective] = useState<Boolean>(true);
+    const [isPlayerWhite, setIsPlayerWhite] = useState<Boolean>(true);
     const stompClient = useRef<Client | null>(null);
     useEffect(() => {
         connect();
@@ -62,6 +62,7 @@ function Match() {
                     }
                     setClockState({ whitePlayerTime: match.whitePlayerTime, blackPlayerTime: match.blackPlayerTime });
                     setBoardState(newBoard);
+                    setIsPlayerWhite(match.whitePlayer?.playerId === playerId);
                 });
 
                 joinGame();
@@ -105,10 +106,9 @@ function Match() {
         <Layout>
             <div className='w-full flex justify-center'>
                 <div className='w-3/4'>
-                    <ChessBoard isInteractable={isPlayersTurn} boardState={boardState} clockState={clockState} moveCallback={handleMove} whitePerspective={whitePerspective} />
+                    <ChessBoard isInteractable={isPlayersTurn} boardState={boardState} clockState={clockState} moveCallback={handleMove} whitePerspective={isPlayerWhite} />
                 </div>
             </div>
-            <Button onClick={() => setWhitePerspective(!whitePerspective)}>Flip orientation</Button>
         </Layout>
     )
 }
