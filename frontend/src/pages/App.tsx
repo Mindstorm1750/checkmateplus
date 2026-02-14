@@ -10,6 +10,7 @@ import SockJS from 'sockjs-client/dist/sockjs';
 import type { JoinRequest } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/JoinRequest"
 import type { MatchFoundEvent } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/MatchFoundEvent"
 import type { QueueStatus } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/QueueStatus"
+import { Spinner } from "@/components/ui/spinner"
 
 function App() {
   const navigate = useNavigate();
@@ -28,36 +29,28 @@ function App() {
  * For now there aren't any options to customise, so we just give the two buttons of "join queue" or "cancel" in this dialog
  */
 const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
-  const [connected, setConnected] = useState<boolean>(false);
-  const [status, setStatus] = useState<string>('Disconnected');
-  const [matchData, setMatchData] = useState<MatchFoundEvent | null>(null);
+  const [inQueue, setInQueue] = useState<boolean>(false);
   const titleText = "Play against humans";
   const descriptionText = "Get matched with other players";
   const navigate = useNavigate();
   const stompClient = useRef<Client | null>(null);
 
   const connect = () => {
-    console.log("FE(*HEWF(*EWH(F*HWE(F*HEF: " + import.meta.env.VITE_BASE_URL + 'matchmaking');
     const socket = new SockJS(import.meta.env.VITE_BASE_URL + 'matchmaking');
 
     const client = new Client({
       webSocketFactory: () => socket,
       debug: (str: string) => console.log(str),
       onConnect: () => {
-        setConnected(true);
-        setStatus('Connected');
-
         // Subscribe to your specific user queue for status updates
         client.subscribe('/user/queue/status', (message: IMessage) => {
           const body: QueueStatus = JSON.parse(message.body);
-          setStatus(`Status: ${body.status}`);
         });
 
         // Subscribe to match found events
         client.subscribe('/user/queue/match', (message: IMessage) => {
           const match: MatchFoundEvent = JSON.parse(message.body);
-          setMatchData(match);
-          setStatus('MATCH FOUND!');
+          setInQueue(false); // Match found, no longer in queue, redirect to match page
           navigate(`/match`, { state: match })
         });
 
@@ -74,11 +67,11 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
   const joinQueue = () => {
     if (stompClient.current?.connected) {
       const joinRequest: JoinRequest = { displayName: `UserWhoJoinedAt${Date.now()}` }; // TODO use player's displayName (or playerId if types/classes have changed)
-
       stompClient.current.publish({
         destination: "/app/join",
         body: JSON.stringify(joinRequest)
       });
+      setInQueue(true);
     }
   };
 
@@ -94,9 +87,12 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
         </DialogHeader>
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant='outline'>Cancel</Button>
+            <Button variant='outline'>Cancel</Button>{/** TODO: make this button exit queue and disconnect */}
           </DialogClose>
-          <Button onClick={connect}>Join queue</Button>
+          <Button onClick={connect} variant={inQueue ? 'secondary' : 'default'} disabled={inQueue}>
+            {inQueue && <Spinner data-icon='inline-start' />}
+            {inQueue ? 'Queueing...' : 'Join queue'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
