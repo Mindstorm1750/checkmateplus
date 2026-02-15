@@ -38,7 +38,6 @@ frontend-test:
     reports:
       junit: frontend/junit.xml
     expire_in: 1 day
-  allow_failure: true
 
 test:
   image: gradle:9.3.1-jdk25-graal
@@ -57,7 +56,7 @@ test:
       - build
       - .gradle
 
-native-docker-image:
+.native-docker-image:
   image: gradle:9.3.1-jdk25-graal
   stage: native-build
   services:
