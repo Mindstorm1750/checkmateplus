@@ -11,6 +11,7 @@ build-job:       # This job runs in the build stage, which runs first.
   script:
     - GRADLE_USER_HOME="$(pwd)/.gradle"
     - export GRADLE_USER_HOME
+    - chmod +x ./gradlew #for sbom detection
     - gradle --build-cache assemble
   artifacts:
     paths:
