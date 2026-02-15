@@ -1,6 +1,5 @@
 package org.checkmateplus.chessLibrary.chessEngine
 
-import BoardState
 import kotlin.math.abs
 
 data class Board(

@@ -15,6 +15,7 @@ import org.checkmateplus.gameserver.models.messages.ResignMessage
 import org.checkmateplus.gameserver.service.MatchService
 import org.slf4j.LoggerFactory
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import java.security.Principal
 
 /**
  * WebSocket controller for handling real-time chess match interactions.
@@ -44,14 +45,14 @@ class MatchWebSocketController(
     @MessageMapping("/match/{matchId}/move")
     fun makeMove(
         @DestinationVariable matchId: String,
-        //principal: Principal,
+        principal: Principal,
         moveMessage: MoveMessage
     ) {
         try {
-            // if (principal.name != moveMessage.playerId) { //this implementation needs further work as the
-            //principal is not really defined yet...
-            //      throw IllegalAccessException("You cannot move for another player")
-            //   }
+           // if (principal.name != moveMessage.playerId) { //this implementation needs further work as the
+                //principal is not really defined yet...
+          //      throw IllegalAccessException("You cannot move for another player")
+         //   }
             // Process the move
             val matchState = matchService.processMove(matchId, moveMessage)
 

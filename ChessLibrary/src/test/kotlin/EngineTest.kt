@@ -1,10 +1,10 @@
 import org.checkmateplus.chessLibrary.chessEngine.Board
+import org.checkmateplus.chessLibrary.chessEngine.BoardState
 import org.checkmateplus.chessLibrary.chessEngine.Colour
 import org.checkmateplus.chessLibrary.chessEngine.FenToBoard
 import org.checkmateplus.chessLibrary.chessEngine.Move
 import org.checkmateplus.chessLibrary.chessEngine.PieceType
 import org.checkmateplus.chessLibrary.chessEngine.STARTING_FEN
-import org.checkmateplus.chessLibrary.chessEngine.Square
 import org.checkmateplus.chessLibrary.chessEngine.toAlgebraic
 import org.checkmateplus.chessLibrary.chessEngine.toFileRank
 import org.checkmateplus.chessLibrary.chessEngine.toSquare

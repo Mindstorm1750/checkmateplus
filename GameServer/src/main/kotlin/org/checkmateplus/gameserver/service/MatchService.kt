@@ -1,6 +1,6 @@
 package org.checkmateplus.gameserver.service
 
-import BoardState
+import org.checkmateplus.chessLibrary.chessEngine.BoardState
 import org.checkmateplus.chessLibrary.chessEngine.Board
 import org.checkmateplus.chessLibrary.chessEngine.Colour.*
 import org.checkmateplus.chessLibrary.chessEngine.Move
