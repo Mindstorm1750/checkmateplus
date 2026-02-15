@@ -71,7 +71,7 @@ native-docker-image:
   before_script:
     - GRADLE_USER_HOME="$(pwd)/.gradle"
     - export GRADLE_USER_HOME
-    - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
+    #- echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
   script:
     - gradle bootBuildImage --publishImage
       -PregistryUrl=$CI_REGISTRY
