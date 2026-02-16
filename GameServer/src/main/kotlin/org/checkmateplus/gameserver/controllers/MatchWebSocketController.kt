@@ -14,6 +14,7 @@ import org.checkmateplus.gameserver.models.messages.MoveMessage
 import org.checkmateplus.gameserver.models.messages.ResignMessage
 import org.checkmateplus.gameserver.service.MatchService
 import org.slf4j.LoggerFactory
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
 /**
  * WebSocket controller for handling real-time chess match interactions.
@@ -47,10 +48,10 @@ class MatchWebSocketController(
         moveMessage: MoveMessage
     ) {
         try {
-           // if (principal.name != moveMessage.playerId) { //this implementation needs further work as the
-                //principal is not really defined yet...
-          //      throw IllegalAccessException("You cannot move for another player")
-         //   }
+            // if (principal.name != moveMessage.playerId) { //this implementation needs further work as the
+            //principal is not really defined yet...
+            //      throw IllegalAccessException("You cannot move for another player")
+            //   }
             // Process the move
             val matchState = matchService.processMove(matchId, moveMessage)
 
@@ -120,6 +121,7 @@ class MatchWebSocketController(
                 )
                 matchService.stopTimer(matchId)
             }
+
             matchState.isStalemate -> {
                 messagingTemplate.convertAndSend(
                     "/topic/match/$matchId/events",
@@ -132,6 +134,7 @@ class MatchWebSocketController(
                 )
                 matchService.stopTimer(matchId)
             }
+
             matchState.isDraw -> {
                 messagingTemplate.convertAndSend(
                     "/topic/match/$matchId/events",
@@ -153,6 +156,7 @@ class MatchWebSocketController(
      * @param matchId The unique identifier of the match.
      * @param joinMessage Message containing player details joining the match.
      */
+    @OptIn(ExperimentalAtomicApi::class)
     @MessageMapping("/match/{matchId}/join")
     fun joinMatch(
         @DestinationVariable matchId: String,
@@ -160,38 +164,42 @@ class MatchWebSocketController(
     ) {
         logger.info(joinMessage.toString());
 
-        //this need to be a referred join from the matchmake manager
-        val success = true
-        if (success) {
-            messagingTemplate.convertAndSend(
-                "/topic/match/$matchId/events",
-                MatchEventMessage(
-                    matchId = matchId,
-                    eventType = MatchEventType.PLAYER_JOINED,
-                    message = "${joinMessage.playerName} joined the match"
-                )
-            )
+        val playerId = joinMessage.playerId
 
-            val match = matchService.getMatch(matchId)
-            if (match != null) {
-                val matchState = matchService.createMatchStateMessage(match)
-                messagingTemplate.convertAndSendToUser(
-                    joinMessage.playerId,
-                    "/queue/match/$matchId/state",
-                    matchState
-                )
+        messagingTemplate.convertAndSend(
+            "/topic/match/$matchId/events",
+            MatchEventMessage(
+                matchId = matchId,
+                eventType = MatchEventType.PLAYER_JOINED,
+                message = "${joinMessage.playerName} joined the match"
+            )
+        )
+
+        val match = matchService.getMatch(matchId)
+        if (match != null) {
+            if (match.players.any { player -> player.playerId == playerId } ) {
+                match.connectedPlayers.add(joinMessage.playerId) // add the player as having connect to the match
             }
-            //when both players are connected start the match
-            if (matchService.getMatch(matchId) != null && matchService.getMatch(matchId)!!.players.size == 2) {
-                startMatch(matchId)
-                val matchState = matchService.createMatchStateMessage(match)
-                messagingTemplate.convertAndSend(
-                    "/topic/match/$matchId/state",
-                    matchState
-                )
-            }
+            val matchState = matchService.createMatchStateMessage(match)
+            messagingTemplate.convertAndSendToUser(
+                joinMessage.playerId,
+                "/queue/match/$matchId/state",
+                matchState
+            )
         }
+
+        //when both players are connected start the match
+        if (match != null && match.connectedPlayers.size == 2 && match.matchStarted.compareAndSet(false, true)) {
+            startMatch(matchId)
+            val matchState = matchService.createMatchStateMessage(match)
+            messagingTemplate.convertAndSend(
+                "/topic/match/$matchId/state",
+                matchState
+            )
+        }
+
     }
+
     /**
      * Starts the match timer and broadcasts the match start event.
      *
