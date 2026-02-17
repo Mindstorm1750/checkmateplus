@@ -10,7 +10,7 @@ plugins {
     id("org.graalvm.buildtools.native") version "0.11.4"
     id("com.google.protobuf") version "0.9.5"
 }
-version = "0.0.1-SNAPSHOT"
+version = "latest"
 description = "MatchmakingService"
 
 
@@ -101,7 +101,12 @@ sourceSets {
 tasks.bootBuildImage {
     var projectname = project.name.lowercase(Locale.getDefault())
     var projectVersion = project.version.toString().lowercase()
-    imageName = "git.cs.kent.ac.uk/jhl28/checkmate/${projectname}:${projectVersion}"
+    imageName = "git.cs.kent.ac.uk:5050/jhl28/checkmate/${projectname}:${projectVersion}"
+    environment.set(mapOf(
+        "BP_SPRING_AOT_ENABLED" to "true",
+        "BP_JVM_CDS_ENABLED" to "true",
+        "BP_NATIVE_IMAGE" to "true" //if you want to disable comment out the native image plugin and set to false here!
+    ))
 }
 tasks.withType<Test> {
     useJUnitPlatform()

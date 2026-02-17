@@ -2,7 +2,7 @@ stages:          # List of stages for jobs, and their order of execution
   - build
   - test
   - secret-detection
-  - native-build
+  - native-docker-image
   - security-test
 
 build-job:       # This job runs in the build stage, which runs first.
@@ -59,9 +59,12 @@ test:
 
 .native-docker-image:
   image: gradle:9.3.1-jdk25-graal
-  stage: native-build
-  services:
-    - docker:24.0.5-dind
+  stage: native-docker-image
+  tags:
+    - docker-socket-support
+  rules:   
+    - if: $CI_COMMIT_BRANCH == "develop"
+    - if: $CI_COMMIT_BRANCH == "master"
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: pull
@@ -69,14 +72,11 @@ test:
       - build
       - .gradle
   before_script:
-    - GRADLE_USER_HOME="$(pwd)/.gradle"
-    - export GRADLE_USER_HOME
-    #- echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
+    - export GRADLE_USER_HOME="$(pwd)/.gradle"
+    - mkdir -p $HOME/.docker
+    - echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > $HOME/.docker/config.json
   script:
     - gradle bootBuildImage --publishImage
-      -PregistryUrl=$CI_REGISTRY
-      -PregistryUsername=$CI_REGISTRY_USER
-      -PregistryPassword=$CI_REGISTRY_PASSWORD
 
 
 
