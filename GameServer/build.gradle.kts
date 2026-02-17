@@ -11,7 +11,7 @@ plugins {
 }
 
 
-version = "0.0.1-SNAPSHOT"
+version = "latest"
 description = "GameServer"
 
 
@@ -99,10 +99,16 @@ sourceSets {
         }
     }
 }
+
 tasks.bootBuildImage {
     var projectname = project.name.lowercase(Locale.getDefault())
     var projectVersion = project.version.toString().lowercase()
-    imageName = "git.cs.kent.ac.uk/jhl28/checkmate/${projectname}:${projectVersion}"
+    imageName = "git.cs.kent.ac.uk:5050/jhl28/checkmate/${projectname}:${projectVersion}"
+    environment.set(mapOf(
+        "BP_SPRING_AOT_ENABLED" to "true",
+        "BP_JVM_CDS_ENABLED" to "true",
+        "BP_NATIVE_IMAGE" to "true" //if you want to disable comment out the native image plugin and set to false here!
+    ))
 }
 tasks.withType<Test> {
     useJUnitPlatform()

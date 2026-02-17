@@ -1,6 +1,6 @@
 services:
   matchmakingservice:
-    image: matchmakingservice:0.0.1-snapshot
+    image: git.cs.kent.ac.uk:5050/jhl28/checkmate/matchmakingservice:latest
     container_name: matchmakingservice
     environment:
       - SPRING_PROFILES_ACTIVE=docker
@@ -14,7 +14,7 @@ services:
       - gameservermanager
 
   gameserver:
-    image: gameserver:0.0.1-snapshot
+    image: git.cs.kent.ac.uk:5050/jhl28/checkmate/gameserver:latest
     container_name: gameserver
     ports:
       - "8090:8090"
@@ -27,7 +27,7 @@ services:
       - gameservermanager
 
   gameservermanager:
-    image: gameservermanager:0.0.1-snapshot
+    image: git.cs.kent.ac.uk:5050/jhl28/checkmate/gameservermanager:latest
     container_name: gameservermanager
     networks:
       - game-network
