@@ -7,6 +7,7 @@ import { BOARD_THEMES } from "@/lib/board.theme";
 import { Dialog, DialogContent, DialogHeader } from "./dialog";
 import { DialogDescription } from "@radix-ui/react-dialog";
 import type { MatchStateMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchStateMessage";
+import { Button } from "./button";
 
 export type ChessBoardProps = {
     moveCallback: (move: Move) => void,
@@ -21,6 +22,7 @@ export type ChessBoardProps = {
 const ChessBoard = ({ moveCallback, boardState, whitePerspective = true, isInteractable, clockState = { whitePlayerTime: 0, blackPlayerTime: 0 }, pieceOrigins, setPieceOrigins }: ChessBoardProps) => {
     const [squareClicked, setSquareClicked] = useState<Square | null>();
     const [askForPromotion, setAskForPromotion] = useState<boolean>(false);
+    const [promotionSquare, setPromotionSquare] = useState<Square | null>();
     const [localClockState, setLocalClockState] = useState(clockState);
 
     const { preferences } = usePreferences();
@@ -30,12 +32,14 @@ const ChessBoard = ({ moveCallback, boardState, whitePerspective = true, isInter
     const moves = legalMoves(boardState);
     const isWhitesTurn = boardState.sideToMove === 'WHITE';
 
+    // Sync up the local clock state with the backend's clock state. This happens every time a move is made.
     useEffect(() => {
         if (clockState) {
             setLocalClockState(clockState);
         }
     }, [clockState]);
 
+    // Tick down the local clock state every second
     useEffect(() => {
         const interval = setInterval(() => {
             setLocalClockState(prev => ({
@@ -78,7 +82,8 @@ const ChessBoard = ({ moveCallback, boardState, whitePerspective = true, isInter
             else if (isMoveInMoves({ ...attemptedMove, promotion: 'QUEEN' }, moves)) {
                 // attempted move is actually to promote a pawn
                 // need to open a dialog
-                setAskForPromotion(true)
+                setPromotionSquare(square);
+                setAskForPromotion(true);
             }
             else {
                 // move is illegal / invalid
@@ -178,8 +183,41 @@ const ChessBoard = ({ moveCallback, boardState, whitePerspective = true, isInter
             </div>
             <DialogContent showCloseButton={false}>
                 <DialogHeader>
-                    <DialogDescription>Choose piece to promote to</DialogDescription>
-                    {/* TODO add buttons for each promotion option */}
+                    <DialogDescription>
+                        <p>Choose piece to promote to:</p>
+                        <div className='flex gap-1 justify-left mt-4'>
+                            {
+                                (['QUEEN', 'ROOK', 'BISHOP', 'KNIGHT'] as const).map((pieceType) => (
+                                    <Button
+                                        key={pieceType}
+                                        className='w-16 h-16 p-1'
+                                        onClick={
+                                            () => {
+                                                if (squareClicked && promotionSquare) {
+                                                    setPieceOrigins(prev => {
+                                                        const newPieceOrigins = new Map(prev);
+                                                        const origin = prev.get(squareClicked) ?? squareClicked;
+                                                        newPieceOrigins.set(promotionSquare, origin);
+                                                        newPieceOrigins.delete(squareClicked);
+                                                        return newPieceOrigins;
+                                                    })
+                                                    moveCallback({
+                                                        from: squareClicked,
+                                                        to: promotionSquare,
+                                                        promotion: pieceType
+                                                    });
+                                                    setSquareClicked(null);
+                                                    setAskForPromotion(false);
+                                                }
+                                            }
+                                        }>
+                                        <img
+                                            src={pieceToSvg({ pieceType, colour: boardState.squares[squareClicked!!]?.colour ?? 'WHITE' })} />
+                                    </Button>
+                                ))
+                            }
+                        </div>
+                    </DialogDescription>
                 </DialogHeader>
             </DialogContent>
         </Dialog>
