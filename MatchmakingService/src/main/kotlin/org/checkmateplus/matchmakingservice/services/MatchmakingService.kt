@@ -39,7 +39,6 @@ class MatchmakingService(
 ) {
 
     companion object {
-        private const val QUEUE_PREFIX = "matchmaking:queue:"
         private const val PLAYER_QUEUE_MAP = "matchmaking:player_queue_map"
         private const val ACTIVE_MATCHES = "matchmaking:active_matches"
     }
@@ -276,14 +275,6 @@ class MatchmakingService(
     private fun isTimeControlCompatible(playerA: TimeControl?, playerB: TimeControl?): Boolean {
         if (playerA == null || playerB == null) return true  // either allows any
         return playerA == playerB
-    }
-
-    private fun serializePlayer(player: Player): String {
-        return json.encodeToString(player)
-    }
-
-    private fun deserializePlayer(jsonString: String): Player {
-        return json.decodeFromString<Player>(jsonString)
     }
 
     private fun serializeMatch(match: Match): String {

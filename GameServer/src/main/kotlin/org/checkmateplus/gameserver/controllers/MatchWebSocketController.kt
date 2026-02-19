@@ -1,21 +1,16 @@
 package org.checkmateplus.gameserver.controllers
 
+import org.checkmateplus.chessLibrary.playerModels.MatchType
+import org.checkmateplus.chessLibrary.playerModels.Player
+import org.checkmateplus.gameserver.models.messages.*
+import org.checkmateplus.gameserver.service.MatchService
+import org.slf4j.LoggerFactory
 import org.springframework.messaging.handler.annotation.DestinationVariable
 import org.springframework.messaging.handler.annotation.MessageMapping
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Controller
-import org.checkmateplus.gameserver.models.messages.DrawOfferMessage
-import org.checkmateplus.gameserver.models.messages.DrawResponseMessage
-import org.checkmateplus.gameserver.models.messages.JoinMatchMessage
-import org.checkmateplus.gameserver.models.messages.MatchEventMessage
-import org.checkmateplus.gameserver.models.messages.MatchEventType
-import org.checkmateplus.gameserver.models.messages.MatchStateMessage
-import org.checkmateplus.gameserver.models.messages.MoveMessage
-import org.checkmateplus.gameserver.models.messages.ResignMessage
-import org.checkmateplus.gameserver.service.MatchService
-import org.slf4j.LoggerFactory
-import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import java.security.Principal
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
 /**
  * WebSocket controller for handling real-time chess match interactions.
@@ -43,16 +38,12 @@ class MatchWebSocketController(
      * @throws IllegalAccessException if the player attempts to move for someone else.
      */
     @MessageMapping("/match/{matchId}/move")
-    fun makeMove(
+    suspend fun makeMove(
         @DestinationVariable matchId: String,
         principal: Principal,
         moveMessage: MoveMessage
     ) {
         try {
-           // if (principal.name != moveMessage.playerId) { //this implementation needs further work as the
-                //principal is not really defined yet...
-          //      throw IllegalAccessException("You cannot move for another player")
-         //   }
             // Process the move
             val matchState = matchService.processMove(matchId, moveMessage)
 
@@ -163,10 +154,19 @@ class MatchWebSocketController(
         @DestinationVariable matchId: String,
         joinMessage: JoinMatchMessage
     ) {
-        logger.info(joinMessage.toString());
+        logger.info(joinMessage.toString())
 
         val playerId = joinMessage.playerId
 
+        val match = matchService.getMatch(matchId) ?: run {
+            logger.warn("Join attempt for unknown match: $matchId")
+            return
+        }
+        if (match.matchType == MatchType.PVE) {
+            match.players
+                .filterIsInstance<Player.Bot>()
+                .forEach { match.connectedPlayers.add(it.playerId) }
+        }
         messagingTemplate.convertAndSend(
             "/topic/match/$matchId/events",
             MatchEventMessage(
@@ -176,21 +176,18 @@ class MatchWebSocketController(
             )
         )
 
-        val match = matchService.getMatch(matchId)
-        if (match != null) {
-            if (match.players.any { player -> player.playerId == playerId } ) {
-                match.connectedPlayers.add(joinMessage.playerId) // add the player as having connect to the match
-            }
-            val matchState = matchService.createMatchStateMessage(match)
-            messagingTemplate.convertAndSendToUser(
-                joinMessage.playerId,
-                "/queue/match/$matchId/state",
-                matchState
-            )
+        if (match.players.any { player -> player.playerId == playerId }) {
+            match.connectedPlayers.add(joinMessage.playerId) // add the player as having connect to the match
         }
+        val matchState = matchService.createMatchStateMessage(match)
+        messagingTemplate.convertAndSendToUser(
+            joinMessage.playerId,
+            "/queue/match/$matchId/state",
+            matchState
+        )
 
         //when both players are connected start the match
-        if (match != null && match.connectedPlayers.size == 2 && match.matchStarted.compareAndSet(false, true)) {
+        if (match.connectedPlayers.size == 2 && match.matchStarted.compareAndSet(false, true)) {
             startMatch(matchId)
             val matchState = matchService.createMatchStateMessage(match)
             messagingTemplate.convertAndSend(
