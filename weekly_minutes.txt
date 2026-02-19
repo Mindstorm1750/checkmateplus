@@ -242,3 +242,30 @@ This will avoid ethics/personal data problems.
 
 Apparently, the supervisor needs to make a repository on `git.cs.kent.ac.uk`. For now, we won't change anything with our current repo. Later, we may copy everything over into the repo he makes.
 
+# 16-2-2026 meeting
+
+## "Further development"
+
+David suggests showing the move that was played (move history) maybe as "further development".
+
+James further ideas:
+- Match history
+- Replay past games
+- Different matchmaking queues (casual, ranked)
+- MMR
+
+David recommends that if you can't finish something by the deadline, don't do it half-finished but instead put it into "further development".
+
+## Pipelines
+
+James spoke with the sysadmin to figure out how to fix the pipeline error-ing.
+
+## Ethics application
+
+David approves the poster and the survey questions.
+
+## Caching engine moves
+
+David suggests maybe saving on compute time by caching the engine's results for a board. If a board has happened before, then we can return a move instantly.
+
+
