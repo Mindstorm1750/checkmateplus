@@ -77,7 +77,7 @@ class MatchmakingService(
      * @throws IllegalStateException if the player is already in a queue.
      */
     fun joinQueue(player: Player): Match? {
-        val timeControl: TimeControl = TimeControl.CLASSICAL_30_0
+        val timeControl: TimeControl = TimeControl.BULLET_1_0
 
         // Check if player already in queue
         val existingQueue = redisTemplate.opsForHash<String, String>().get(PLAYER_QUEUE_MAP, player.playerId)

@@ -15,11 +15,20 @@ export type ChessBoardProps = {
     whitePerspective?: Boolean,
     isInteractable: Boolean // used for stopping the player from making moves when it isn't their turn
     clockState?: Pick<MatchStateMessage, "whitePlayerTime" | "blackPlayerTime">
+    isGameOver: Boolean
     pieceOrigins: Map<Square, Square>,
     setPieceOrigins: React.Dispatch<React.SetStateAction<Map<Square, Square>>>
 }
 
-const ChessBoard = ({ moveCallback, boardState, whitePerspective = true, isInteractable, clockState = { whitePlayerTime: 0, blackPlayerTime: 0 }, pieceOrigins, setPieceOrigins }: ChessBoardProps) => {
+const ChessBoard = ({
+    moveCallback,
+    boardState,
+    whitePerspective = true,
+    isInteractable,
+    clockState = { whitePlayerTime: 0, blackPlayerTime: 0 },
+    pieceOrigins,
+    setPieceOrigins,
+    isGameOver }: ChessBoardProps) => {
     const [squareClicked, setSquareClicked] = useState<Square | null>();
     const [askForPromotion, setAskForPromotion] = useState<boolean>(false);
     const [promotionSquare, setPromotionSquare] = useState<Square | null>();
@@ -41,6 +50,9 @@ const ChessBoard = ({ moveCallback, boardState, whitePerspective = true, isInter
 
     // Tick down the local clock state every second
     useEffect(() => {
+        if(isGameOver) {
+            return;
+        }
         const interval = setInterval(() => {
             setLocalClockState(prev => ({
                 whitePlayerTime: isWhitesTurn ? prev.whitePlayerTime - 1 : prev.whitePlayerTime,
@@ -49,13 +61,14 @@ const ChessBoard = ({ moveCallback, boardState, whitePerspective = true, isInter
         }, 1000);
 
         return () => clearInterval(interval); // to delete old intervals that would otherwise still be decrementing clocks
-    }, [isWhitesTurn]);
+    }, [isWhitesTurn, isGameOver]);
 
     const handleClick = (square: Square) => {
         if (!isInteractable) {
             return; // it's not the player's turn
         }
-        if (!squareClicked) {
+        if (squareClicked === null || squareClicked === undefined) {
+            // simply doing !squareClicked causes bugs with the zeroth square as !0 is true.
             setSquareClicked(square);
         }
         else if (square == squareClicked) {
@@ -66,7 +79,6 @@ const ChessBoard = ({ moveCallback, boardState, whitePerspective = true, isInter
             const attemptedMove: Move = {
                 from: squareClicked,
                 to: square
-                // TODO HANDLE PROMOTION POSSIBILITY
             };
             if (isMoveInMoves(attemptedMove, moves)) {
                 setPieceOrigins(prev => {
@@ -86,7 +98,7 @@ const ChessBoard = ({ moveCallback, boardState, whitePerspective = true, isInter
                 setAskForPromotion(true);
             }
             else {
-                // move is illegal / invalid
+                // move is illegal or invalid
                 setSquareClicked(null);
             }
 

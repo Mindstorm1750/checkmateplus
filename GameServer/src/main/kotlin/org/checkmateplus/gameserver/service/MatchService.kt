@@ -238,9 +238,15 @@ class MatchService {
         var isDraw = false
         if (boardState == BoardState.CHECKMATE) {
             isCheckmate = true
-            isCheck = false
+            isCheck = true
             isStalemate = false
             isDraw = false
+        }
+        if (boardState == BoardState.STALEMATE) {
+            isCheckmate = false
+            isCheck = false
+            isStalemate = true
+            isDraw = true
         }
         return MatchStateMessage(
             matchId = match.matchId,

@@ -28,6 +28,8 @@ function Match() {
     const [clockState, setClockState] = useState<ChessBoardProps['clockState']>();
     const [isPlayersTurn, setIsPlayersTurn] = useState<Boolean>(false);
     const [isPlayerWhite, setIsPlayerWhite] = useState<Boolean>(true);
+    const [isGameOver, setIsGameOver] = useState<Boolean>(false);
+    const [gameOverMessage, setGameOverMessage] = useState<String>();
     const stompClient = useRef<Client | null>(null);
     useEffect(() => {
         connect();
@@ -46,6 +48,16 @@ function Match() {
                 client.subscribe(`/topic/match/${matchId}/events`, (message: IMessage) => {
                     const body: MatchEventMessage = JSON.parse(message.body);
                     console.log("Got match event message: " + body.message);
+                    if (body.eventType == 'MATCH_ENDED') {
+                        // if the game has ended in checkmate, stalemate, or is a draw
+                        setIsGameOver(true);
+                        setGameOverMessage(body.message);
+                    }
+                    if(body.eventType == 'TIME_EXPIRED') {
+                        // if the game has ended due to time
+                        setIsGameOver(true);
+                        setGameOverMessage(body.message);
+                    }
                 });
 
                 // TODO figure out if unneeded as it never seems to receive messages
@@ -58,7 +70,7 @@ function Match() {
                 // Subscribe to the match state. This will update our board
                 client.subscribe(`/topic/match/${matchId}/state`, (message: IMessage) => {
                     const match: MatchStateMessage = JSON.parse(message.body);
-                    console.log("Got match state message: " + match.fen);
+                    console.log(`Is checkmate? ${match.isCheckmate}. Is stalemate? ${match.isStalemate}. Is draw? ${match.isDraw}`);
                     const newBoard = fenToBoard(match.fen)
                     const playerWithTurn = newBoard.sideToMove === 'WHITE' ? match.whitePlayer : match.blackPlayer;
                     if (playerWithTurn?.playerId === playerId) {
@@ -77,6 +89,9 @@ function Match() {
                         });
                     }
                     setIsPlayerWhite(match.whitePlayer?.playerId === playerId);
+                    // This line corrects the player's board perspective every time a move is made. 
+                    // Unfortunately, this disturbs the functionality of a "flip perspective" button.
+                    // Hence why there currently isn't one.
                 });
 
                 joinGame();
@@ -120,10 +135,12 @@ function Match() {
         <Layout>
             <div className='w-full flex justify-center'>
                 <div className='w-3/4'>
+                    {isGameOver && gameOverMessage && <p>{gameOverMessage}</p>}
                     <ChessBoard
-                        isInteractable={isPlayersTurn}
+                        isInteractable={isPlayersTurn && !isGameOver}
                         boardState={boardState}
                         clockState={clockState}
+                        isGameOver={isGameOver}
                         moveCallback={handleMove}
                         whitePerspective={isPlayerWhite}
                         pieceOrigins={pieceOrigins}
