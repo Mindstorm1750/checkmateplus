@@ -5,22 +5,22 @@ import io.grpc.ManagedChannelBuilder
 import jakarta.annotation.PostConstruct
 import jakarta.annotation.PreDestroy
 import kotlinx.serialization.json.Json
-import org.checkmateplus.chessLibrary.playerModels.MatchStatus
-import org.checkmateplus.chessLibrary.playerModels.Player
-import org.checkmateplus.chessLibrary.playerModels.TimeControl
-
+import org.checkmateplus.chessLibrary.playerModels.*
 import org.checkmateplus.gameserver.proto.GameServerProto
 import org.checkmateplus.gameserver.proto.ServerAllocatorGrpc
 import org.checkmateplus.gameserver.proto.ServerAllocatorGrpc.newBlockingStub
-
 import org.checkmateplus.matchmakingservice.models.Match
+import org.checkmateplus.matchmakingservice.models.QueueEntry
 import org.checkmateplus.matchmakingservice.models.messages.ServerAllocationResult
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Service
 import java.util.concurrent.TimeUnit
+import kotlin.math.abs
+import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 /**
  * Service responsible for player matchmaking and match state management.
@@ -34,7 +34,8 @@ import kotlin.time.ExperimentalTime
 class MatchmakingService(
     private val redisTemplate: RedisTemplate<String, String>,
     @Value("\${gameservermanager.host}") private val managerHost: String,
-    @Value("\${gameservermanager.port}") private val managerPort: Int
+    @Value("\${gameservermanager.port}") private val managerPort: Int,
+    private val json: Json
 ) {
 
     companion object {
@@ -76,8 +77,10 @@ class MatchmakingService(
      * @return A [Match] if an opponent was found and a match created, null otherwise.
      * @throws IllegalStateException if the player is already in a queue.
      */
-    fun joinQueue(player: Player): Match? {
-        val timeControl: TimeControl = TimeControl.BULLET_1_0
+    fun joinQueue(
+        player: Player, matchType: MatchType, timeControl: TimeControl?, botModelType: BotModelType?
+    ): Match? {
+
 
         // Check if player already in queue
         val existingQueue = redisTemplate.opsForHash<String, String>().get(PLAYER_QUEUE_MAP, player.playerId)
@@ -85,27 +88,88 @@ class MatchmakingService(
             throw IllegalStateException("Player ${player.playerId} is already in queue")
         }
 
-        val queueKey = "$QUEUE_PREFIX${timeControl.name}"
+        val entry = QueueEntry(
+            player,
+            matchType = matchType,
+            timeControl = timeControl,
+            mmr = player.skillRating,
+        )
+
+        when (matchType) {
+            MatchType.PVE -> {
+                requireNotNull(timeControl) { "timeControl is required for PvE queues" }
+                requireNotNull(botModelType) { "botModelType is required for PvE queues" }
+                val bot = Player.Bot(
+                    botModelType = botModelType,
+                )
+
+                return createMatch(listOf(player, bot), matchType, timeControl, botModelType)
+
+            }
+
+            MatchType.CASUAL_PVP -> {
+                //set handler
+                val hashOps = redisTemplate.opsForHash<String, String>()
+                //get all entries from the redis
+                val allEntries = hashOps.entries(PLAYER_QUEUE_MAP).values.map { deserializeQueueEntry(it) }
+                //match first player where the players game mode and time control match
+                val opponent = allEntries.firstOrNull { candidate ->
+                    candidate.player.playerId != entry.player.playerId && candidate.matchType == entry.matchType && isTimeControlCompatible(
+                        entry.timeControl, candidate.timeControl
+                    )
+                }
+
+                return if (opponent != null) {
+                    hashOps.delete(PLAYER_QUEUE_MAP, opponent.player.playerId)
+                    //if both players did not pick a time control we pick a random one :)
+                    // perhaps the default should be Classic?
+                    val timeControl = entry.timeControl ?: opponent.timeControl ?: TimeControl.entries.random()
+                    logger.info("Match found: ${entry.player.playerId} vs ${opponent.player.playerId} [$timeControl]")
+                    createMatch(listOf(entry.player, opponent.player), entry.matchType, timeControl, null)
+                } else {
+                    hashOps.put(PLAYER_QUEUE_MAP, entry.player.playerId, serializeQueueEntry(entry))
+                    logger.info("Player ${entry.player.playerId} added to queue, no match found yet")
+                    null
+                }
+            }
+
+            MatchType.COMPETITIVE_PVP -> {
+                val hashOps = redisTemplate.opsForHash<String, String>()
+
+                val allEntries = hashOps.entries(PLAYER_QUEUE_MAP).values.map { deserializeQueueEntry(it) }
+
+                val playerMmr = entry.player.skillRating
+                    ?: throw IllegalStateException("Player ${entry.player.playerId} has no MMR for competitive queue")
+
+                val opponent = allEntries.firstOrNull { candidate ->
+                    val candidateMmr = candidate.player.skillRating ?: return@firstOrNull false
+
+                    // Use the wider of the two ranges so both players' wait times are respected
+                    val playerRange = calculateMmrRange(entry.player.joinedQueueAt)
+                    val candidateRange = calculateMmrRange(candidate.player.joinedQueueAt)
+                    val effectiveRange = maxOf(playerRange, candidateRange)
+
+                    candidate.player.playerId != entry.player.playerId && candidate.matchType == entry.matchType && isTimeControlCompatible(
+                        entry.timeControl, candidate.timeControl
+                    ) && abs(playerMmr - candidateMmr) <= effectiveRange
+                }
+
+                return if (opponent != null) {
+                    hashOps.delete(PLAYER_QUEUE_MAP, opponent.player.playerId)
+                    val timeControl = entry.timeControl ?: opponent.timeControl ?: TimeControl.entries.random()
+                    logger.info("Match found: ${entry.player.playerId} (${playerMmr}) vs ${opponent.player.playerId} (${opponent.player.skillRating}) [$timeControl]")
+                    createMatch(listOf(entry.player, opponent.player), entry.matchType, timeControl, null)
+                } else {
+                    hashOps.put(PLAYER_QUEUE_MAP, entry.player.playerId, serializeQueueEntry(entry))
+                    logger.info("Player ${entry.player.playerId} added to competitive queue, no match found yet")
+                    null
+                }
+            }
 
 
-        val opponentJson = redisTemplate.opsForList().rightPop(queueKey)
-
-        return if (opponentJson != null) {
-            val opponent = deserializePlayer(opponentJson)
-
-            redisTemplate.opsForHash<String, String>().delete(PLAYER_QUEUE_MAP, opponent.playerId)
-
-            createMatch(listOf(opponent, player), timeControl)
-        } else {
-
-            val playerJson = serializePlayer(player)
-            redisTemplate.opsForList().leftPush(queueKey, playerJson)
-
-
-            redisTemplate.opsForHash<String, String>().put(PLAYER_QUEUE_MAP, player.playerId, timeControl.name)
-
-            null
         }
+
+
     }
 
     /**
@@ -115,39 +179,24 @@ class MatchmakingService(
      * @return true if the player was successfully removed, false if not found in any queue.
      */
     fun leaveQueue(playerId: String): Boolean {
-        val timeControlName = redisTemplate.opsForHash<String, String>().get(PLAYER_QUEUE_MAP, playerId) ?: return false
-
-        val queueKey = "$QUEUE_PREFIX$timeControlName"
-
-
-        val queueSize = redisTemplate.opsForList().size(queueKey) ?: 0
-        val players = redisTemplate.opsForList().range(queueKey, 0, queueSize)
-
-        var removed = false
-        players?.forEach { playerJson ->
-            val player = deserializePlayer(playerJson)
-            if (player.playerId == playerId) {
-                redisTemplate.opsForList().remove(queueKey, 1, playerJson)
-                removed = true
-            }
-        }
-
-        if (removed) {
-            redisTemplate.opsForHash<String, String>().delete(PLAYER_QUEUE_MAP, playerId)
-        }
-
-        return removed
+        val hashOps = redisTemplate.opsForHash<String, String>()
+        val exists = hashOps.hasKey(PLAYER_QUEUE_MAP, playerId)
+        if (!exists) return false
+        hashOps.delete(PLAYER_QUEUE_MAP, playerId)
+        return true
     }
 
     /**
      * Retrieves the current number of players waiting in queue for each time control.
      *
-     * @return A map of [TimeControl] to queue size.
+     * @return the current queue size.
      */
-    fun getQueueSizes(): Map<TimeControl, Int> {
-        return TimeControl.entries.associateWith { timeControl ->
-            val queueKey = "$QUEUE_PREFIX${timeControl.name}"
-            (redisTemplate.opsForList().size(queueKey) ?: 0).toInt()
+    fun getQueueSizes(): Map<MatchType, Int> {
+        val allEntries = redisTemplate.opsForHash<String, String>()
+            .entries(PLAYER_QUEUE_MAP).values.map { deserializeQueueEntry(it) }
+
+        return MatchType.entries.associateWith { queueType ->
+            allEntries.count { it.matchType == queueType }
         }
     }
 
@@ -200,9 +249,15 @@ class MatchmakingService(
      * Internal helper to create a match and store it in Redis.
      */
     @OptIn(ExperimentalTime::class)
-    private fun createMatch(players: List<Player>, timeControl: TimeControl): Match {
+    private fun createMatch(
+        players: List<Player>, matchType: MatchType, timeControl: TimeControl, botModelType: BotModelType?
+    ): Match {
         val match = Match(
-            players = players, timeControl = timeControl, status = MatchStatus.PENDING
+            players = players,
+            timeControl = timeControl,
+            status = MatchStatus.PENDING,
+            matchType = matchType,
+            botModelType = botModelType
         )
 
         // Store match in Redis
@@ -211,20 +266,40 @@ class MatchmakingService(
         return match
     }
 
+    private fun calculateMmrRange(joinedQueueAt: Instant): Int {
+        val secondsWaiting = Clock.System.now().minus(joinedQueueAt).inWholeSeconds
+        val expansions = secondsWaiting / 5 //how long for a range expansion
+        //1 is the min range, 5 is how much it increases by and 50 is the max range we will match
+        return minOf(10 + (expansions * 5), 50).toInt()
+    }
+
+    private fun isTimeControlCompatible(playerA: TimeControl?, playerB: TimeControl?): Boolean {
+        if (playerA == null || playerB == null) return true  // either allows any
+        return playerA == playerB
+    }
+
     private fun serializePlayer(player: Player): String {
-        return Json.Default.encodeToString(player)
+        return json.encodeToString(player)
     }
 
     private fun deserializePlayer(jsonString: String): Player {
-        return Json.Default.decodeFromString<Player>(jsonString)
+        return json.decodeFromString<Player>(jsonString)
     }
 
     private fun serializeMatch(match: Match): String {
-        return Json.Default.encodeToString(match)
+        return json.encodeToString(match)
     }
 
     private fun deserializeMatch(jsonString: String): Match {
-        return Json.Default.decodeFromString<Match>(jsonString)
+        return json.decodeFromString<Match>(jsonString)
+    }
+
+    private fun serializeQueueEntry(entry: QueueEntry): String {
+        return json.encodeToString(entry)
+    }
+
+    private fun deserializeQueueEntry(jsonString: String): QueueEntry {
+        return json.decodeFromString<QueueEntry>(jsonString)
     }
 
     /**
@@ -234,24 +309,36 @@ class MatchmakingService(
      * @param whitePlayer The player assigned to play white.
      * @param blackPlayer The player assigned to play black.
      * @param timeControl The match's time control.
+     * @param matchType The match's type i.e. PvP/PvE, Competitive/Casual
+     * @param botModelType The selected bot model affecting its move making algorithm
      * @return A [ServerAllocationResult] indicating success or failure and server details.
      */
     fun requestServerForMatch(
-        matchId: String, whitePlayer: Player, blackPlayer: Player, timeControl: TimeControl
+        matchId: String,
+        whitePlayer: Player,
+        blackPlayer: Player,
+        timeControl: TimeControl,
+        matchType: MatchType,
+        botModelType: BotModelType?
     ): ServerAllocationResult {
 
         try {
             logger.info("Requesting server for match $matchId")
-            logger.info("  White: ${whitePlayer.displayName} ")
-            logger.info("  Black: ${blackPlayer.displayName} ")
+            logger.info("  White: ${whitePlayer.displayName}, MMR: ${whitePlayer.skillRating} ")
+            logger.info("  Black: ${blackPlayer.displayName}, MMR: ${blackPlayer.skillRating} ")
             logger.info("  Time: ${timeControl.name} (${timeControl.minutes}+${timeControl.increment})")
+            logger.info("  Game mode: $matchType ")
+
+            if (botModelType != null) {
+                logger.info("  BotModelType: $botModelType")
+            }
 
             val request =
                 GameServerProto.ServerRequest.newBuilder().setMatchId(matchId).setWhitePlayerId(whitePlayer.playerId)
-                    .setWhitePlayerName(whitePlayer.displayName)
-                    .setBlackPlayerId(blackPlayer.playerId).setBlackPlayerName(blackPlayer.displayName)
-                    .setInitialTimeMinutes(timeControl.minutes)
-                    .setIncrementSeconds(timeControl.increment).build()
+                    .setWhitePlayerName(whitePlayer.displayName).setBlackPlayerId(blackPlayer.playerId)
+                    .setBlackPlayerName(blackPlayer.displayName).setInitialTimeMinutes(timeControl.minutes)
+                    .setIncrementSeconds(timeControl.increment).setMatchType(matchType.toString())
+                    .setBotModelType(botModelType.toString()).build()
 
             val response = stub.requestServer(request)
 

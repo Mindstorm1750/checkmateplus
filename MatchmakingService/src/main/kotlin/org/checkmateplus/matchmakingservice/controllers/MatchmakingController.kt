@@ -54,7 +54,12 @@ class MatchmakingController(
 
         try {
             // Add to queue
-            val match = matchmakingService.joinQueue(player)
+            val match = matchmakingService.joinQueue(
+                player,
+                matchType = request.matchType,
+                timeControl = request.timeControl,
+                botModelType = request.botModelType
+            )
 
             if (match == null) {
                 // Waiting for opponent
@@ -71,7 +76,9 @@ class MatchmakingController(
                     match.matchId,
                     match.players[0],
                     match.players[1],
-                    match.timeControl
+                    match.timeControl,
+                    match.matchType,
+                    match.botModelType
                 )
 
                 if (allocation.success) {

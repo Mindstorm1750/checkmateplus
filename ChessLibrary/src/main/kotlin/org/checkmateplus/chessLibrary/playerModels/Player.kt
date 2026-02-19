@@ -26,4 +26,23 @@ sealed class Player {
         override val joinedQueueAt: Instant = Clock.System.now(),
         override val skillRating: Int? = null
     ) : Player()
+    /**
+     * AI or bot player.
+     *
+     * @property playerId Unique identifier for the bot player.
+     * @property displayName The name of the bot displayed in-game.
+     * @property joinedQueueAt The time when the bot joined the queue.
+     * @property skillRating The optional skill rating for matchmaking.
+     * @property difficulty The AI difficulty level (e.g., 1-10).
+     * @property botModelType The AI model type used by the bot.
+     */
+    @Serializable
+    data class Bot @OptIn(ExperimentalTime::class) constructor(
+        override val playerId: String = UUID.randomUUID().toString(),
+        override val displayName: String = "Bot-${playerId.take(6)}",
+        override val joinedQueueAt: Instant = Clock.System.now(),
+        override val skillRating: Int? = null,
+        val difficulty: Int = 1,
+        val botModelType: BotModelType = BotModelType.RANDOM
+    ) : Player()
 }

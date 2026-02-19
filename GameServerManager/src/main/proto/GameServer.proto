@@ -29,6 +29,8 @@ message ServerRequest {
   // int32 black_player_rating = 7;
   int32 initial_time_minutes = 8;
   int32 increment_seconds = 9;
+  string matchType = 10;
+  string botModelType = 11;
 }
 
 message ServerResponse {
@@ -54,6 +56,9 @@ message AllocateMatchRequest {
   bool black_player_registered = 7;
   int32 initial_time_seconds = 8;
   int32 increment_seconds = 9;
+  string matchType = 10;
+  string botModelType = 11;
+
 }
 ///Server shutting down remove from pool
 message UnRegisterServerRequest {

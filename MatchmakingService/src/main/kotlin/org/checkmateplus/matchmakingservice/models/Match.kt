@@ -1,8 +1,10 @@
 package org.checkmateplus.matchmakingservice.models
 
 import kotlinx.serialization.Serializable
+import org.checkmateplus.chessLibrary.playerModels.BotModelType
 import org.checkmateplus.chessLibrary.playerModels.Player
 import org.checkmateplus.chessLibrary.playerModels.MatchStatus
+import org.checkmateplus.chessLibrary.playerModels.MatchType
 import org.checkmateplus.chessLibrary.playerModels.TimeControl
 import java.util.*
 import kotlin.time.Clock
@@ -19,6 +21,7 @@ import kotlin.time.Instant
  * @property timeControl The time control settings for the match.
  * @property createdAt Timestamp when the match was created.
  * @property status Current status of the match.
+ * @property matchType The match type (competitive or casual, pvp or pve)
  */
 @Serializable
 @OptIn(ExperimentalTime::class)
@@ -27,7 +30,9 @@ data class Match(
     val players: List<Player>,
     val timeControl: TimeControl,
     val createdAt: Instant = Clock.System.now(),
-    val status: MatchStatus = MatchStatus.PENDING
+    val status: MatchStatus = MatchStatus.PENDING,
+    val matchType: MatchType,
+    val botModelType: BotModelType? = null,
 ) {
     init {
         require(players.size >= 2) {
