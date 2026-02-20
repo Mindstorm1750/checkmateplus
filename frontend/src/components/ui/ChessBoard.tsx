@@ -13,11 +13,10 @@ export type ChessBoardProps = {
     moveCallback: (move: Move) => void,
     boardState: Board,
     whitePerspective?: Boolean,
-    isInteractable: Boolean // used for stopping the player from making moves when it isn't their turn
-    clockState?: Pick<MatchStateMessage, "whitePlayerTime" | "blackPlayerTime">
-    isGameOver: Boolean
-    pieceOrigins: Map<Square, Square>,
-    setPieceOrigins: React.Dispatch<React.SetStateAction<Map<Square, Square>>>
+    isInteractable: Boolean, // used for stopping the player from making moves when it isn't their turn
+    clockState?: Pick<MatchStateMessage, "whitePlayerTime" | "blackPlayerTime">,
+    isGameOver: Boolean,
+    pieceOrigins: Map<Square, Square>
 }
 
 const ChessBoard = ({
@@ -26,9 +25,8 @@ const ChessBoard = ({
     whitePerspective = true,
     isInteractable,
     clockState = { whitePlayerTime: 0, blackPlayerTime: 0 },
-    pieceOrigins,
-    setPieceOrigins,
-    isGameOver }: ChessBoardProps) => {
+    isGameOver,
+    pieceOrigins }: ChessBoardProps) => {
     const [squareClicked, setSquareClicked] = useState<Square | null>();
     const [askForPromotion, setAskForPromotion] = useState<boolean>(false);
     const [promotionSquare, setPromotionSquare] = useState<Square | null>();
@@ -50,7 +48,7 @@ const ChessBoard = ({
 
     // Tick down the local clock state every second
     useEffect(() => {
-        if(isGameOver) {
+        if (isGameOver) {
             return;
         }
         const interval = setInterval(() => {
@@ -81,13 +79,6 @@ const ChessBoard = ({
                 to: square
             };
             if (isMoveInMoves(attemptedMove, moves)) {
-                setPieceOrigins(prev => {
-                    const newPieceOrigins = new Map(prev);
-                    const origin = prev.get(squareClicked) ?? squareClicked;
-                    newPieceOrigins.set(square, origin);
-                    newPieceOrigins.delete(squareClicked);
-                    return newPieceOrigins;
-                })
                 moveCallback(attemptedMove);
                 setSquareClicked(null);
             }
@@ -148,8 +139,8 @@ const ChessBoard = ({
                         {
                             squaresView.map((piece, index) => {
                                 const square = whitePerspective ? index : 63 - index;
-                                const origin = pieceOrigins.get(square as Square) ?? square;
-
+                                const origin = pieceOrigins.get(square as Square);
+                            
                                 // for the fun animations
                                 const randomAngle = Math.random() * 360;
                                 const randomX = Math.cos(randomAngle) * 333;
@@ -163,7 +154,7 @@ const ChessBoard = ({
                                         <AnimatePresence>
                                             {piece && (
                                                 <motion.img
-                                                    key={`${piece.colour}-${piece.pieceType}-${square}`}
+                                                    key={`${piece.colour}-${piece.pieceType}-${origin}`}
                                                     layoutId={`piece-${piece.colour}-${piece.pieceType}-${origin}`}
                                                     src={pieceToSvg(piece)}
                                                     alt={`${piece.colour} ${piece.pieceType}`}
@@ -206,13 +197,6 @@ const ChessBoard = ({
                                         onClick={
                                             () => {
                                                 if (squareClicked && promotionSquare) {
-                                                    setPieceOrigins(prev => {
-                                                        const newPieceOrigins = new Map(prev);
-                                                        const origin = prev.get(squareClicked) ?? squareClicked;
-                                                        newPieceOrigins.set(promotionSquare, origin);
-                                                        newPieceOrigins.delete(squareClicked);
-                                                        return newPieceOrigins;
-                                                    })
                                                     moveCallback({
                                                         from: squareClicked,
                                                         to: promotionSquare,

@@ -70,6 +70,10 @@ export const EMPTY_BOARD: Board = {
     fullMoveNumber: 1,
 }
 
+export const EMPTY_PIECE_ORIGINS: Map<Square, Square> = new Map(
+  Array.from({ length: 64 }, (_, i) => [i, i] as [Square, Square])
+);
+
 export type Move = {
     from: Square,
     to: Square,

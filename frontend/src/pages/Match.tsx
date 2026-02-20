@@ -6,7 +6,7 @@ import type { MatchEventMessage } from "@/lib/stompMessageTypes/GameServer/model
 import type { MatchStateMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchStateMessage";
 import type { MoveMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MoveMessage";
 import type { MatchFoundEvent } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/MatchFoundEvent";
-import { EMPTY_BOARD, type Board, type Move, type Square } from "@/types/Chess.type";
+import { EMPTY_BOARD, EMPTY_PIECE_ORIGINS, type Board, type Move, type Square } from "@/types/Chess.type";
 import { Client, type IMessage } from "@stomp/stompjs";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router";
@@ -24,7 +24,7 @@ function Match() {
      * pieceOrigins is used in ChessBoard to animate pieces via framer motion's layoutId. 
      * Identifies pieces as they move from boardState to boardState.
      */
-    const [pieceOrigins, setPieceOrigins] = useState<Map<Square, Square>>(new Map());
+    const [pieceOrigins, setPieceOrigins] = useState<Map<Square, Square>>(EMPTY_PIECE_ORIGINS);
     const [clockState, setClockState] = useState<ChessBoardProps['clockState']>();
     const [isPlayersTurn, setIsPlayersTurn] = useState<Boolean>(false);
     const [isPlayerWhite, setIsPlayerWhite] = useState<Boolean>(true);
@@ -53,7 +53,7 @@ function Match() {
                         setIsGameOver(true);
                         setGameOverMessage(body.message);
                     }
-                    if(body.eventType == 'TIME_EXPIRED') {
+                    if (body.eventType == 'TIME_EXPIRED') {
                         // if the game has ended due to time
                         setIsGameOver(true);
                         setGameOverMessage(body.message);
@@ -81,6 +81,11 @@ function Match() {
                     if (match.lastMove) {
                         const move = { from: algebraicToSquare(match.lastMove.from), to: algebraicToSquare(match.lastMove.to), promotion: match.lastMove.promotion };
                         setPieceOrigins(prev => {
+                            if(!prev.get(move.from)) {
+                                // if pieceOrigins has already been updated with a move, the square we're moving from will have no origin (be undefined)
+                                // therefore we should leave pieceOrigins as is.
+                                return prev;
+                            }
                             const newPieceOrigins = new Map(prev);
                             const origin = prev.get(move.from) ?? move.from;
                             newPieceOrigins.set(move.to, origin);
@@ -143,8 +148,7 @@ function Match() {
                         isGameOver={isGameOver}
                         moveCallback={handleMove}
                         whitePerspective={isPlayerWhite}
-                        pieceOrigins={pieceOrigins}
-                        setPieceOrigins={setPieceOrigins} />
+                        pieceOrigins={pieceOrigins} />
                 </div>
             </div>
         </Layout>
