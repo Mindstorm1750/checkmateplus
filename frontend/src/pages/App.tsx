@@ -102,8 +102,51 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
 const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
   const titleText = "Play against a computer";
   const descriptionText = "Play against a computer opponent as the colour of your choice";
+  const [inQueue, setInQueue] = useState<boolean>(false);
   const [colour, setColour] = useState('Random');
   const navigate = useNavigate();
+  const stompClient = useRef<Client | null>(null);
+
+  const connect = () => {
+    const socket = new SockJS(import.meta.env.VITE_BASE_URL + 'matchmaking');
+
+    const client = new Client({
+      webSocketFactory: () => socket,
+      debug: (str: string) => console.log(str),
+      onConnect: () => {
+        // Subscribe to your specific user queue for status updates
+        client.subscribe('/user/queue/status', (message: IMessage) => {
+          const body: QueueStatus = JSON.parse(message.body);
+        });
+
+        // Subscribe to match found events
+        client.subscribe('/user/queue/match', (message: IMessage) => {
+          const match: MatchFoundEvent = JSON.parse(message.body);
+          setInQueue(false); // Match found, no longer in queue, redirect to match page
+          navigate(`/match`, { state: match })
+        });
+
+        joinQueue(); // send join request immediately after connecting
+      },
+      onStompError: (frame: { headers: { [x: string]: string; }; }) => {
+      },
+    });
+
+    client.activate();
+    stompClient.current = client;
+  };
+
+  const joinQueue = () => {
+    if (stompClient.current?.connected) {
+      const joinRequest: JoinRequest = { displayName: `UserWhoJoinedAt${Date.now()}`, matchType: 'PVE', botModelType: 'RANDOM', timeControl: 'BULLET_2_1'}; // TODO use player's displayName (or playerId if types/classes have changed)
+      stompClient.current.publish({
+        destination: "/app/join",
+        body: JSON.stringify(joinRequest)
+      });
+      setInQueue(true);
+    }
+  };
+
   return (
     <Dialog>
       <form>
@@ -135,7 +178,7 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
             <DialogClose asChild>
               <Button variant='outline'>Cancel</Button>
             </DialogClose>
-            <Button onClick={() => navigate(`/play/${colour}`)}>Play</Button>
+            <Button onClick={connect} disabled={inQueue}>Play</Button>
           </DialogFooter>
         </DialogContent>
       </form>
