@@ -85,27 +85,6 @@ class MatchService {
         flipTurn(match)
 
 
-        if (match.matchType == MatchType.PVE && match.botModelType != null) {
-            val botColour = if (match.players[0] is Player.Bot) WHITE else BLACK
-
-            if (botColour == match.activeTurn) {
-                val botMove = calculateMove(match.board!!, match.botModelType)
-
-                match.board = match.board!!.applyMove(botMove)
-                updateTimeAfterMove(match, match.board)
-                flipTurn(match)
-
-                val botNotification = MoveNotification(
-                    matchId = matchId,
-                    from = botMove.from.toAlgebraic(),
-                    to = botMove.to.toAlgebraic(),
-                    promotion = botMove.promotion,
-                    movedBy = match.players.filterIsInstance<Player.Bot>().first().playerId
-                )
-
-                return createMatchStateMessage(match, botNotification)
-            }
-        }
         // Create move notification
         val moveNotification = MoveNotification(
             matchId = matchId,
@@ -118,7 +97,7 @@ class MatchService {
         return createMatchStateMessage(match, moveNotification)
     }
 
-    private fun updateTimeAfterMove(
+    fun updateTimeAfterMove(
         match: MatchState, board: Board?
     ) {
         val increment = match.timeControl.increment
@@ -193,7 +172,7 @@ class MatchService {
         }, 1000, 1000)
     }
 
-    private fun flipTurn(match: MatchState) {
+    fun flipTurn(match: MatchState) {
         match.activeTurn = if (match.activeTurn == WHITE) BLACK else WHITE
     }
 
