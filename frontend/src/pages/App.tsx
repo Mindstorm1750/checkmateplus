@@ -138,7 +138,7 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
 
   const joinQueue = () => {
     if (stompClient.current?.connected) {
-      const joinRequest: JoinRequest = { displayName: `UserWhoJoinedAt${Date.now()}`, matchType: 'PVE', botModelType: 'RANDOM', timeControl: 'BULLET_2_1'}; // TODO use player's displayName (or playerId if types/classes have changed)
+      const joinRequest: JoinRequest = { displayName: `UserWhoJoinedAt${Date.now()}`, matchType: 'PVE', botModelType: 'MINMAX', timeControl: 'BULLET_2_1'}; // TODO use player's displayName (or playerId if types/classes have changed)
       stompClient.current.publish({
         destination: "/app/join",
         body: JSON.stringify(joinRequest)

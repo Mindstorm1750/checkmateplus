@@ -7,5 +7,6 @@ enum class BotModelType {
     /**
      * Random algorithm for determining the best move.
      */
-    RANDOM //ADD MORE SOON!
+    RANDOM,
+    MINMAX
 }

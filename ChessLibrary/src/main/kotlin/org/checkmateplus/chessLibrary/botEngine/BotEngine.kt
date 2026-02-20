@@ -32,6 +32,12 @@ sealed class BotEngine {
         }
     }
 
+    class MinMaxEngine : BotEngine() {
+        override fun getMove(board: Board): Move {
+            return board.findBestMoves(4) ?: board.generateLegalMoves().random()
+        }
+    }
+
     companion object {
         /**
          * Factory method for creating a [BotEngine] based on the requested [botModelType].
@@ -39,6 +45,7 @@ sealed class BotEngine {
         fun create(botModelType: BotModelType): BotEngine {
             return when (botModelType) {
                 BotModelType.RANDOM -> RandomEngine()
+                BotModelType.MINMAX -> MinMaxEngine()
             }
         }
     }

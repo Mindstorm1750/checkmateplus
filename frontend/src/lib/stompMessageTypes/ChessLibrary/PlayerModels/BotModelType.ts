@@ -1,5 +1,3 @@
 export type BotModelType =
-    /**
-     * Random algorithm for determining the best move.
-     */
-    'RANDOM' //ADD MORE SOON!
+    'RANDOM' | // makes random moves
+    'MINMAX' // Luke's engine
