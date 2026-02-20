@@ -15,7 +15,6 @@ export type ChessBoardProps = {
     whitePerspective?: Boolean,
     isInteractable: Boolean, // used for stopping the player from making moves when it isn't their turn
     clockState?: Pick<MatchStateMessage, "whitePlayerTime" | "blackPlayerTime">,
-    isGameOver: Boolean,
     pieceOrigins: Map<Square, Square>
 }
 
@@ -25,41 +24,16 @@ const ChessBoard = ({
     whitePerspective = true,
     isInteractable,
     clockState = { whitePlayerTime: 0, blackPlayerTime: 0 },
-    isGameOver,
     pieceOrigins }: ChessBoardProps) => {
     const [squareClicked, setSquareClicked] = useState<Square | null>();
     const [askForPromotion, setAskForPromotion] = useState<boolean>(false);
     const [promotionSquare, setPromotionSquare] = useState<Square | null>();
-    const [localClockState, setLocalClockState] = useState(clockState);
 
     const { preferences } = usePreferences();
     const { lightSquare, lightSquareSelected, darkSquare, darkSquareSelected } = BOARD_THEMES[preferences.boardColor];
 
     const squaresView = whitePerspective ? boardState.squares : boardState.squares.toReversed();
     const moves = legalMoves(boardState);
-    const isWhitesTurn = boardState.sideToMove === 'WHITE';
-
-    // Sync up the local clock state with the backend's clock state. This happens every time a move is made.
-    useEffect(() => {
-        if (clockState) {
-            setLocalClockState(clockState);
-        }
-    }, [clockState]);
-
-    // Tick down the local clock state every second
-    useEffect(() => {
-        if (isGameOver) {
-            return;
-        }
-        const interval = setInterval(() => {
-            setLocalClockState(prev => ({
-                whitePlayerTime: isWhitesTurn ? prev.whitePlayerTime - 1 : prev.whitePlayerTime,
-                blackPlayerTime: isWhitesTurn ? prev.blackPlayerTime : prev.blackPlayerTime - 1
-            }));
-        }, 1000);
-
-        return () => clearInterval(interval); // to delete old intervals that would otherwise still be decrementing clocks
-    }, [isWhitesTurn, isGameOver]);
 
     const handleClick = (square: Square) => {
         if (!isInteractable) {
@@ -103,7 +77,7 @@ const ChessBoard = ({
     return (
         <Dialog open={askForPromotion}>
             <div className='flex flex-col w-full'>
-                <Clock topClock={true} time={whitePerspective ? localClockState.blackPlayerTime : localClockState.whitePlayerTime} />
+                <Clock topClock={true} time={whitePerspective ? clockState.blackPlayerTime : clockState.whitePlayerTime} />
                 <div className='relative w-full aspect-square'>
                     {/* Just the squares */}
                     <div className='grid grid-cols-8 grid-rows-8 w-full aspect-square absolute inset-0'>
@@ -140,9 +114,9 @@ const ChessBoard = ({
                             squaresView.map((piece, index) => {
                                 const square = whitePerspective ? index : 63 - index;
                                 const origin = pieceOrigins.get(square as Square);
-                            
+
                                 // for the fun animations
-                                const randomAngle = Math.random() * 360;
+                                const randomAngle = -135 + 45 * Math.random();
                                 const randomX = Math.cos(randomAngle) * 333;
                                 const randomY = Math.sin(randomAngle) * 333;
                                 // 333 is arbitrary. It's just a decent looking distance for the pieces to fly away
@@ -165,7 +139,7 @@ const ChessBoard = ({
                                                     exit={preferences.animationType === 'FUN' ? {
                                                         x: randomX,
                                                         y: randomY,
-                                                        rotate: 360,
+                                                        rotate: 540,
                                                         opacity: 0,
                                                         scale: 0.5,
                                                     } : {
@@ -182,7 +156,7 @@ const ChessBoard = ({
                         }
                     </div>
                 </div>
-                <Clock topClock={false} time={whitePerspective ? localClockState.whitePlayerTime : localClockState.blackPlayerTime} />
+                <Clock topClock={false} time={whitePerspective ? clockState.whitePlayerTime : clockState.blackPlayerTime} />
             </div>
             <DialogContent showCloseButton={false}>
                 <DialogHeader>

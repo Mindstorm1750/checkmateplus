@@ -5,6 +5,7 @@ import type { JoinMatchMessage } from "@/lib/stompMessageTypes/GameServer/models
 import type { MatchEventMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchEventMessage";
 import type { MatchStateMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchStateMessage";
 import type { MoveMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MoveMessage";
+import type { TimeUpdateMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/TimeUpdateMessage";
 import type { MatchFoundEvent } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/MatchFoundEvent";
 import { EMPTY_BOARD, EMPTY_PIECE_ORIGINS, type Board, type Move, type Square } from "@/types/Chess.type";
 import { Client, type IMessage } from "@stomp/stompjs";
@@ -60,6 +61,12 @@ function Match() {
                     }
                 });
 
+                client.subscribe(`/topic/match/${matchId}/time`, (message: IMessage) => {
+                    const timeUpdate: TimeUpdateMessage = JSON.parse(message.body);
+                    const { whitePlayerTime, blackPlayerTime } = timeUpdate;
+                    setClockState({ whitePlayerTime, blackPlayerTime});
+                });
+
                 // TODO figure out if unneeded as it never seems to receive messages
                 client.subscribe(`/user/queue/match/${matchId}/state`, (message: IMessage) => {
                     const match: MatchStateMessage = JSON.parse(message.body);
@@ -76,12 +83,11 @@ function Match() {
                     if (playerWithTurn?.playerId === playerId) {
                         setIsPlayersTurn(true)
                     }
-                    setClockState({ whitePlayerTime: match.whitePlayerTime, blackPlayerTime: match.blackPlayerTime });
                     setBoardState(newBoard);
                     if (match.lastMove) {
                         const move = { from: algebraicToSquare(match.lastMove.from), to: algebraicToSquare(match.lastMove.to), promotion: match.lastMove.promotion };
                         setPieceOrigins(prev => {
-                            if(!prev.get(move.from)) {
+                            if (!prev.get(move.from)) {
                                 // if pieceOrigins has already been updated with a move, the square we're moving from will have no origin (be undefined)
                                 // therefore we should leave pieceOrigins as is.
                                 return prev;
@@ -145,7 +151,6 @@ function Match() {
                         isInteractable={isPlayersTurn && !isGameOver}
                         boardState={boardState}
                         clockState={clockState}
-                        isGameOver={isGameOver}
                         moveCallback={handleMove}
                         whitePerspective={isPlayerWhite}
                         pieceOrigins={pieceOrigins} />
