@@ -62,7 +62,7 @@ class MatchService {
      * @param moveMessage The move details.
      * @return The updated [MatchStateMessage].
      */
-    suspend fun processMove(
+    fun processMove(
         matchId: String, moveMessage: MoveMessage
     ): MatchStateMessage {
         val match = matches[matchId] ?: throw IllegalArgumentException("Match not found: $matchId")
@@ -265,10 +265,9 @@ class MatchService {
         return count
     }
 
-    suspend fun calculateMove(board: Board, botModelType: BotModelType): Move {
-        return withContext(Dispatchers.Default) {
-            BotEngine.create(botModelType).getMove(board)
-        }
+    fun calculateMove(board: Board, botModelType: BotModelType): Move {
+        return BotEngine.create(botModelType).getMove(board)
+
     }
 }
 

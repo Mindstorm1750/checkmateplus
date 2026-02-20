@@ -41,7 +41,7 @@ class MatchWebSocketController(
      * @throws IllegalAccessException if the player attempts to move for someone else.
      */
     @MessageMapping("/match/{matchId}/move")
-    suspend fun makeMove(
+    fun makeMove(
         @DestinationVariable matchId: String,
         principal: Principal,
         moveMessage: MoveMessage
