@@ -488,4 +488,13 @@ class EngineTest {
         assertEquals(correctThirdMove, boardQh7toQf7.findBestMoves(2))
         assertEquals(correctThirdMove, boardQh7toQf7.findBestMoves(3))
     }
+
+    @Test
+    fun testFindBestMoveStalemateInOne() {
+        val boardQe7toQf7 = FenToBoard("7k/4q3/8/3Q4/p6P/P7/KP6/8 b - - 0 1")
+        val correctMove = Move("e7".toSquare()!!, "f7".toSquare()!!)
+        assertEquals(correctMove, boardQe7toQf7.findBestMoves(3))
+        assertEquals(correctMove, boardQe7toQf7.findBestMoves(4))
+        assertEquals(correctMove, boardQe7toQf7.findBestMoves(5))
+    }
 }
