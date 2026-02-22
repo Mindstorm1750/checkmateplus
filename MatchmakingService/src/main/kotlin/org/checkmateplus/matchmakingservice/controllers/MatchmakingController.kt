@@ -7,6 +7,7 @@ import org.checkmateplus.matchmakingservice.models.messages.MatchFoundEvent
 import org.checkmateplus.matchmakingservice.models.messages.ServerAllocationResult
 import org.checkmateplus.matchmakingservice.services.MatchmakingService
 import org.slf4j.LoggerFactory
+import org.springframework.aot.hint.annotation.RegisterReflectionForBinding
 import org.springframework.messaging.handler.annotation.MessageMapping
 import org.springframework.messaging.handler.annotation.Payload
 import org.springframework.messaging.simp.SimpMessagingTemplate
@@ -23,6 +24,11 @@ import kotlin.time.ExperimentalTime
  * @property matchmakingService Service for queue and match management.
  * @property messagingTemplate Template for sending messages to specific users.
  */
+@RegisterReflectionForBinding(
+    MatchFoundEvent::class,
+    JoinRequest::class,
+    ServerAllocationResult::class
+)
 @Controller
 class MatchmakingController(
     private val matchmakingService: MatchmakingService,
