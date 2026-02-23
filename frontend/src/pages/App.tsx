@@ -1,9 +1,7 @@
 import { Button } from "@/components/ui/button"
 import Layout from "../components/Layout"
-import { Dialog, DialogContent, DialogFooter, DialogHeader } from "../components/ui/dialog"
-import { DialogClose, DialogDescription, DialogTitle, DialogTrigger } from "@radix-ui/react-dialog"
-import { useRef, useState, type ComponentProps } from "react"
-import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group"
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog"
+import { useRef, useState, type ComponentProps, type Dispatch, type SetStateAction } from "react"
 import { useNavigate } from "react-router"
 import { Client, type IMessage } from "@stomp/stompjs"
 import SockJS from 'sockjs-client/dist/sockjs';
@@ -11,6 +9,8 @@ import type { JoinRequest } from "@/lib/stompMessageTypes/MatchMakingService/mod
 import type { MatchFoundEvent } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/MatchFoundEvent"
 import type { QueueStatus } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/QueueStatus"
 import { Spinner } from "@/components/ui/spinner"
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { type TimeControl, TimeControlToStringMap } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/TimeControl"
 
 function App() {
   const navigate = useNavigate();
@@ -101,9 +101,8 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
 
 const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
   const titleText = "Play against a computer";
-  const descriptionText = "Play against a computer opponent as the colour of your choice";
   const [inQueue, setInQueue] = useState<boolean>(false);
-  const [colour, setColour] = useState('Random');
+  const [timeControl, setTimeControl] = useState<TimeControl>();
   const navigate = useNavigate();
   const stompClient = useRef<Client | null>(null);
 
@@ -138,7 +137,7 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
 
   const joinQueue = () => {
     if (stompClient.current?.connected) {
-      const joinRequest: JoinRequest = { displayName: `UserWhoJoinedAt${Date.now()}`, matchType: 'PVE', botModelType: 'MINMAX', timeControl: 'BULLET_2_1'}; // TODO use player's displayName (or playerId if types/classes have changed)
+      const joinRequest: JoinRequest = { displayName: `UserWhoJoinedAt${Date.now()}`, matchType: 'PVE', botModelType: 'MINMAX', timeControl }; // TODO use player's displayName (or playerId if types/classes have changed)
       stompClient.current.publish({
         destination: "/app/join",
         body: JSON.stringify(joinRequest)
@@ -149,41 +148,41 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
 
   return (
     <Dialog>
-      <form>
-        <DialogTrigger asChild>
-          <Button {...props}>{titleText}</Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="font-bold">{titleText}</DialogTitle>
-            <DialogDescription className="text-sm">{descriptionText}</DialogDescription>
-          </DialogHeader>
-
-          <div className='flex items-center gap-3'>
-            <p>Play as:</p>
-            <ToggleGroup type='single' variant='outline' value={colour} onValueChange={setColour}>
-              <ToggleGroupItem value='White'>
-                White
-              </ToggleGroupItem>
-              <ToggleGroupItem value='Black'>
-                Black
-              </ToggleGroupItem>
-              <ToggleGroupItem value='Random'>
-                Random
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </div>
-
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant='outline'>Cancel</Button>
-            </DialogClose>
-            <Button onClick={connect} disabled={inQueue}>Play</Button>
-          </DialogFooter>
-        </DialogContent>
-      </form>
+      <DialogTrigger asChild>
+        <Button {...props}>{titleText}</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="font-bold">{titleText}</DialogTitle>
+        </DialogHeader>
+        <SelectTimeControl callBack={setTimeControl}/>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant='outline'>Cancel</Button>
+          </DialogClose>
+          <Button onClick={connect} disabled={inQueue}>Play</Button>
+        </DialogFooter>
+      </DialogContent>
     </Dialog>
   )
+}
+
+export const SelectTimeControl = ({callBack}: {callBack: Dispatch<SetStateAction<TimeControl | undefined>>}) => {
+  return (<Select onValueChange={(timeControl) => callBack(timeControl as TimeControl)}>
+    <SelectTrigger>
+      <SelectValue placeholder='Select a time control' />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectGroup>
+        {
+          [...TimeControlToStringMap.entries()].map((entry) => {
+            const [value, label] = entry;
+            return <SelectItem key={value} value={value.toString()}>{label}</SelectItem>
+          })
+        }
+      </SelectGroup>
+    </SelectContent>
+  </Select>);
 }
 
 export default App
