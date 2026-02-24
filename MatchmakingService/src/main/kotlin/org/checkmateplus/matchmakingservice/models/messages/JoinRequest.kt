@@ -1,4 +1,4 @@
-package org.checkmateplus.matchmakingservice.models
+package org.checkmateplus.matchmakingservice.models.messages
 
 /**
  * Request payload for a player joining the matchmaking queue.

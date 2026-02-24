@@ -1,21 +1,18 @@
 import com.google.protobuf.gradle.id
+import java.util.Locale
 
 plugins {
-    kotlin("jvm") version "2.2.21"
-    kotlin("plugin.spring") version "2.2.21"
-    kotlin("plugin.serialization") version "2.2.21"
-    id("org.springframework.boot") version "4.0.1"
+    kotlin("jvm") version "2.3.10"
+    kotlin("plugin.spring") version "2.3.10"
+    kotlin("plugin.serialization") version "2.3.10"
+    id("org.springframework.boot") version "4.0.2"
     id("io.spring.dependency-management") version "1.1.7"
-    id("org.graalvm.buildtools.native") version "0.11.3"
+    id("org.graalvm.buildtools.native") version "0.11.4"
     id("com.google.protobuf") version "0.9.5"
 }
+version = "latest"
 description = "MatchmakingService"
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(24)
-    }
-}
 
 configurations {
     compileOnly {
@@ -28,7 +25,7 @@ repositories {
 }
 
 extra["springCloudVersion"] = "2025.1.0"
-val springGrpcVersion by extra("1.0.1")
+val springGrpcVersion by extra("1.0.2")
 
 dependencies {
     implementation(project(":ChessLibrary"))
@@ -100,6 +97,16 @@ sourceSets {
             )
         }
     }
+}
+tasks.bootBuildImage {
+    var projectname = project.name.lowercase(Locale.getDefault())
+    var projectVersion = project.version.toString().lowercase()
+    imageName = "git.cs.kent.ac.uk:5050/jhl28/checkmate/${projectname}:${projectVersion}"
+    environment.set(mapOf(
+        "BP_SPRING_AOT_ENABLED" to "true",
+        "BP_JVM_CDS_ENABLED" to "true",
+        "BP_NATIVE_IMAGE" to "true" //if you want to disable comment out the native image plugin and set to false here!
+    ))
 }
 tasks.withType<Test> {
     useJUnitPlatform()

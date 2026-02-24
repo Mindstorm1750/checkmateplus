@@ -11,6 +11,7 @@ import org.checkmateplus.gameserver.proto.GameServerGrpc
 import org.checkmateplus.gameserver.proto.GameServerProto
 import org.checkmateplus.gameserver.proto.MatchManagerGrpc
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.grpc.server.service.GrpcService
 import org.springframework.scheduling.annotation.Scheduled
 import java.util.concurrent.TimeUnit
@@ -23,6 +24,11 @@ import kotlin.time.ExperimentalTime
 @GrpcService
 class GameServerService(
     private val matchService: MatchService,
+    @Value("\${gameservermanager.host}") private val managerHost: String,
+    @Value("\${gameservermanager.port}") private val managerPort: Int,
+    @Value("\${gameserver.advertise.host}") private val advertiseHost: String,
+    @Value("\${gameserver.advertise.grpc-port}") private val advertiseGrpcPort: Int,
+    @Value("\${gameserver.max-concurrent-matches:5}") private val maxConcurrentMatches: Int
 ) : GameServerGrpc.GameServerImplBase() {
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -32,7 +38,7 @@ class GameServerService(
     @PostConstruct
     fun initialize() {
         channel = ManagedChannelBuilder
-            .forAddress("localhost", 9090) //this needs to be changed
+            .forAddress(managerHost, managerPort) //this needs to be changed
             .usePlaintext()
             .build()
 
@@ -47,13 +53,12 @@ class GameServerService(
     }
 
     private fun registerServer() {
-        val podName = System.getenv("HOSTNAME") ?: "localhost"
         try {
             val request = GameServerProto.RegisterServerRequest.newBuilder()
                 .setServerId(serverId)
-                .setIpAddress("127.0.0.1")
-                .setPort(9091)
-                .setMaxConcurrentMatches(5)
+                .setIpAddress(advertiseHost)
+                .setPort(advertiseGrpcPort)
+                .setMaxConcurrentMatches(maxConcurrentMatches)
                 .build()
 
             val response = stub.registerServer(request)
@@ -122,7 +127,7 @@ class GameServerService(
                 players = listOf(whitePlayer, blackPlayer),
                 timeControl = timeControl
             )
-
+            logger.info("Created match: ${request.matchId} with players $whitePlayer & $blackPlayer")
             val response = GameServerProto.AllocateMatchResponse.newBuilder()
                 .setSuccess(true)
                 .setMessage("Match created")

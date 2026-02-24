@@ -1,5 +1,7 @@
 package org.checkmateplus.gameserver.models.messages
 
+import org.checkmateplus.chessLibrary.chessEngine.PieceType
+
 
 /* not sure what's gonna happen on the chess engine end
 so imma just roll with using the algebraic notation for
@@ -9,5 +11,5 @@ data class MoveMessage(
     val playerId: String,
     val from: String,  // e.g., "e2"
     val to: String,    // e.g., "e4"
-    val promotion: String? = null  // e.g., "q", "r", "b", "n"
+    val promotion: PieceType? // e.g., "q", "r", "b", "n"
 )

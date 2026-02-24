@@ -1,5 +1,6 @@
 package org.checkmateplus.gameserver.service
 
+import org.checkmateplus.chessLibrary.chessEngine.BoardState
 import org.checkmateplus.chessLibrary.chessEngine.Board
 import org.checkmateplus.chessLibrary.chessEngine.Colour.*
 import org.checkmateplus.chessLibrary.chessEngine.Move
@@ -60,14 +61,14 @@ class MatchService {
     ): MatchStateMessage {
         val match = matches[matchId]
             ?: throw IllegalArgumentException("Match not found: $matchId")
-        val board = match.board
+        var board = match.board
             ?: throw IllegalStateException("Board not initialized")
         /*
         TODO: Implement validation from chess engine to detect illicit moves. Waiting for chess engine implementation first though
         */
 
         // execute the move on the local board
-        board.applyMove(
+        match.board = board.applyMove(
             Move(
                 from = moveMessage.from.toSquare() ?: throw IllegalArgumentException("Invalid from square"),
                 to = moveMessage.to.toSquare() ?: throw IllegalArgumentException("Invalid to square"),
@@ -82,7 +83,7 @@ class MatchService {
 
 
         // Update time with increment
-        updateTimeAfterMove(match, board)
+        updateTimeAfterMove(match, match.board)
 
         //flip the active turn
         if (match.activeTurn == WHITE) match.activeTurn = BLACK
@@ -102,13 +103,13 @@ class MatchService {
 
     private fun updateTimeAfterMove(
         match: MatchState,
-        board: Board
+        board: Board?
     ) {
         val increment = match.timeControl.increment
 
         // Add increment to the player who just moved
         // Current turn is now the OTHER player after the move
-        when (board.sideToMove) {
+        when (board?.sideToMove) {
             BLACK -> {
                 // White just moved
                 match.whitePlayerTime += increment
@@ -118,6 +119,8 @@ class MatchService {
                 // Black just moved
                 match.blackPlayerTime += increment
             }
+
+            else -> {}
         }
     }
 
@@ -223,21 +226,37 @@ class MatchService {
      * Send the MatchState
      */
     fun createMatchStateMessage(
-        match: MatchState,
+        match: MatchState?,
         lastMove: MoveNotification? = null
     ): MatchStateMessage {
-        match.board
+        match?.board
             ?: throw IllegalStateException("Board not initialized")
-
+        val boardState = match.board!!.getBoardState()
+        var isCheckmate = false
+        var isCheck = false
+        var isStalemate = false
+        var isDraw = false
+        if (boardState == BoardState.CHECKMATE) {
+            isCheckmate = true
+            isCheck = true
+            isStalemate = false
+            isDraw = false
+        }
+        if (boardState == BoardState.STALEMATE) {
+            isCheckmate = false
+            isCheck = false
+            isStalemate = true
+            isDraw = true
+        }
         return MatchStateMessage(
             matchId = match.matchId,
-            fen = TODO("waiting for engine implementation"),
+            fen = match.board!!.toFen(),
             whitePlayerTime = match.whitePlayerTime,
             blackPlayerTime = match.blackPlayerTime,
-            isCheck = TODO("waiting for engine implementation"),
-            isCheckmate = TODO("waiting for engine implementation"),
-            isStalemate = TODO("waiting for engine implementation"),
-            isDraw = TODO("waiting for engine implementation"),
+            isCheck = isCheck,
+            isCheckmate = isCheckmate,
+            isStalemate = isStalemate,
+            isDraw = isDraw,
             lastMove = lastMove,
             whitePlayer = match.players.getOrNull(0),
             blackPlayer = match.players.getOrNull(1)
@@ -247,6 +266,7 @@ class MatchService {
     fun getActiveMatchCount(): Int {
         return matches.size;
     }
+
     fun getActivePlayerCount(): Int {
         var count = 0
         matches.forEach { (_, matchstate) -> matchstate.players.forEach { _ -> count++ } }

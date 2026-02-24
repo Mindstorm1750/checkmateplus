@@ -1,4 +1,4 @@
-package org.checkmateplus.matchmakingservice.models
+package org.checkmateplus.matchmakingservice.models.messages
 
 /**
  * Event sent to players when a match has been successfully formed and a server allocated.
@@ -11,4 +11,5 @@ data class MatchFoundEvent(
     val matchId: String,
     val websocketUrl: String,
     val opponentName: String,
+    val playerId: String,
 )

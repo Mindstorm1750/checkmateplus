@@ -1,10 +1,10 @@
 package org.checkmateplus.matchmakingservice.controllers
 
 import org.checkmateplus.chessLibrary.playerModels.Player
-import org.checkmateplus.matchmakingservice.models.JoinRequest
+import org.checkmateplus.matchmakingservice.models.messages.JoinRequest
 import org.checkmateplus.matchmakingservice.models.Match
-import org.checkmateplus.matchmakingservice.models.MatchFoundEvent
-import org.checkmateplus.matchmakingservice.models.ServerAllocationResult
+import org.checkmateplus.matchmakingservice.models.messages.MatchFoundEvent
+import org.checkmateplus.matchmakingservice.models.messages.ServerAllocationResult
 import org.checkmateplus.matchmakingservice.services.MatchmakingService
 import org.slf4j.LoggerFactory
 import org.springframework.messaging.handler.annotation.MessageMapping
@@ -102,6 +102,7 @@ class MatchmakingController(
                     matchId = match.matchId,
                     websocketUrl = allocation.websocketUrl,
                     opponentName = opponent.displayName,
+                    playerId = player.playerId,
                 )
             )
         }

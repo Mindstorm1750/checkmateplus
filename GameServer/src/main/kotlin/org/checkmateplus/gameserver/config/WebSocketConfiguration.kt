@@ -8,12 +8,12 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 
 @Configuration
 @EnableWebSocketMessageBroker
-class WebSocketConfiguration : WebSocketMessageBrokerConfigurer {
+class WebSocketConfiguration(private val customHandshakeHandler: CustomHandshakeHandler) : WebSocketMessageBrokerConfigurer {
 
     override fun registerStompEndpoints(registry: StompEndpointRegistry) {
-        registry
-            .addEndpoint("/match")
+        registry.addEndpoint("/match")
             .setAllowedOriginPatterns("*")
+            .setHandshakeHandler(customHandshakeHandler)
             .withSockJS()
     }
 
