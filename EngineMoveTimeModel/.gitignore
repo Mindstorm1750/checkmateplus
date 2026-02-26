@@ -1,2 +1,4 @@
 # A 310 MB file. Could be added to corpus but I'll leave it out of git for now.
 src/main/resources/movetimes3481887positions.csv
+
+build/

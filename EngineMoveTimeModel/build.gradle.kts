@@ -10,11 +10,9 @@ repositories {
 }
 
 dependencies {
-    testImplementation(kotlin("test"))
-    implementation("org.deeplearning4j:deeplearning4j-core:1.0.0-M2.1")
-    implementation("org.nd4j:nd4j-native-platform:1.0.0-M2.1")
-    implementation("org.deeplearning4j:deeplearning4j-ui:1.0.0-M2.1")
-    implementation("org.deeplearning4j:deeplearning4j-datasets:1.0.0-M2.1")
+    implementation ("org.jetbrains.kotlinx:kotlin-deeplearning-tensorflow:0.5.2")
+    implementation ("org.jetbrains.kotlinx:kotlin-deeplearning-onnx:0.5.2")
+    implementation ("org.jetbrains.kotlinx:kotlin-deeplearning-visualization:0.5.2")
 }
 
 tasks.test {
