@@ -2,6 +2,8 @@
 
 
     import kotlin.math.abs
+    private const val MATE_SCORE = 1000000
+
 
     data class Board(
         val squares: Array<Piece?> = Array(64) { null },
@@ -487,19 +489,27 @@
         //minimax algorithm - tried to add alpha beta pruning
         //Depth - how many moves to look ahead, Alpha - best score white, Beta - best score black
         private fun minimaxAlg(depth: Int, alpha: Int, beta: Int): Int{
-            if (depth == 0){
-                return evaluate()
+            val state = getBoardState()
+            if (state!= BoardState.IN_PROGRESS){
+                return when (state){
+                    BoardState.STALEMATE -> 0 //Draw check
+                    //Checkmate check  - large win/loss to be clear
+                    BoardState.CHECKMATE -> {
+                        if (sideToMove == Colour.WHITE){
+                            -MATE_SCORE + depth //white in mate
+                        } else {
+                            MATE_SCORE - depth//black in mate
+                        }
+                    }
+                }
             }
-            //Game in checkmate or stalemate
-            if(getBoardState() != BoardState.IN_PROGRESS){
+
+
+            if (depth == 0){
                 return evaluate()
             }
 
             val legalMoves = generateLegalMoves()
-            if (legalMoves.isEmpty()){
-                return evaluate()//check again (possibly not necessary)
-            }
-
             var currentAlpha = alpha
             var currentBeta = beta
 
