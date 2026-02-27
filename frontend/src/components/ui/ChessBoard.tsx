@@ -1,6 +1,6 @@
 import { isMoveInMoves, legalMoves, pieceToSvg } from "@/lib/chess.helpers";
 import type { Board, Move, Square } from "@/types/Chess.type"
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion"
 import { usePreferences } from "@/lib/PreferencesContext";
 import { BOARD_THEMES } from "@/lib/board.theme";
