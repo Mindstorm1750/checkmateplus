@@ -9,7 +9,6 @@ import { Client, type IMessage } from "@stomp/stompjs"
 import SockJS from 'sockjs-client/dist/sockjs';
 import type { JoinRequest } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/JoinRequest"
 import type { MatchFoundEvent } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/MatchFoundEvent"
-import type { QueueStatus } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/QueueStatus"
 import { Spinner } from "@/components/ui/spinner"
 
 function App() {
@@ -43,9 +42,9 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
       debug: (str: string) => console.log(str),
       onConnect: () => {
         // Subscribe to your specific user queue for status updates
-        client.subscribe('/user/queue/status', (message: IMessage) => {
-          const body: QueueStatus = JSON.parse(message.body);
-        });
+        // client.subscribe('/user/queue/status', (message: IMessage) => {
+        //   const body: QueueStatus = JSON.parse(message.body);
+        // });
 
         // Subscribe to match found events
         client.subscribe('/user/queue/match', (message: IMessage) => {
@@ -57,6 +56,7 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
         joinQueue(); // send join request immediately after connecting
       },
       onStompError: (frame: { headers: { [x: string]: string; }; }) => {
+        console.log({error: frame});
       },
     });
 
