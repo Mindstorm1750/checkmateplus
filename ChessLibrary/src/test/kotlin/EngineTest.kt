@@ -410,19 +410,91 @@ class EngineTest {
         assertEquals(BoardState.STALEMATE, boardStalemate.getBoardState())
         assertEquals(BoardState.CHECKMATE, boardCheckmate.getBoardState())
     }
+
     @Test
     fun testBoardToFenString(){
         val board = FenToBoard("rn1q1rk1/ppp1bppp/3pp3/4Pb2/3P4/2P2NP1/P1P1BP1P/R1BQ1RK1 b - - 0 9")
         assertEquals(board.toFen(), "rn1q1rk1/ppp1bppp/3pp3/4Pb2/3P4/2P2NP1/P1P1BP1P/R1BQ1RK1 b - - 0 9")
     }
+
     @Test
     fun testBoardToFenString_ComplexPosition() {
         val board = FenToBoard("r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R w KQkq - 4 5")
         assertEquals("r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R w KQkq - 4 5", board.toFen())
     }
+
     @Test
     fun testBoardToFenString_ScholarsMate() {
         val board = FenToBoard("r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 4")
         assertEquals("r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 4", board.toFen())
+    }
+
+    /**
+     * Testing for both a position as White and a position as Black whether the first move of a backrank mate-in-two
+     * will be chosen by findBestMove() across various depths.
+     */
+    @Test
+    fun testFindBestMoveBackrankMateInTwos() {
+        val boardQe2toQe8 = FenToBoard("r5k1/5ppp/8/8/2q5/8/4QPPP/4R1K1 w - - 0 1");
+        val boardQe5toQe1 = FenToBoard("r3r1k1/5ppp/3R4/4q3/8/8/1Q3PPP/B1R3K1 b - - 0 1")
+        assertEquals(Move("e2".toSquare()!!, "e8".toSquare()!!), boardQe2toQe8.findBestMoves(3))
+        assertEquals(Move("e2".toSquare()!!, "e8".toSquare()!!), boardQe2toQe8.findBestMoves(4))
+        assertEquals(Move("e2".toSquare()!!, "e8".toSquare()!!), boardQe2toQe8.findBestMoves(5))
+
+        assertEquals(Move("e5".toSquare()!!, "e1".toSquare()!!), boardQe5toQe1.findBestMoves(3))
+        assertEquals(Move("e5".toSquare()!!, "e1".toSquare()!!), boardQe5toQe1.findBestMoves(4))
+        assertEquals(Move("e5".toSquare()!!, "e1".toSquare()!!), boardQe5toQe1.findBestMoves(5))
+    }
+
+    @Test
+    fun testFindBestMoveWinMaterialInOne() {
+        val boardQd1toQh5 = FenToBoard("r3k2r/2qnbppp/p2p4/1pp1p1Nb/2nPP3/2P4P/PPBN1PP1/R1BQR2K w kq - 5 15")
+        val correctMove = Move("d1".toSquare()!!, "h5".toSquare()!!)
+        assertEquals(correctMove, boardQd1toQh5.findBestMoves(1))
+        assertEquals(correctMove, boardQd1toQh5.findBestMoves(2))
+        assertEquals(correctMove, boardQd1toQh5.findBestMoves(3))
+        assertEquals(correctMove, boardQd1toQh5.findBestMoves(4))
+        assertEquals(correctMove, boardQd1toQh5.findBestMoves(5))
+    }
+
+    @Test
+    fun testFindBestMoveWinMaterialInTwo() {
+        val boardd7tod5 = FenToBoard("r1bq1rk1/pppp1ppp/2n5/4p3/1bB1N3/5N1P/PPPP1PP1/R1BQ1RK1 b - - 0 7")
+        val correctMove = Move("d7".toSquare()!!, "d5".toSquare()!!)
+        assertEquals(correctMove, boardd7tod5.findBestMoves(3))
+        assertEquals(correctMove, boardd7tod5.findBestMoves(4))
+        assertEquals(correctMove, boardd7tod5.findBestMoves(5))
+    }
+
+    /**
+     * Testing for White if findBestMove will carry out the 3 moves in a classic mate-in-three
+     * across various depths
+     */
+    @Test
+    fun testFindBestMoveMateInThree() {
+        val boardBh7toBg6 = FenToBoard("r3r2k/ppp2p1B/2n4Q/8/3q4/8/PPP2PPP/R5K1 w - - 2 2")
+        val correctFirstMove = Move("h7".toSquare()!!, "g6".toSquare()!!)
+        assertEquals(correctFirstMove, boardBh7toBg6.findBestMoves(5))
+
+        val boardQh6toQh7 = FenToBoard("r3r1k1/ppp2p2/2n3BQ/8/3q4/8/PPP2PPP/R5K1 w - - 4 3")
+        val correctSecondMove = Move("h6".toSquare()!!, "h7".toSquare()!!)
+        assertEquals(correctSecondMove, boardQh6toQh7.findBestMoves(3))
+        assertEquals(correctSecondMove, boardQh6toQh7.findBestMoves(4))
+        assertEquals(correctSecondMove, boardQh6toQh7.findBestMoves(5))
+
+        val boardQh7toQf7 = FenToBoard("r3rk2/ppp2p1Q/2n3B1/8/3q4/8/PPP2PPP/R5K1 w - - 6 4")
+        val correctThirdMove = Move("h7".toSquare()!!, "f7".toSquare()!!)
+        assertEquals(correctThirdMove, boardQh7toQf7.findBestMoves(1))
+        assertEquals(correctThirdMove, boardQh7toQf7.findBestMoves(2))
+        assertEquals(correctThirdMove, boardQh7toQf7.findBestMoves(3))
+    }
+
+    @Test
+    fun testFindBestMoveStalemateInOne() {
+        val boardQe7toQf7 = FenToBoard("7k/4q3/8/3Q4/p6P/P7/KP6/8 b - - 0 1")
+        val correctMove = Move("e7".toSquare()!!, "f7".toSquare()!!)
+        assertEquals(correctMove, boardQe7toQf7.findBestMoves(3))
+        assertEquals(correctMove, boardQe7toQf7.findBestMoves(4))
+        assertEquals(correctMove, boardQe7toQf7.findBestMoves(5))
     }
 }
