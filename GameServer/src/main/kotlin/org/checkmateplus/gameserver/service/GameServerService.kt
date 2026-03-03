@@ -5,6 +5,9 @@ import io.grpc.ManagedChannelBuilder
 import io.grpc.stub.StreamObserver
 import jakarta.annotation.PostConstruct
 import jakarta.annotation.PreDestroy
+import org.checkmateplus.chessLibrary.chessEngine.Colour
+import org.checkmateplus.chessLibrary.playerModels.BotModelType
+import org.checkmateplus.chessLibrary.playerModels.MatchType
 import org.checkmateplus.chessLibrary.playerModels.Player
 import org.checkmateplus.chessLibrary.playerModels.TimeControl
 import org.checkmateplus.gameserver.proto.GameServerGrpc
@@ -15,6 +18,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.grpc.server.service.GrpcService
 import org.springframework.scheduling.annotation.Scheduled
 import java.util.concurrent.TimeUnit
+import kotlin.random.Random
 import kotlin.time.ExperimentalTime
 
 /**
@@ -35,12 +39,11 @@ class GameServerService(
     private lateinit var channel: ManagedChannel
     private lateinit var stub: MatchManagerGrpc.MatchManagerBlockingStub
     private val serverId = System.getenv("HOSTNAME") ?: "localhost"
+
     @PostConstruct
     fun initialize() {
-        channel = ManagedChannelBuilder
-            .forAddress(managerHost, managerPort) //this needs to be changed
-            .usePlaintext()
-            .build()
+        channel = ManagedChannelBuilder.forAddress(managerHost, managerPort) //this needs to be changed
+            .usePlaintext().build()
 
         stub = MatchManagerGrpc.newBlockingStub(channel)
 
@@ -54,12 +57,9 @@ class GameServerService(
 
     private fun registerServer() {
         try {
-            val request = GameServerProto.RegisterServerRequest.newBuilder()
-                .setServerId(serverId)
-                .setIpAddress(advertiseHost)
-                .setPort(advertiseGrpcPort)
-                .setMaxConcurrentMatches(maxConcurrentMatches)
-                .build()
+            val request =
+                GameServerProto.RegisterServerRequest.newBuilder().setServerId(serverId).setIpAddress(advertiseHost)
+                    .setPort(advertiseGrpcPort).setMaxConcurrentMatches(maxConcurrentMatches).build()
 
             val response = stub.registerServer(request)
 
@@ -72,6 +72,7 @@ class GameServerService(
             logger.error("Failed to register", e)
         }
     }
+
     /**
      * Allocates a new match on this server based on a request from the Match Manager.
      *
@@ -83,65 +84,69 @@ class GameServerService(
         request: GameServerProto.AllocateMatchRequest,
         responseObserver: StreamObserver<GameServerProto.AllocateMatchResponse>
     ) {
+
         try {
+
             logger.info("Allocating match ${request.matchId}")
-
-
-
-            val whitePlayer: Player = if (request.whitePlayerRegistered) {
-                Player.Anonymous(
-                    displayName = request.whitePlayerName,
-                    playerId = request.whitePlayerId
+            val whitePlayer: Player
+            val blackPlayer: Player
+            if (!(request.botModelType == null || request.botModelType == "null")) {
+                val bot = Player.Bot(botModelType = BotModelType.valueOf(request.botModelType))
+                val human = Player.Anonymous(
+                    displayName = request.whitePlayerName, playerId = request.whitePlayerId
                 )
+                val botSide = if (Random.nextBoolean()) Colour.WHITE else Colour.BLACK
+                whitePlayer = if (botSide == Colour.WHITE) bot else human
+                blackPlayer = if (botSide == Colour.WHITE) human else bot
             } else {
-                Player.Anonymous(  //this needs to be "registered" when accounts are implemented!!!!
-                    displayName = request.whitePlayerName,
-                    playerId = request.whitePlayerId
-                )
+                whitePlayer = if (request.whitePlayerRegistered) {
+                    Player.Anonymous(
+                        displayName = request.whitePlayerName, playerId = request.whitePlayerId
+                    )
+                } else {
+                    Player.Anonymous(  //this needs to be "registered" when accounts are implemented!!!!
+                        displayName = request.whitePlayerName, playerId = request.whitePlayerId
+                    )
+                }
+
+                blackPlayer = if (request.blackPlayerRegistered) {
+                    Player.Anonymous(
+                        displayName = request.blackPlayerName, playerId = request.blackPlayerId
+                    )
+                } else {
+                    Player.Anonymous(
+                        displayName = request.blackPlayerName, //this needs to be "registered" when accounts are implemented!!!!
+                        playerId = request.blackPlayerId
+                    )
+                }
             }
-
-            val blackPlayer: Player = if (request.blackPlayerRegistered) {
-                Player.Anonymous(
-                    displayName = request.blackPlayerName,
-                    playerId = request.blackPlayerId
-                )
-            } else {
-                Player.Anonymous(
-                    displayName = request.blackPlayerName, //this needs to be "registered" when accounts are implemented!!!!
-                    playerId = request.blackPlayerId
-                )
-            }
-
-
 
 
             // Create time control
             val timeControl: TimeControl = TimeControl.fromMinutesAndIncrement(
-                minutes = request.initialTimeSeconds / 60,
-                increment = request.incrementSeconds
-            )!!
+                minutes = request.initialTimeSeconds / 60, increment = request.incrementSeconds
+            )
+                ?: throw IllegalArgumentException("Invalid time control: ${request.initialTimeSeconds / 60}+${request.incrementSeconds}")
 
             // Create match
             matchService.createMatch(
                 matchId = request.matchId,
                 players = listOf(whitePlayer, blackPlayer),
-                timeControl = timeControl
+                timeControl = timeControl,
+                matchType = MatchType.valueOf(request.matchType),
+                botModelType = if(request.botModelType == "null") null else BotModelType.valueOf(request.botModelType)
             )
-            logger.info("Created match: ${request.matchId} with players $whitePlayer & $blackPlayer")
-            val response = GameServerProto.AllocateMatchResponse.newBuilder()
-                .setSuccess(true)
-                .setMessage("Match created")
-                .build()
+            logger.info("Created match: ${request.matchId} with players $whitePlayer & $blackPlayer of type ${request.matchType}")
+            val response =
+                GameServerProto.AllocateMatchResponse.newBuilder().setSuccess(true).setMessage("Match created").build()
 
             responseObserver.onNext(response)
             responseObserver.onCompleted()
 
         } catch (e: Exception) {
             logger.error("Failed to allocate match", e)
-            val response = GameServerProto.AllocateMatchResponse.newBuilder()
-                .setSuccess(false)
-                .setMessage(e.message ?: "Unknown error")
-                .build()
+            val response = GameServerProto.AllocateMatchResponse.newBuilder().setSuccess(false)
+                .setMessage(e.message ?: "Unknown error").build()
             responseObserver.onNext(response)
             responseObserver.onCompleted()
         }
@@ -162,9 +167,7 @@ class GameServerService(
 
             matchService.removeMatch(request.matchId)
 
-            val response = GameServerProto.TerminateMatchResponse.newBuilder()
-                .setSuccess(true)
-                .build()
+            val response = GameServerProto.TerminateMatchResponse.newBuilder().setSuccess(true).build()
 
             responseObserver.onNext(response)
             responseObserver.onCompleted()
@@ -174,6 +177,7 @@ class GameServerService(
             responseObserver.onError(e)
         }
     }
+
     /**
      * Periodically sends a heartbeat to the Match Manager with server statistics.
      */
@@ -183,11 +187,9 @@ class GameServerService(
             val activeMatches = matchService.getActiveMatchCount()
             val activePlayers = matchService.getActivePlayerCount()
 
-            val request = GameServerProto.HeartbeatRequest.newBuilder()
-                .setServerId(serverId)
-                .setActiveMatchCount(activeMatches)
-                .setConnectedPlayerCount(activePlayers)
-                .build()
+            val request =
+                GameServerProto.HeartbeatRequest.newBuilder().setServerId(serverId).setActiveMatchCount(activeMatches)
+                    .setConnectedPlayerCount(activePlayers).build()
 
             val response = stub.heartbeat(request)
 

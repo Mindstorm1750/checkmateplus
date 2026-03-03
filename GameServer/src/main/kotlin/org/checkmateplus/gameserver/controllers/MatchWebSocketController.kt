@@ -1,21 +1,22 @@
 package org.checkmateplus.gameserver.controllers
 
+import org.checkmateplus.chessLibrary.chessEngine.Colour
+import org.checkmateplus.chessLibrary.chessEngine.Colour.BLACK
+import org.checkmateplus.chessLibrary.chessEngine.Colour.WHITE
+import org.checkmateplus.chessLibrary.chessEngine.toAlgebraic
+import org.checkmateplus.chessLibrary.playerModels.MatchType
+import org.checkmateplus.chessLibrary.playerModels.Player
+import org.checkmateplus.gameserver.models.MatchState
+import org.checkmateplus.gameserver.models.messages.*
+import org.checkmateplus.gameserver.service.MatchService
+import org.slf4j.LoggerFactory
+import org.springframework.aot.hint.annotation.RegisterReflectionForBinding
 import org.springframework.messaging.handler.annotation.DestinationVariable
 import org.springframework.messaging.handler.annotation.MessageMapping
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Controller
-import org.checkmateplus.gameserver.models.messages.DrawOfferMessage
-import org.checkmateplus.gameserver.models.messages.DrawResponseMessage
-import org.checkmateplus.gameserver.models.messages.JoinMatchMessage
-import org.checkmateplus.gameserver.models.messages.MatchEventMessage
-import org.checkmateplus.gameserver.models.messages.MatchEventType
-import org.checkmateplus.gameserver.models.messages.MatchStateMessage
-import org.checkmateplus.gameserver.models.messages.MoveMessage
-import org.checkmateplus.gameserver.models.messages.ResignMessage
-import org.checkmateplus.gameserver.service.MatchService
-import org.slf4j.LoggerFactory
-import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import java.security.Principal
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
 /**
  * WebSocket controller for handling real-time chess match interactions.
@@ -26,6 +27,23 @@ import java.security.Principal
  * @property messagingTemplate Template for sending messages to WebSocket topics.
  * @property matchService Service for processing match logic and state.
  */
+@RegisterReflectionForBinding(
+    DrawOfferMessage::class,
+    DrawResponseMessage::class,
+    JoinMatchMessage::class,
+    MatchEventMessage::class,
+    MatchEventType::class,
+    MatchStateMessage::class,
+    MoveMessage::class,
+    MoveNotification::class,
+    ResignMessage::class,
+    TimeUpdateMessage::class,
+    MatchState::class,
+    Player::class,
+    Player.Anonymous::class,
+    Player.Bot::class,
+)
+
 @Controller
 class MatchWebSocketController(
     private val messagingTemplate: SimpMessagingTemplate,
@@ -49,10 +67,6 @@ class MatchWebSocketController(
         moveMessage: MoveMessage
     ) {
         try {
-           // if (principal.name != moveMessage.playerId) { //this implementation needs further work as the
-                //principal is not really defined yet...
-          //      throw IllegalAccessException("You cannot move for another player")
-         //   }
             // Process the move
             val matchState = matchService.processMove(matchId, moveMessage)
 
@@ -68,6 +82,49 @@ class MatchWebSocketController(
                     "/topic/match/$matchId/moves",
                     lastMove
                 )
+            }
+            // Handle game end conditions
+            handleGameEndConditions(matchId, matchState)
+
+
+            val match = matchService.getMatch(matchId)
+            if (match?.matchType == MatchType.PVE && match.botModelType != null) {
+                val botColour = if (match.players[0] is Player.Bot) WHITE else BLACK
+
+                if (botColour == match.activeTurn) {
+                    val botMove = matchService.calculateMove(match.board!!, match.botModelType)
+                    val botMoveMessage = MoveMessage(
+                        matchId,
+                        playerId = match.players.find { it is Player.Bot }?.playerId ?: "BOT",
+                        from = botMove.from.toAlgebraic(),
+                        to = botMove.to.toAlgebraic(),
+                        promotion = botMove.promotion,
+                    )
+                    val botMatchStateMessage = matchService.processMove(matchId, botMoveMessage)
+                    val botMoveNotification = MoveNotification(
+                        matchId,
+                        botMoveMessage.from,
+                        botMoveMessage.to,
+                        botMoveMessage.promotion,
+                        botMoveMessage.playerId
+                    )
+                    val botStateMessage = matchService.createMatchStateMessage(match, botMoveNotification)
+
+                    // Broadcast updated state to all players
+                    messagingTemplate.convertAndSend(
+                        "/topic/match/$matchId/state",
+                        botStateMessage
+                    )
+
+                    // Send the specific move notification
+                    matchState.lastMove?.let { lastMove ->
+                        messagingTemplate.convertAndSend(
+                            "/topic/match/$matchId/moves",
+                            botMoveNotification
+                        )
+                    }
+                    handleGameEndConditions(matchId, botStateMessage)
+                }
             }
 
             // Handle game end conditions
@@ -163,10 +220,19 @@ class MatchWebSocketController(
         @DestinationVariable matchId: String,
         joinMessage: JoinMatchMessage
     ) {
-        logger.info(joinMessage.toString());
+        logger.info(joinMessage.toString())
 
         val playerId = joinMessage.playerId
 
+        val match = matchService.getMatch(matchId) ?: run {
+            logger.warn("Join attempt for unknown match: $matchId")
+            return
+        }
+        if (match.matchType == MatchType.PVE) {
+            match.players
+                .filterIsInstance<Player.Bot>()
+                .forEach { match.connectedPlayers.add(it.playerId) }
+        }
         messagingTemplate.convertAndSend(
             "/topic/match/$matchId/events",
             MatchEventMessage(
@@ -176,21 +242,18 @@ class MatchWebSocketController(
             )
         )
 
-        val match = matchService.getMatch(matchId)
-        if (match != null) {
-            if (match.players.any { player -> player.playerId == playerId } ) {
-                match.connectedPlayers.add(joinMessage.playerId) // add the player as having connect to the match
-            }
-            val matchState = matchService.createMatchStateMessage(match)
-            messagingTemplate.convertAndSendToUser(
-                joinMessage.playerId,
-                "/queue/match/$matchId/state",
-                matchState
-            )
+        if (match.players.any { player -> player.playerId == playerId }) {
+            match.connectedPlayers.add(joinMessage.playerId) // add the player as having connect to the match
         }
+        val matchState = matchService.createMatchStateMessage(match)
+        messagingTemplate.convertAndSendToUser(
+            joinMessage.playerId,
+            "/queue/match/$matchId/state",
+            matchState
+        )
 
         //when both players are connected start the match
-        if (match != null && match.connectedPlayers.size == 2 && match.matchStarted.compareAndSet(false, true)) {
+        if (match.connectedPlayers.size == 2 && match.matchStarted.compareAndSet(false, true)) {
             startMatch(matchId)
             val matchState = matchService.createMatchStateMessage(match)
             messagingTemplate.convertAndSend(
@@ -240,6 +303,43 @@ class MatchWebSocketController(
                 message = "Match started!"
             )
         )
+        val match = matchService.getMatch(matchId)!!
+        val activeTurn = match.activeTurn
+        val botSide = if(match.whitePlayer is Player.Bot) WHITE else BLACK
+        if (activeTurn == WHITE && botSide == WHITE ) {
+            val botMove = matchService.calculateMove(match.board!!, match.botModelType!!)
+            val botMoveMessage = MoveMessage(
+                matchId,
+                playerId = match.players.find { it is Player.Bot }?.playerId ?: "BOT",
+                from = botMove.from.toAlgebraic(),
+                to = botMove.to.toAlgebraic(),
+                promotion = botMove.promotion,
+            )
+            val botMatchStateMessage = matchService.processMove(matchId, botMoveMessage)
+            val botMoveNotification = MoveNotification(
+                matchId,
+                botMoveMessage.from,
+                botMoveMessage.to,
+                botMoveMessage.promotion,
+                botMoveMessage.playerId
+            )
+            val botStateMessage = matchService.createMatchStateMessage(match, botMoveNotification)
+
+            // Broadcast updated state to all players
+            messagingTemplate.convertAndSend(
+                "/topic/match/$matchId/state",
+                botStateMessage
+            )
+
+            // Send the specific move notification
+            botMatchStateMessage.lastMove?.let { lastMove ->
+                messagingTemplate.convertAndSend(
+                    "/topic/match/$matchId/moves",
+                    botMoveNotification
+                )
+            }
+        }
+
     }
 
     /**

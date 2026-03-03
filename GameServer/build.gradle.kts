@@ -29,6 +29,7 @@ extra["springCloudVersion"] = "2025.1.1"
 extra["springGrpcVersion"] = "1.0.2"
 
 dependencies {
+    implementation(project(":ChessLibrary"))
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springframework.boot:spring-boot-starter-session-data-redis")
@@ -52,9 +53,9 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.springframework.grpc:spring-grpc-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    implementation(project(":ChessLibrary"))
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.security:spring-security-messaging")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
 }
 
 dependencyManagement {

@@ -1,15 +1,18 @@
 package org.checkmateplus.gameserver.service
 
-import org.checkmateplus.chessLibrary.chessEngine.BoardState
-import org.checkmateplus.chessLibrary.chessEngine.Board
-import org.checkmateplus.chessLibrary.chessEngine.Colour.*
-import org.checkmateplus.chessLibrary.chessEngine.Move
-import org.checkmateplus.chessLibrary.chessEngine.PieceType
-import org.checkmateplus.chessLibrary.chessEngine.toSquare
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.checkmateplus.chessLibrary.botEngine.BotEngine
+import org.checkmateplus.chessLibrary.chessEngine.*
+import org.checkmateplus.chessLibrary.chessEngine.Colour.BLACK
+import org.checkmateplus.chessLibrary.chessEngine.Colour.WHITE
+import org.checkmateplus.chessLibrary.playerModels.BotModelType
+import org.checkmateplus.chessLibrary.playerModels.MatchType
 import org.checkmateplus.chessLibrary.playerModels.Player
 import org.checkmateplus.chessLibrary.playerModels.TimeControl
 import org.checkmateplus.gameserver.models.MatchState
 import org.checkmateplus.gameserver.models.messages.MatchStateMessage
+import org.checkmateplus.gameserver.models.messages.MoveMessage
 import org.checkmateplus.gameserver.models.messages.MoveNotification
 import org.checkmateplus.gameserver.models.messages.TimeUpdateMessage
 import org.springframework.stereotype.Service
@@ -36,10 +39,14 @@ class MatchService {
     fun createMatch(
         matchId: String,
         players: List<Player>,
-        timeControl: TimeControl
+        timeControl: TimeControl,
+        matchType: MatchType,
+        botModelType: BotModelType?
     ): MatchState {
-        val matchState =
-            MatchState(players, matchId, timeControl)
+        val matchState = MatchState(
+            players, matchId, timeControl, matchType, botModelType
+        )
+
         matches[matchId] = matchState
         return matchState
     }
@@ -56,38 +63,27 @@ class MatchService {
      * @return The updated [MatchStateMessage].
      */
     fun processMove(
-        matchId: String,
-        moveMessage: org.checkmateplus.gameserver.models.messages.MoveMessage
+        matchId: String, moveMessage: MoveMessage
     ): MatchStateMessage {
-        val match = matches[matchId]
-            ?: throw IllegalArgumentException("Match not found: $matchId")
-        var board = match.board
-            ?: throw IllegalStateException("Board not initialized")
-        /*
-        TODO: Implement validation from chess engine to detect illicit moves. Waiting for chess engine implementation first though
-        */
+        val match = matches[matchId] ?: throw IllegalArgumentException("Match not found: $matchId")
+        val board = match.board ?: throw IllegalStateException("Board not initialized")
+
 
         // execute the move on the local board
         match.board = board.applyMove(
             Move(
                 from = moveMessage.from.toSquare() ?: throw IllegalArgumentException("Invalid from square"),
                 to = moveMessage.to.toSquare() ?: throw IllegalArgumentException("Invalid to square"),
-                promotion = moveMessage.promotion as PieceType?
+                promotion = moveMessage.promotion
             )
 
         )
-        //needs to be re-enabled when move execution is enabled
-        //if (!moveSuccess) {
-        //   throw IllegalArgumentException("Illegal move")
-        //}
-
-
         // Update time with increment
         updateTimeAfterMove(match, match.board)
 
         //flip the active turn
-        if (match.activeTurn == WHITE) match.activeTurn = BLACK
-        if (match.activeTurn == BLACK) match.activeTurn = WHITE
+        flipTurn(match)
+
 
         // Create move notification
         val moveNotification = MoveNotification(
@@ -101,9 +97,8 @@ class MatchService {
         return createMatchStateMessage(match, moveNotification)
     }
 
-    private fun updateTimeAfterMove(
-        match: MatchState,
-        board: Board?
+    fun updateTimeAfterMove(
+        match: MatchState, board: Board?
     ) {
         val increment = match.timeControl.increment
 
@@ -132,9 +127,7 @@ class MatchService {
      * @param onTimeExpired Callback when a player's time expires.
      */
     fun startTimer(
-        matchId: String,
-        onTimeUpdate: (TimeUpdateMessage) -> Unit,
-        onTimeExpired: (String) -> Unit
+        matchId: String, onTimeUpdate: (TimeUpdateMessage) -> Unit, onTimeExpired: (String) -> Unit
     ) {
         val match = matches[matchId] ?: return
 
@@ -179,6 +172,10 @@ class MatchService {
         }, 1000, 1000)
     }
 
+    fun flipTurn(match: MatchState) {
+        match.activeTurn = if (match.activeTurn == WHITE) BLACK else WHITE
+    }
+
     fun stopTimer(matchId: String) {
         timers[matchId]?.cancel()
         timers.remove(matchId)
@@ -189,16 +186,13 @@ class MatchService {
     }
 
     fun resumeTimer(
-        matchId: String,
-        onTimeUpdate: (TimeUpdateMessage) -> Unit,
-        onTimeExpired: (String) -> Unit
+        matchId: String, onTimeUpdate: (TimeUpdateMessage) -> Unit, onTimeExpired: (String) -> Unit
     ) {
         startTimer(matchId, onTimeUpdate, onTimeExpired)
     }
 
     fun resign(matchId: String, playerId: String): String {
-        val match = matches[matchId]
-            ?: throw IllegalArgumentException("Match not found")
+        val match = matches[matchId] ?: throw IllegalArgumentException("Match not found")
         stopTimer(matchId)
 
         val resigningPlayer = match.players.find { it.playerId == playerId }
@@ -226,11 +220,9 @@ class MatchService {
      * Send the MatchState
      */
     fun createMatchStateMessage(
-        match: MatchState?,
-        lastMove: MoveNotification? = null
+        match: MatchState?, lastMove: MoveNotification? = null
     ): MatchStateMessage {
-        match?.board
-            ?: throw IllegalStateException("Board not initialized")
+        match?.board ?: throw IllegalStateException("Board not initialized")
         val boardState = match.board!!.getBoardState()
         var isCheckmate = false
         var isCheck = false
@@ -264,13 +256,18 @@ class MatchService {
     }
 
     fun getActiveMatchCount(): Int {
-        return matches.size;
+        return matches.size
     }
 
     fun getActivePlayerCount(): Int {
         var count = 0
         matches.forEach { (_, matchstate) -> matchstate.players.forEach { _ -> count++ } }
         return count
+    }
+
+    fun calculateMove(board: Board, botModelType: BotModelType): Move {
+        return BotEngine.create(botModelType).getMove(board)
+
     }
 }
 
