@@ -1,6 +1,9 @@
 # A 310 MB file. Could be added to corpus but I'll leave it out of git for now.
 src/main/resources/movetimes3481887positions.csv
 
+# 117 MB
+src/main/resources/movetimes3481887positions-withMoveNumber-withoutPieces.csv
+
 # 106 GB
 src/main/resources/lichess_db_univ_2019-01.pgn
 src/main/resources/lichess_db_univ_2019-01 (edited).pgn
