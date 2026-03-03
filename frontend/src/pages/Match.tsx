@@ -42,7 +42,7 @@ function Match() {
 
         const client = new Client({
             webSocketFactory: () => socket,
-            debug: (str: string) => console.log(str),
+            debug: (str: string) => null, // DON'T INCLUDE THIS CHANGE
             onConnect: () => {
 
                 // Subscribe to your specific user queue for status updates
@@ -87,13 +87,34 @@ function Match() {
                     if (match.lastMove) {
                         const move = { from: algebraicToSquare(match.lastMove.from), to: algebraicToSquare(match.lastMove.to), promotion: match.lastMove.promotion };
                         setPieceOrigins(prev => {
-                            if (!prev.get(move.from)) {
+                            const originOfSquareMovedFrom = prev.get(move.from);
+                            if (originOfSquareMovedFrom === undefined || originOfSquareMovedFrom === null) {
                                 // if pieceOrigins has already been updated with a move, the square we're moving from will have no origin (be undefined)
                                 // therefore we should leave pieceOrigins as is.
                                 return prev;
                             }
                             const newPieceOrigins = new Map(prev);
                             const origin = prev.get(move.from) ?? move.from;
+                            const whiteCastledKingside = origin == 60 && move.to == 62;
+                            const whiteCastledQueenside = origin == 60 && move.to == 58;
+                            const blackCastledKingside = origin == 4 && move.to == 6;
+                            const blackCastledQueenside = origin == 4 && move.to == 2;
+                            if(whiteCastledKingside) {
+                                newPieceOrigins.set(61, 63);
+                                newPieceOrigins.delete(63);
+                            }
+                            if(whiteCastledQueenside) {
+                                newPieceOrigins.set(59, 56);
+                                newPieceOrigins.delete(56);
+                            }
+                            if(blackCastledKingside) {
+                                newPieceOrigins.set(5, 7);
+                                newPieceOrigins.delete(7);
+                            }
+                            if(blackCastledQueenside) {
+                                newPieceOrigins.set(3, 0);
+                                newPieceOrigins.delete(0);
+                            }
                             newPieceOrigins.set(move.to, origin);
                             newPieceOrigins.delete(move.from);
                             return newPieceOrigins;
