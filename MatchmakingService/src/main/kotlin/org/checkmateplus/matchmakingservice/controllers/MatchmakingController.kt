@@ -84,7 +84,7 @@ class MatchmakingController(
                     match.players[1],
                     match.timeControl,
                     match.matchType,
-                    match.botModelType
+                    match.botConfiguration
                 )
 
                 if (allocation.success) {

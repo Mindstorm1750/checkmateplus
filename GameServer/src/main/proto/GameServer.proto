@@ -30,7 +30,7 @@ message ServerRequest {
   int32 initial_time_minutes = 8;
   int32 increment_seconds = 9;
   string matchType = 10;
-  string botModelType = 11;
+  string botConfiguration = 11;
 }
 
 message ServerResponse {
@@ -57,7 +57,7 @@ message AllocateMatchRequest {
   int32 initial_time_seconds = 8;
   int32 increment_seconds = 9;
   string matchType = 10;
-  string botModelType = 11;
+  string botConfiguration = 11;
 
 }
 ///Server shutting down remove from pool

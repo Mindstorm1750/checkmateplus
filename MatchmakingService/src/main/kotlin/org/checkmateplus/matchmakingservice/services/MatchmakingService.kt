@@ -77,7 +77,7 @@ class MatchmakingService(
      * @throws IllegalStateException if the player is already in a queue.
      */
     fun joinQueue(
-        player: Player, matchType: MatchType, timeControl: TimeControl?, botModelType: BotModelType?
+        player: Player, matchType: MatchType, timeControl: TimeControl?, botConfiguration: BotConfiguration?
     ): Match? {
 
 
@@ -97,12 +97,12 @@ class MatchmakingService(
         when (matchType) {
             MatchType.PVE -> {
                 requireNotNull(timeControl) { "timeControl is required for PvE queues" }
-                requireNotNull(botModelType) { "botModelType is required for PvE queues" }
+                requireNotNull(botConfiguration) { "botConfiguration is required for PvE queues" }
                 val bot = Player.Bot(
-                    botModelType = botModelType,
+                    botModelType = botConfiguration.botModelType,
                 )
 
-                return createMatch(listOf(player, bot), matchType, timeControl, botModelType)
+                return createMatch(listOf(player, bot), matchType, timeControl, botConfiguration)
 
             }
 
@@ -249,14 +249,14 @@ class MatchmakingService(
      */
     @OptIn(ExperimentalTime::class)
     private fun createMatch(
-        players: List<Player>, matchType: MatchType, timeControl: TimeControl, botModelType: BotModelType?
+        players: List<Player>, matchType: MatchType, timeControl: TimeControl, botConfiguration: BotConfiguration?
     ): Match {
         val match = Match(
             players = players,
             timeControl = timeControl,
             status = MatchStatus.PENDING,
             matchType = matchType,
-            botModelType = botModelType
+            botConfiguration = botConfiguration
         )
 
         // Store match in Redis

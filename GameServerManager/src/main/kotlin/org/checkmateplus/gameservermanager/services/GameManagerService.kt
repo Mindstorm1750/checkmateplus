@@ -163,7 +163,7 @@ class GameManagerService : MatchManagerGrpc.MatchManagerImplBase() {
                 .setBlackPlayerName(request.blackPlayerName)
                 .setInitialTimeSeconds(request.initialTimeMinutes * 60)
                 .setIncrementSeconds(request.incrementSeconds)
-                .setBotModelType(request.botModelType)
+                .setBotConfiguration(request.botConfiguration)
                 .setMatchType(request.matchType)
                 .build()
 

@@ -11,6 +11,7 @@ import org.checkmateplus.chessLibrary.chessEngine.Colour
 import org.checkmateplus.chessLibrary.chessEngine.Colour.BLACK
 import org.checkmateplus.chessLibrary.chessEngine.Colour.WHITE
 import org.checkmateplus.chessLibrary.chessEngine.toAlgebraic
+import org.checkmateplus.chessLibrary.playerModels.BotMoveTimeModelType
 import org.checkmateplus.chessLibrary.playerModels.MatchType
 import org.checkmateplus.chessLibrary.playerModels.Player
 import org.checkmateplus.gameserver.models.MatchState
@@ -95,17 +96,22 @@ class MatchWebSocketController(
 
 
             val match = matchService.getMatch(matchId)
-            if (match?.matchType == MatchType.PVE && match.botModelType != null) {
+            if (match?.matchType == MatchType.PVE && match.botConfiguration?.botModelType != null) {
                 val botColour = if (match.players[0] is Player.Bot) WHITE else BLACK
 
                 if (botColour == match.activeTurn) {
                     CoroutineScope(Dispatchers.Default).launch {
                         val botMove = coroutineScope {
                             val moveDeferred = async(Dispatchers.Default) {
-                                matchService.calculateMove(match.board!!, match.botModelType)
+                                matchService.calculateMove(match.board!!, match.botConfiguration.botModelType)
                             }
                             val delayDeferred = async {
-                                delay(2240) // for median delay
+                                when(match.botConfiguration.botMoveTimeModelType) {
+                                    BotMoveTimeModelType.NODELAY -> delay(0)
+                                    BotMoveTimeModelType.MEDIAN -> delay(2240)
+                                    BotMoveTimeModelType.REALISTIC -> delay(0) // TODO
+                                }
+
                             }
                             awaitAll(moveDeferred, delayDeferred)
                             moveDeferred.await()
@@ -325,7 +331,7 @@ class MatchWebSocketController(
         val activeTurn = match.activeTurn
         val botSide = if(match.whitePlayer is Player.Bot) WHITE else BLACK
         if (activeTurn == WHITE && botSide == WHITE ) {
-            val botMove = matchService.calculateMove(match.board!!, match.botModelType!!)
+            val botMove = matchService.calculateMove(match.board!!, match.botConfiguration?.botModelType!!)
             val botMoveMessage = MoveMessage(
                 matchId,
                 playerId = match.players.find { it is Player.Bot }?.playerId ?: "BOT",

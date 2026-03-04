@@ -1,6 +1,7 @@
 package org.checkmateplus.matchmakingservice.models
 
 import kotlinx.serialization.Serializable
+import org.checkmateplus.chessLibrary.playerModels.BotConfiguration
 import org.checkmateplus.chessLibrary.playerModels.BotModelType
 import org.checkmateplus.chessLibrary.playerModels.Player
 import org.checkmateplus.chessLibrary.playerModels.MatchStatus
@@ -32,7 +33,7 @@ data class Match(
     val createdAt: Instant = Clock.System.now(),
     val status: MatchStatus = MatchStatus.PENDING,
     val matchType: MatchType,
-    val botModelType: BotModelType? = null,
+    val botConfiguration: BotConfiguration? = null,
 ) {
     init {
         require(players.size >= 2) {
