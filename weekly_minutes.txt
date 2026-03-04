@@ -268,4 +268,23 @@ David approves the poster and the survey questions.
 
 David suggests maybe saving on compute time by caching the engine's results for a board. If a board has happened before, then we can return a move instantly.
 
+# 2-3-2026 meeting
+
+## Project deployed
+
+Project is deployed and a demonstration was conducted by visiting checkmateplus.org
+
+## Realistic move time feature
+
+Since complicated and big neural network move-time models yields insignificant improvements over a simple linear regression model, a simple linear regression model will be used.
+
+## Poster fair
+
+David recommends at least 2 people at the stand so the others are free to explore.
+
+David recommends everybody have good knowledge of every area of the project because the second-marker will be there.
+
+## Future meetings
+
+Future meetings will be held next term. No more meetings this term.
 
