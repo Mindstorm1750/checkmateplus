@@ -1,5 +1,12 @@
 package org.checkmateplus.gameserver.controllers
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.checkmateplus.chessLibrary.chessEngine.Colour
 import org.checkmateplus.chessLibrary.chessEngine.Colour.BLACK
 import org.checkmateplus.chessLibrary.chessEngine.Colour.WHITE
@@ -92,38 +99,49 @@ class MatchWebSocketController(
                 val botColour = if (match.players[0] is Player.Bot) WHITE else BLACK
 
                 if (botColour == match.activeTurn) {
-                    val botMove = matchService.calculateMove(match.board!!, match.botModelType)
-                    val botMoveMessage = MoveMessage(
-                        matchId,
-                        playerId = match.players.find { it is Player.Bot }?.playerId ?: "BOT",
-                        from = botMove.from.toAlgebraic(),
-                        to = botMove.to.toAlgebraic(),
-                        promotion = botMove.promotion,
-                    )
-                    val botMatchStateMessage = matchService.processMove(matchId, botMoveMessage)
-                    val botMoveNotification = MoveNotification(
-                        matchId,
-                        botMoveMessage.from,
-                        botMoveMessage.to,
-                        botMoveMessage.promotion,
-                        botMoveMessage.playerId
-                    )
-                    val botStateMessage = matchService.createMatchStateMessage(match, botMoveNotification)
-
-                    // Broadcast updated state to all players
-                    messagingTemplate.convertAndSend(
-                        "/topic/match/$matchId/state",
-                        botStateMessage
-                    )
-
-                    // Send the specific move notification
-                    matchState.lastMove?.let { lastMove ->
-                        messagingTemplate.convertAndSend(
-                            "/topic/match/$matchId/moves",
-                            botMoveNotification
+                    CoroutineScope(Dispatchers.Default).launch {
+                        val botMove = coroutineScope {
+                            val moveDeferred = async(Dispatchers.Default) {
+                                matchService.calculateMove(match.board!!, match.botModelType)
+                            }
+                            val delayDeferred = async {
+                                delay(2240) // for median delay
+                            }
+                            awaitAll(moveDeferred, delayDeferred)
+                            moveDeferred.await()
+                        }
+                        val botMoveMessage = MoveMessage(
+                            matchId,
+                            playerId = match.players.find { it is Player.Bot }?.playerId ?: "BOT",
+                            from = botMove.from.toAlgebraic(),
+                            to = botMove.to.toAlgebraic(),
+                            promotion = botMove.promotion,
                         )
+                        val botMatchStateMessage = matchService.processMove(matchId, botMoveMessage)
+                        val botMoveNotification = MoveNotification(
+                            matchId,
+                            botMoveMessage.from,
+                            botMoveMessage.to,
+                            botMoveMessage.promotion,
+                            botMoveMessage.playerId
+                        )
+                        val botStateMessage = matchService.createMatchStateMessage(match, botMoveNotification)
+
+                        // Broadcast updated state to all players
+                        messagingTemplate.convertAndSend(
+                            "/topic/match/$matchId/state",
+                            botStateMessage
+                        )
+
+                        // Send the specific move notification
+                        matchState.lastMove?.let { lastMove ->
+                            messagingTemplate.convertAndSend(
+                                "/topic/match/$matchId/moves",
+                                botMoveNotification
+                            )
+                        }
+                        handleGameEndConditions(matchId, botStateMessage)
                     }
-                    handleGameEndConditions(matchId, botStateMessage)
                 }
             }
 
