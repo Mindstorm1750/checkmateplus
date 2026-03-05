@@ -64,7 +64,7 @@ class MatchmakingController(
                 player,
                 matchType = request.matchType,
                 timeControl = request.timeControl,
-                botModelType = request.botConfiguration?.botModelType
+                botConfiguration = request.botConfiguration
             )
 
             if (match == null) {

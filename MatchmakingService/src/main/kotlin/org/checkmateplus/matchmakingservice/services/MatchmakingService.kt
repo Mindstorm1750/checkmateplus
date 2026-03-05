@@ -310,7 +310,7 @@ class MatchmakingService(
         blackPlayer: Player,
         timeControl: TimeControl,
         matchType: MatchType,
-        botModelType: BotModelType?
+        botConfiguration: BotConfiguration?
     ): ServerAllocationResult {
 
         try {
@@ -320,8 +320,8 @@ class MatchmakingService(
             logger.info("  Time: ${timeControl.name} (${timeControl.minutes}+${timeControl.increment})")
             logger.info("  Game mode: $matchType ")
 
-            if (botModelType != null) {
-                logger.info("  BotModelType: $botModelType")
+            if (botConfiguration != null) {
+                logger.info("  BotConfiguration: $botConfiguration")
             }
 
             val request =
@@ -329,7 +329,16 @@ class MatchmakingService(
                     .setWhitePlayerName(whitePlayer.displayName).setBlackPlayerId(blackPlayer.playerId)
                     .setBlackPlayerName(blackPlayer.displayName).setInitialTimeMinutes(timeControl.minutes)
                     .setIncrementSeconds(timeControl.increment).setMatchType(matchType.toString())
-                    .setBotModelType(botModelType.toString()).build()
+                    .apply {
+                        botConfiguration?.let {
+                            setBotConfiguration(
+                                GameServerProto.BotConfiguration.newBuilder()
+                                    .setBotModelType(GameServerProto.BotModelType.valueOf(it.botModelType.name))
+                                    .setBotMoveTimeModelType(GameServerProto.BotMoveTimeModelType.valueOf(it.botMoveTimeModelType.name))
+                                    .build()
+                            )
+                        }
+                    }.build()
 
             val response = stub.requestServer(request)
 

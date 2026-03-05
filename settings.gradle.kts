@@ -5,5 +5,4 @@ include(
     "MatchmakingService",
     "GameServer",
     "GameServerManager",
-    "EngineMoveTimeModel"
 )

@@ -19,6 +19,23 @@ service MatchManager {
 service ServerAllocator {
   rpc RequestServer(ServerRequest) returns (ServerResponse);
 }
+
+enum BotModelType {
+  RANDOM = 0;
+  MINMAX = 1;
+}
+
+enum BotMoveTimeModelType {
+  NODELAY = 0;
+  MEDIAN = 1;
+  REALISTIC = 2;
+}
+
+message BotConfiguration {
+  BotModelType bot_model_type = 1;
+  BotMoveTimeModelType bot_move_time_model_type = 2;
+}
+
 message ServerRequest {
   string match_id = 1;
   string white_player_id = 2;
@@ -30,7 +47,7 @@ message ServerRequest {
   int32 initial_time_minutes = 8;
   int32 increment_seconds = 9;
   string matchType = 10;
-  string botConfiguration = 11;
+  optional BotConfiguration bot_configuration = 11;
 }
 
 message ServerResponse {
@@ -57,7 +74,7 @@ message AllocateMatchRequest {
   int32 initial_time_seconds = 8;
   int32 increment_seconds = 9;
   string matchType = 10;
-  string botConfiguration = 11;
+  optional BotConfiguration bot_configuration = 11;
 
 }
 ///Server shutting down remove from pool

@@ -1,11 +1,10 @@
 package org.checkmateplus.gameserver.service
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.checkmateplus.chessLibrary.botEngine.BotEngine
 import org.checkmateplus.chessLibrary.chessEngine.*
 import org.checkmateplus.chessLibrary.chessEngine.Colour.BLACK
 import org.checkmateplus.chessLibrary.chessEngine.Colour.WHITE
+import org.checkmateplus.chessLibrary.playerModels.BotConfiguration
 import org.checkmateplus.chessLibrary.playerModels.BotModelType
 import org.checkmateplus.chessLibrary.playerModels.MatchType
 import org.checkmateplus.chessLibrary.playerModels.Player
@@ -41,10 +40,10 @@ class MatchService {
         players: List<Player>,
         timeControl: TimeControl,
         matchType: MatchType,
-        botModelType: BotModelType?
+        botConfiguration: BotConfiguration?
     ): MatchState {
         val matchState = MatchState(
-            players, matchId, timeControl, matchType, botModelType
+            players, matchId, timeControl, matchType, botConfiguration
         )
 
         matches[matchId] = matchState
