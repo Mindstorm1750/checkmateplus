@@ -7,12 +7,13 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.checkmateplus.chessLibrary.botEngine.calculateMoveTimeDelayMs
 import org.checkmateplus.chessLibrary.chessEngine.Colour
 import org.checkmateplus.chessLibrary.chessEngine.Colour.BLACK
 import org.checkmateplus.chessLibrary.chessEngine.Colour.WHITE
 import org.checkmateplus.chessLibrary.chessEngine.toAlgebraic
-import org.checkmateplus.chessLibrary.playerModels.BotMoveTimeModelType
 import org.checkmateplus.chessLibrary.playerModels.MatchType
+import org.checkmateplus.chessLibrary.playerModels.MoveTimeModelFeatures
 import org.checkmateplus.chessLibrary.playerModels.Player
 import org.checkmateplus.gameserver.models.MatchState
 import org.checkmateplus.gameserver.models.messages.*
@@ -75,6 +76,8 @@ class MatchWebSocketController(
         moveMessage: MoveMessage
     ) {
         try {
+            val match = matchService.getMatch(matchId)
+            val timePlayerTook = match!!.activePlayerTimeAtTurnStart - (if(match.activeTurn == Colour.WHITE) match.whitePlayerTime else match.blackPlayerTime)
             // Process the move
             val matchState = matchService.processMove(matchId, moveMessage)
 
@@ -94,28 +97,31 @@ class MatchWebSocketController(
             // Handle game end conditions
             handleGameEndConditions(matchId, matchState)
 
-
-            val match = matchService.getMatch(matchId)
             if (match?.matchType == MatchType.PVE && match.botConfiguration?.botModelType != null) {
                 val botColour = if (match.players[0] is Player.Bot) WHITE else BLACK
 
                 if (botColour == match.activeTurn) {
                     CoroutineScope(Dispatchers.Default).launch {
                         val botMove = coroutineScope {
+                            val moveTimeModelFeatures = MoveTimeModelFeatures(
+                                moveNumber = match.board?.fullMoveNumber ?: 0,
+                                initialTime = match.timeControl.minutes * 60,
+                                increment = match.timeControl.increment,
+                                timeRemaining = (if (match.activeTurn == Colour.WHITE) match.whitePlayerTime else match.blackPlayerTime).toDouble(),
+                                timeOpponentTook = timePlayerTook.toDouble(),
+                                numberOfLegalMoves = match.board?.generateLegalMoves()?.size ?: 0,
+                                inCheck = match.board?.isInCheck(match.activeTurn) ?: false,
+                            )
                             val moveDeferred = async(Dispatchers.Default) {
                                 matchService.calculateMove(match.board!!, match.botConfiguration.botModelType)
                             }
                             val delayDeferred = async {
-                                when(match.botConfiguration.botMoveTimeModelType) {
-                                    BotMoveTimeModelType.NODELAY -> delay(0)
-                                    BotMoveTimeModelType.MEDIAN -> delay(2240)
-                                    BotMoveTimeModelType.REALISTIC -> delay(0) // TODO
-                                }
-
+                                    delay(calculateMoveTimeDelayMs(match.botConfiguration.botMoveTimeModelType, moveTimeModelFeatures))
                             }
                             awaitAll(moveDeferred, delayDeferred)
                             moveDeferred.await()
                         }
+
                         val botMoveMessage = MoveMessage(
                             matchId,
                             playerId = match.players.find { it is Player.Bot }?.playerId ?: "BOT",

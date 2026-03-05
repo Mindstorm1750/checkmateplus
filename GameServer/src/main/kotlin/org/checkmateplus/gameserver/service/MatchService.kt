@@ -102,14 +102,17 @@ class MatchService {
         val increment = match.timeControl.increment
 
         // Add increment to the player who just moved
+        // Also update activePlayerTimeAtTurnStart
         // Current turn is now the OTHER player after the move
         when (board?.sideToMove) {
             BLACK -> {
+                match.activePlayerTimeAtTurnStart = match.blackPlayerTime
                 // White just moved
                 match.whitePlayerTime += increment
             }
 
             WHITE -> {
+                match.activePlayerTimeAtTurnStart = match.whitePlayerTime
                 // Black just moved
                 match.blackPlayerTime += increment
             }

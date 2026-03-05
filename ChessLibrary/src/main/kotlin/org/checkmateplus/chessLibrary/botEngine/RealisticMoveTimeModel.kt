@@ -2,6 +2,7 @@ package org.checkmateplus.chessLibrary.botEngine
 
 import org.checkmateplus.chessLibrary.playerModels.BotMoveTimeModelType
 import org.checkmateplus.chessLibrary.playerModels.MoveTimeModelFeatures
+import kotlin.math.max
 
 /**
  * @return a Long representing milliseconds
@@ -27,4 +28,14 @@ private fun calculateRealisticDelay(features: MoveTimeModelFeatures): Long {
     val number_of_legal_moves = features.numberOfLegalMoves * 0.038792908621827236
     val in_check = if (features.inCheck) 0.5525076768512188 else 0.0
     val intercept = 0.2430456998921584
+    val sum = move_number +
+              initial_time +
+              increment +
+              time_remaining_for_this_position +
+              time_opponent_took +
+              number_of_legal_moves +
+              in_check +
+              intercept
+
+    return max(1000L * sum.toLong(), 0) // don't return a negative value
 }

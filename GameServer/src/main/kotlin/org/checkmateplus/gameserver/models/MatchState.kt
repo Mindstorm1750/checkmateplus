@@ -23,6 +23,13 @@ class MatchState(
     var board: Board? = null
     var whitePlayerTime: Int = timeControl.minutes * 60 //set up timers
     var blackPlayerTime: Int = timeControl.minutes * 60
+
+    /**
+     * This field doesn't decrement in real-time,
+     * but instead a snapshot of the active player's clock when they began their turn.
+     * Used to calculate timeOpponentTook for MoveTimeModelFeatures
+     */
+    var activePlayerTimeAtTurnStart: Int = timeControl.minutes * 60
     var activeTurn: Colour = Colour.WHITE
     var whitePlayer: Player? = null
     var blackPlayer: Player? = null
