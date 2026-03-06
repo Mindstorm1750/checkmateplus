@@ -12,6 +12,7 @@ import org.checkmateplus.chessLibrary.chessEngine.Colour
 import org.checkmateplus.chessLibrary.chessEngine.Colour.BLACK
 import org.checkmateplus.chessLibrary.chessEngine.Colour.WHITE
 import org.checkmateplus.chessLibrary.chessEngine.toAlgebraic
+import org.checkmateplus.chessLibrary.chessEngine.toSquare
 import org.checkmateplus.chessLibrary.playerModels.MatchType
 import org.checkmateplus.chessLibrary.playerModels.MoveTimeModelFeatures
 import org.checkmateplus.chessLibrary.playerModels.Player
@@ -77,7 +78,11 @@ class MatchWebSocketController(
     ) {
         try {
             val match = matchService.getMatch(matchId)
+
+            // these are for if the match is PVE (a bot match) and the bot is using the realistic move time feature
             val timePlayerTook = match!!.activePlayerTimeAtTurnStart - (if(match.activeTurn == Colour.WHITE) match.whitePlayerTime else match.blackPlayerTime)
+            val wasCapture = match.board?.squares?.get(moveMessage.to.toSquare() ?: throw IllegalArgumentException("moveMessage has no 'to' square")) != null
+
             // Process the move
             val matchState = matchService.processMove(matchId, moveMessage)
 
@@ -97,13 +102,14 @@ class MatchWebSocketController(
             // Handle game end conditions
             handleGameEndConditions(matchId, matchState)
 
-            if (match?.matchType == MatchType.PVE && match.botConfiguration?.botModelType != null) {
+            if (match.matchType == MatchType.PVE && match.botConfiguration?.botModelType != null) {
                 val botColour = if (match.players[0] is Player.Bot) WHITE else BLACK
 
                 if (botColour == match.activeTurn) {
                     CoroutineScope(Dispatchers.Default).launch {
                         val botMove = coroutineScope {
                             val moveTimeModelFeatures = MoveTimeModelFeatures(
+                                wasCapture = wasCapture,
                                 moveNumber = match.board?.fullMoveNumber ?: 0,
                                 initialTime = match.timeControl.minutes * 60,
                                 increment = match.timeControl.increment,

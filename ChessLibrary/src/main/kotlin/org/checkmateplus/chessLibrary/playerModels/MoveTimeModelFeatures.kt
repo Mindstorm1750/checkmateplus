@@ -2,6 +2,10 @@ package org.checkmateplus.chessLibrary.playerModels
 
 data class MoveTimeModelFeatures(
     /**
+     * Was the most recent move a capture?
+     */
+    val wasCapture: Boolean,
+    /**
      * Refers to Board's fullMoveNumber
      */
     val moveNumber: Int,
