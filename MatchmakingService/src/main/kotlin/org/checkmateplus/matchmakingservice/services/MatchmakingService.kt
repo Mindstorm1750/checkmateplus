@@ -99,7 +99,7 @@ class MatchmakingService(
                 requireNotNull(timeControl) { "timeControl is required for PvE queues" }
                 requireNotNull(botConfiguration) { "botConfiguration is required for PvE queues" }
                 val bot = Player.Bot(
-                    botModelType = botConfiguration.botModelType,
+                    botConfiguration = botConfiguration,
                 )
 
                 return createMatch(listOf(player, bot), matchType, timeControl, botConfiguration)

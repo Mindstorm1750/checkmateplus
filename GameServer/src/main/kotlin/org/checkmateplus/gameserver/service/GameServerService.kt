@@ -145,8 +145,14 @@ class GameServerService(
             logger.info("Allocating match ${request.matchId}")
             val whitePlayer: Player
             val blackPlayer: Player
-            if (request.hasBotConfiguration()) {
-                val bot = Player.Bot(botModelType = BotModelType.valueOf(request.botConfiguration.botModelType.name))
+            val botConfiguration: BotConfiguration? = if (request.hasBotConfiguration()) {
+                BotConfiguration(
+                    botModelType = BotModelType.valueOf(request.botConfiguration.botModelType.name),
+                    botMoveTimeModelType = BotMoveTimeModelType.valueOf(request.botConfiguration.botMoveTimeModelType.name)
+                )
+            } else null
+            if (botConfiguration != null) {
+                val bot = Player.Bot(botConfiguration = botConfiguration)
                 val human = Player.Anonymous(
                     displayName = request.whitePlayerName, playerId = request.whitePlayerId
                 )
@@ -189,11 +195,7 @@ class GameServerService(
                 players = listOf(whitePlayer, blackPlayer),
                 timeControl = timeControl,
                 matchType = MatchType.valueOf(request.matchType),
-                botConfiguration = if(!request.hasBotConfiguration()) null
-                    else BotConfiguration(
-                        botModelType = BotModelType.valueOf(request.botConfiguration.botModelType.name),
-                        botMoveTimeModelType = BotMoveTimeModelType.valueOf(request.botConfiguration.botMoveTimeModelType.name)
-                    )
+                botConfiguration = botConfiguration
             )
             logger.info("Created match: ${request.matchId} with players $whitePlayer & $blackPlayer of type ${request.matchType}")
             val response =
