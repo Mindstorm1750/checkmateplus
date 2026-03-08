@@ -10,6 +10,8 @@ import type { MatchFoundEvent } from "@/lib/stompMessageTypes/MatchMakingService
 import { Spinner } from "@/components/ui/spinner"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { type TimeControl, TimeControlToStringMap } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/TimeControl"
+import { Info } from "lucide-react"
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 
 function App() {
   const navigate = useNavigate();
@@ -24,11 +26,9 @@ function App() {
     </Layout>)
 }
 
-/**
- * For now there aren't any options to customise, so we just give the two buttons of "join queue" or "cancel" in this dialog
- */
 const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
   const [inQueue, setInQueue] = useState<boolean>(false);
+  const [timeControl, setTimeControl] = useState<TimeControl>();
   const titleText = "Play against humans";
   const descriptionText = "Get matched with other players";
   const navigate = useNavigate();
@@ -57,6 +57,7 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
       },
       onStompError: (frame: { headers: { [x: string]: string; }; }) => {
         console.log({ error: frame });
+        console.log({ error: frame });
       },
     });
 
@@ -66,7 +67,7 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
 
   const joinQueue = () => {
     if (stompClient.current?.connected) {
-      const joinRequest: JoinRequest = { displayName: `UserWhoJoinedAt${Date.now()}`, matchType: 'CASUAL_PVP' }; // TODO use player's displayName (or playerId if types/classes have changed)
+      const joinRequest: JoinRequest = { displayName: `UserWhoJoinedAt${Date.now()}`, matchType: 'CASUAL_PVP', timeControl }; // TODO use player's displayName (or playerId if types/classes have changed)
       stompClient.current.publish({
         destination: "/app/join",
         body: JSON.stringify(joinRequest)
@@ -85,6 +86,7 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
           <DialogTitle className="font-bold">{titleText}</DialogTitle>
           <DialogDescription className="text-sm">{descriptionText}</DialogDescription>
         </DialogHeader>
+        <SelectTimeControl callBack={setTimeControl} includeAny/>
         <DialogFooter>
           <DialogClose asChild>
             <Button variant='outline'>Cancel</Button>{/** TODO: make this button exit queue and disconnect */}
@@ -160,29 +162,47 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
           <DialogClose asChild>
             <Button variant='outline'>Cancel</Button>
           </DialogClose>
-          <Button onClick={connect} disabled={inQueue}>Play</Button>
+          <Button onClick={connect} variant={inQueue ? 'secondary' : 'default'} disabled={inQueue}>
+            {inQueue && <Spinner data-icon='inline-start' />}
+            {inQueue ? 'Joining...' : 'Play'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   )
 }
 
-export const SelectTimeControl = ({ callBack }: { callBack: Dispatch<SetStateAction<TimeControl | undefined>> }) => {
-  return (<Select onValueChange={(timeControl) => callBack(timeControl as TimeControl)}>
-    <SelectTrigger>
-      <SelectValue placeholder='Select a time control' />
-    </SelectTrigger>
-    <SelectContent>
-      <SelectGroup>
-        {
-          [...TimeControlToStringMap.entries()].map((entry) => {
-            const [value, label] = entry;
-            return <SelectItem key={value} value={value.toString()}>{label}</SelectItem>
-          })
-        }
-      </SelectGroup>
-    </SelectContent>
-  </Select>);
+export const SelectTimeControl = ({ callBack, includeAny = false }: { callBack: Dispatch<SetStateAction<TimeControl | undefined>>, includeAny?: Boolean }) => {
+  return (<div className='flex items-center gap-2'>
+    <Select onValueChange={(timeControl) => callBack((timeControl == "ANY" ? undefined : timeControl) as TimeControl)}>
+      <SelectTrigger>
+        <SelectValue placeholder='Select a time control' />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectGroup>
+          {includeAny && <SelectItem key="ANY" value="ANY">Any</SelectItem>}
+          {
+            [...TimeControlToStringMap.entries()].map((entry) => {
+              const [value, label] = entry;
+              return <SelectItem key={value} value={value.toString()}>{label}</SelectItem>
+            })
+          }
+        </SelectGroup>
+      </SelectContent>
+    </Select>
+    <HoverCard>
+      <HoverCardTrigger>
+        <Info />
+      </HoverCardTrigger>
+      <HoverCardContent>
+        <div className="text-sm">
+          <p>Time controls are shown as X+Y:</p>
+          <p>X minutes per player, with Y seconds added after each move.</p>
+        </div>
+      </HoverCardContent>
+    </HoverCard>
+
+  </div>);
 }
 
 export default App
