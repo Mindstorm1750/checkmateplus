@@ -42,7 +42,7 @@ function Match() {
 
         const client = new Client({
             webSocketFactory: () => socket,
-            debug: (str: string) => null, // DON'T INCLUDE THIS CHANGE
+            debug: (str: string) => console.log(str),
             onConnect: () => {
 
                 // Subscribe to your specific user queue for status updates
@@ -52,12 +52,12 @@ function Match() {
                     if (body.eventType == 'MATCH_ENDED') {
                         // if the game has ended in checkmate, stalemate, or is a draw
                         setIsGameOver(true);
-                        setGameOverMessage(body.message);
+                        setGameOverMessage(`${body.message} MatchId: ${matchId}`);
                     }
                     if (body.eventType == 'TIME_EXPIRED') {
                         // if the game has ended due to time
                         setIsGameOver(true);
-                        setGameOverMessage(body.message);
+                        setGameOverMessage(`${body.message} MatchId: ${matchId}`);
                     }
                 });
 

@@ -11,6 +11,7 @@ import org.checkmateplus.chessLibrary.botEngine.calculateMoveTimeDelayMs
 import org.checkmateplus.chessLibrary.chessEngine.Colour
 import org.checkmateplus.chessLibrary.chessEngine.Colour.BLACK
 import org.checkmateplus.chessLibrary.chessEngine.Colour.WHITE
+import org.checkmateplus.chessLibrary.chessEngine.FenToBoard
 import org.checkmateplus.chessLibrary.chessEngine.toAlgebraic
 import org.checkmateplus.chessLibrary.chessEngine.toSquare
 import org.checkmateplus.chessLibrary.playerModels.MatchType
@@ -200,16 +201,18 @@ class MatchWebSocketController(
         when {
             matchState.isCheckmate -> {
                 //if winner declared by engine
-                val winner = "TEST WINNER" //TODO: Needs to be update with engine
+                val colourOfWinner = FenToBoard(matchState.fen).sideToMove.opposite()
+                val winnerDisplayName =
+                    if (colourOfWinner == Colour.WHITE) matchState.whitePlayer!!.displayName else matchState.blackPlayer!!.displayName
                 messagingTemplate.convertAndSend(
                     "/topic/match/$matchId/events",
                     MatchEventMessage(
                         matchId = matchId,
                         eventType = MatchEventType.MATCH_ENDED,
-                        message = "Checkmate! $winner wins!",
+                        message = "Checkmate! $winnerDisplayName wins!",
                         data = mapOf(
                             "result" to "checkmate",
-                            "winner" to winner
+                            "winner" to winnerDisplayName
                         )
                     )
                 )
