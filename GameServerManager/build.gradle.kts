@@ -87,14 +87,36 @@ sourceSets {
 }
 
 tasks.bootBuildImage {
+    var tag = ""
     var projectname = project.name.lowercase(Locale.getDefault())
     var projectVersion = project.version.toString().lowercase()
-    imageName = "git.cs.kent.ac.uk:5050/jhl28/checkmate/${projectname}:${projectVersion}"
+    var CommitSha = System.getenv("CI_COMMIT_SHA") ?: ""
+    if (CommitSha != "") {
+        tag = CommitSha
+    } else tag = projectVersion
+    imageName = "git.cs.kent.ac.uk:5050/jhl28/checkmate/${projectname}:${tag}"
     environment.set(mapOf(
         "BP_SPRING_AOT_ENABLED" to "true",
         "BP_JVM_CDS_ENABLED" to "true",
-        "BP_NATIVE_IMAGE" to "true" //if you want to disable comment out the native image plugin and set to false here!
+        "BP_NATIVE_IMAGE" to "true", //if you want to disable comment out the native image plugin and set to false here!
+        "BP_NATIVE_IMAGE_BUILD_ARGUMENTS" to """
+            -march=x86-64-v3
+            --gc=G1 
+            -O3
+            """.trimIndent(),
+        "BP_JVM_VERSION" to "25",
+        // G1GC for less stop the world pauses, higher throughput
+        // -O3 enables higher tier optimizations giving higher throughput and faster startup
+        // it seems the default march might be x86-64-v3 but im forcing this to allow for compatibility while retaining
+        // the instruction set optimizations
+        "BP_BINARY_COMPRESSION_METHOD" to "upx" //*29.97% image compression
     ))
+    buildpacks = listOf("docker.io/paketobuildpacks/oracle", "urn:cnb:builder:paketo-buildpacks/java-native-image")
+    // we have to use the oracle variant of the buildpack rather than BellSoft Liberica to give us access to g1gc
+    // if there is an issue with using the oracle graalvm variant simply comment out the line and remove g1gc from
+    // the build args
+    // if you want a very quick build use -Ob it will cause less performance as the image will not receive optimization
+    // also disables machine-learning PGO!
 }
 tasks.withType<Test> {
     useJUnitPlatform()

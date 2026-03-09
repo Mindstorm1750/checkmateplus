@@ -48,7 +48,8 @@ class GameManagerService : MatchManagerGrpc.MatchManagerImplBase() {
                 ipAddress = request.ipAddress,
                 port = request.port,
                 maxMatches = request.maxConcurrentMatches,
-                lastheartbeatTime = System.currentTimeMillis()
+                lastheartbeatTime = System.currentTimeMillis(),
+                websocketUrl = request.websocketUrl
             )
 
             val channel = ManagedChannelBuilder.forAddress(request.ipAddress,request.port)
@@ -193,7 +194,7 @@ class GameManagerService : MatchManagerGrpc.MatchManagerImplBase() {
                         GameServerProto.AllocatedServer.newBuilder()
                             .setServerId(server.value.serverId)
                             .setMatchId(request.matchId)
-                            .setWebsocketUrl(server.value.ipAddress) //NOTE: when running for real the domain should be added
+                            .setWebsocketUrl(server.value.websocketUrl) //NOTE: when running for real the domain should be added
                             .setEstimatedWaitSeconds(0)
                             .build()
                     )

@@ -16,6 +16,7 @@ class SecurityConfig {
         http
             .csrf { it.disable() } // Disable CSRF for game APIs
             .authorizeHttpRequests { auth ->
+                auth.requestMatchers("/actuator/health/**").permitAll()
                 auth.requestMatchers("/matchmaking/**").permitAll() // Handled by WS security
                 auth.anyRequest().authenticated()
             }

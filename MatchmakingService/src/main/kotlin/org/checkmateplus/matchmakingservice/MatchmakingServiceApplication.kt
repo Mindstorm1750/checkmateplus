@@ -2,12 +2,13 @@ package org.checkmateplus.matchmakingservice
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
+import org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration
 
 /**
  * Main entry point for the Matchmaking Service application.
  * This service handles player matchmaking queues and coordinates server allocations.
  */
-@SpringBootApplication
+@SpringBootApplication(exclude = [UserDetailsServiceAutoConfiguration::class])
 class MatchmakingServiceApplication
 
 fun main(args: Array<String>) {
