@@ -2,6 +2,7 @@ import Layout from "@/components/Layout";
 import { BackArrowLink } from "@/components/ui/back-arrow-link";
 import ChessBoard, { type ChessBoardProps } from "@/components/ui/ChessBoard";
 import { algebraicToSquare, fenToBoard, squareToAlgebraic } from "@/lib/chess.helpers";
+import { usePreferences } from "@/lib/PreferencesContext";
 import type { JoinMatchMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/JoinMatchMessage";
 import type { MatchEventMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchEventMessage";
 import type { MatchStateMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchStateMessage";
@@ -32,6 +33,7 @@ function Match() {
     const [isPlayerWhite, setIsPlayerWhite] = useState<Boolean>(true);
     const [isGameOver, setIsGameOver] = useState<Boolean>(false);
     const [gameOverMessage, setGameOverMessage] = useState<String>();
+    const { preferences, updatePreferences } = usePreferences();
     const stompClient = useRef<Client | null>(null);
     useEffect(() => {
         connect();
@@ -65,7 +67,7 @@ function Match() {
                 client.subscribe(`/topic/match/${matchId}/time`, (message: IMessage) => {
                     const timeUpdate: TimeUpdateMessage = JSON.parse(message.body);
                     const { whitePlayerTime, blackPlayerTime } = timeUpdate;
-                    setClockState({ whitePlayerTime, blackPlayerTime});
+                    setClockState({ whitePlayerTime, blackPlayerTime });
                 });
 
                 // TODO figure out if unneeded as it never seems to receive messages
@@ -100,19 +102,19 @@ function Match() {
                             const whiteCastledQueenside = origin == 60 && move.to == 58;
                             const blackCastledKingside = origin == 4 && move.to == 6;
                             const blackCastledQueenside = origin == 4 && move.to == 2;
-                            if(whiteCastledKingside) {
+                            if (whiteCastledKingside) {
                                 newPieceOrigins.set(61, 63);
                                 newPieceOrigins.delete(63);
                             }
-                            if(whiteCastledQueenside) {
+                            if (whiteCastledQueenside) {
                                 newPieceOrigins.set(59, 56);
                                 newPieceOrigins.delete(56);
                             }
-                            if(blackCastledKingside) {
+                            if (blackCastledKingside) {
                                 newPieceOrigins.set(5, 7);
                                 newPieceOrigins.delete(7);
                             }
-                            if(blackCastledQueenside) {
+                            if (blackCastledQueenside) {
                                 newPieceOrigins.set(3, 0);
                                 newPieceOrigins.delete(0);
                             }
@@ -137,6 +139,9 @@ function Match() {
 
     const joinGame = () => {
         if (stompClient.current?.connected) {
+            const randomAnimationType = Math.random() > 0.5 ? 'FUN' : 'NORMAL';
+            updatePreferences({ animationType: randomAnimationType });
+            // send randomAnimationType to backend, NOT preferences.animationType (stale)
             const joinRequest: JoinMatchMessage = { playerId, matchId: matchId, playerName: `UserWhoJoinedAt${Date.now()}` }; // TODO use player's displayName (or playerId if types/classes have changed)
 
             stompClient.current.publish({

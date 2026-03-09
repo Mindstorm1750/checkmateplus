@@ -2,8 +2,6 @@ import Layout from "@/components/Layout";
 import { BackArrowLink } from "@/components/ui/back-arrow-link";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { usePreferences, type Preferences } from "@/lib/PreferencesContext"
-import { ArrowLeft } from "lucide-react";
-import { Link } from "react-router";
 
 function Settings() {
   const { preferences, updatePreferences } = usePreferences();
