@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { type TimeControl, TimeControlToStringMap } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/TimeControl"
 import { Info } from "lucide-react"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
+import type { QueueStatus } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/QueueStatus"
 
 function App() {
   const navigate = useNavigate();
@@ -42,9 +43,10 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
       debug: (str: string) => console.log(str),
       onConnect: () => {
         // Subscribe to your specific user queue for status updates
-        // client.subscribe('/user/queue/status', (message: IMessage) => {
-        //   const body: QueueStatus = JSON.parse(message.body);
-        // });
+        client.subscribe('/user/queue/status', (message: IMessage) => {
+          const body: QueueStatus = JSON.parse(message.body);
+          console.log('/user/queue/status', { body })
+        });
 
         // Subscribe to match found events
         client.subscribe('/user/queue/match', (message: IMessage) => {
@@ -90,7 +92,7 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
         <SelectTimeControl value={timeControl} callBack={setTimeControl} includeAny />
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant='outline'>Cancel</Button>{/** TODO: make this button exit queue and disconnect */}
+            <Button onClick={() => { stompClient.current?.deactivate(); setInQueue(false) }} variant='outline'>Cancel</Button>{/** TODO: make this button exit queue and disconnect */}
           </DialogClose>
           <Button onClick={connect} variant={inQueue ? 'secondary' : 'default'} disabled={inQueue || timeControl === undefined}>
             {inQueue && <Spinner data-icon='inline-start' />}
@@ -162,7 +164,7 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
         <SelectTimeControl value={timeControl} callBack={setTimeControl} />
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant='outline'>Cancel</Button>
+            <Button onClick={() => { stompClient.current?.deactivate(); setInQueue(false) }} variant='outline'>Cancel</Button>
           </DialogClose>
           <Button onClick={connect} variant={inQueue ? 'secondary' : 'default'} disabled={inQueue || timeControl === undefined}>
             {inQueue && <Spinner data-icon='inline-start' />}
