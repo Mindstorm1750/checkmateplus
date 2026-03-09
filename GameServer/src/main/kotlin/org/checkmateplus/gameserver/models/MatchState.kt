@@ -4,17 +4,17 @@ import org.checkmateplus.chessLibrary.chessEngine.Board
 import org.checkmateplus.chessLibrary.chessEngine.Colour
 import org.checkmateplus.chessLibrary.chessEngine.FenToBoard
 import org.checkmateplus.chessLibrary.chessEngine.STARTING_FEN
-import org.checkmateplus.chessLibrary.playerModels.BotConfiguration
-import org.checkmateplus.chessLibrary.playerModels.BotModelType
+import org.checkmateplus.chessLibrary.botEngine.BotConfiguration
 import org.checkmateplus.chessLibrary.playerModels.MatchType
 import org.checkmateplus.chessLibrary.playerModels.Player
 import org.checkmateplus.chessLibrary.playerModels.TimeControl
+import org.checkmateplus.chessLibrary.playerModels.history.Turn
 import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
 @OptIn(ExperimentalAtomicApi::class)
 class MatchState(
-    var players: List<Player>, //Player White is List position 0 and player black is position 1
+    var players: MutableList<Player>, //Player White is List position 0 and player black is position 1
     val matchId: String,
     val timeControl: TimeControl,
     val matchType: MatchType,
@@ -35,6 +35,7 @@ class MatchState(
     var blackPlayer: Player? = null
     var connectedPlayers: HashSet<String>
     var matchStarted: AtomicBoolean
+    var turnHistory: MutableList<Turn> = mutableListOf()
 
 
 

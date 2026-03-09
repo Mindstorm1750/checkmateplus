@@ -11,12 +11,14 @@ import org.checkmateplus.chessLibrary.botEngine.calculateMoveTimeDelayMs
 import org.checkmateplus.chessLibrary.chessEngine.Colour
 import org.checkmateplus.chessLibrary.chessEngine.Colour.BLACK
 import org.checkmateplus.chessLibrary.chessEngine.Colour.WHITE
-import org.checkmateplus.chessLibrary.chessEngine.FenToBoard
 import org.checkmateplus.chessLibrary.chessEngine.toAlgebraic
 import org.checkmateplus.chessLibrary.chessEngine.toSquare
 import org.checkmateplus.chessLibrary.playerModels.MatchType
-import org.checkmateplus.chessLibrary.playerModels.MoveTimeModelFeatures
+import org.checkmateplus.chessLibrary.botEngine.MoveTimeModelFeatures
+import org.checkmateplus.chessLibrary.playerModels.MatchStatus
 import org.checkmateplus.chessLibrary.playerModels.Player
+import org.checkmateplus.chessLibrary.playerModels.history.MatchOutcome
+import org.checkmateplus.chessLibrary.playerModels.history.MatchRecord
 import org.checkmateplus.gameserver.models.MatchState
 import org.checkmateplus.gameserver.models.messages.*
 import org.checkmateplus.gameserver.service.MatchService
@@ -81,7 +83,7 @@ class MatchWebSocketController(
             val match = matchService.getMatch(matchId)
 
             // these are for if the match is PVE (a bot match) and the bot is using the realistic move time feature
-            val timePlayerTook = match!!.activePlayerTimeAtTurnStart - (if(match.activeTurn == Colour.WHITE) match.whitePlayerTime else match.blackPlayerTime)
+            val timePlayerTook = match!!.activePlayerTimeAtTurnStart - (if(match.activeTurn == WHITE) match.whitePlayerTime else match.blackPlayerTime)
             val wasCapture = match.board?.squares?.get(moveMessage.to.toSquare() ?: throw IllegalArgumentException("moveMessage has no 'to' square")) != null
 
             // Process the move
@@ -123,7 +125,7 @@ class MatchWebSocketController(
                                 matchService.calculateMove(match.board!!, match.botConfiguration.botModelType)
                             }
                             val delayDeferred = async {
-                                    delay(calculateMoveTimeDelayMs(match.botConfiguration.botMoveTimeModelType, moveTimeModelFeatures))
+                                delay(calculateMoveTimeDelayMs(match.botConfiguration.botMoveTimeModelType, moveTimeModelFeatures))
                             }
                             awaitAll(moveDeferred, delayDeferred)
                             moveDeferred.await()
@@ -200,23 +202,39 @@ class MatchWebSocketController(
     private fun handleGameEndConditions(matchId: String, matchState: MatchStateMessage) {
         when {
             matchState.isCheckmate -> {
-                //if winner declared by engine
-                val colourOfWinner = FenToBoard(matchState.fen).sideToMove.opposite()
-                val winnerDisplayName =
-                    if (colourOfWinner == Colour.WHITE) matchState.whitePlayer!!.displayName else matchState.blackPlayer!!.displayName
+                val match = matchService.getMatch(matchId)
+                val losingPlayer = match?.board?.sideToMove
+                val winner = if (losingPlayer == WHITE) match.blackPlayer else match?.whitePlayer
+                val outcome = if (losingPlayer == WHITE) MatchOutcome.BLACK_WINS else MatchOutcome.WHITE_WINS
+                val winnerName = winner!!.displayName
                 messagingTemplate.convertAndSend(
                     "/topic/match/$matchId/events",
                     MatchEventMessage(
                         matchId = matchId,
                         eventType = MatchEventType.MATCH_ENDED,
-                        message = "Checkmate! $winnerDisplayName wins!",
+                        message = "Checkmate! $winnerName wins!",
                         data = mapOf(
                             "result" to "checkmate",
-                            "winner" to winnerDisplayName
+                            "winner" to winnerName
                         )
                     )
                 )
                 matchService.stopTimer(matchId)
+                matchService.addMatchRecord(MatchRecord(
+                    board = match?.board!!,
+                    players = match.players,
+                    matchId = match.matchId,
+                    timeControl = match.timeControl,
+                    matchType = match.matchType,
+                    botConfiguration = match.botConfiguration,
+                    matchOutcome = outcome,
+                    whitePlayer = match.whitePlayer!!,
+                    blackPlayer = match.blackPlayer!!,
+                    remainingWhitePlayerTime = match.whitePlayerTime,
+                    remainingBlackPlayerTime = match.blackPlayerTime,
+                    matchStatus = MatchStatus.COMPLETED,
+                    history = match.turnHistory
+                ))
             }
 
             matchState.isStalemate -> {
@@ -230,6 +248,22 @@ class MatchWebSocketController(
                     )
                 )
                 matchService.stopTimer(matchId)
+                val match = matchService.getMatch(matchId)
+                matchService.addMatchRecord(MatchRecord(
+                    board = match?.board!!,
+                    players = match.players,
+                    matchId = match.matchId,
+                    timeControl = match.timeControl,
+                    matchType = match.matchType,
+                    botConfiguration = match.botConfiguration,
+                    matchOutcome = MatchOutcome.DRAW,
+                    whitePlayer = match.whitePlayer!!,
+                    blackPlayer = match.blackPlayer!!,
+                    remainingWhitePlayerTime = match.whitePlayerTime,
+                    remainingBlackPlayerTime = match.blackPlayerTime,
+                    matchStatus = MatchStatus.COMPLETED,
+                    history = match.turnHistory
+                ))
             }
 
             matchState.isDraw -> {
@@ -243,6 +277,22 @@ class MatchWebSocketController(
                     )
                 )
                 matchService.stopTimer(matchId)
+                val match = matchService.getMatch(matchId)
+                matchService.addMatchRecord(MatchRecord(
+                    board = match?.board!!,
+                    players = match.players,
+                    matchId = match.matchId,
+                    timeControl = match.timeControl,
+                    matchType = match.matchType,
+                    botConfiguration = match.botConfiguration,
+                    matchOutcome = MatchOutcome.DRAW,
+                    whitePlayer = match.whitePlayer!!,
+                    blackPlayer = match.blackPlayer!!,
+                    remainingWhitePlayerTime = match.whitePlayerTime,
+                    remainingBlackPlayerTime = match.blackPlayerTime,
+                    matchStatus = MatchStatus.COMPLETED,
+                    history = match.turnHistory
+                ))
             }
         }
     }
@@ -262,6 +312,7 @@ class MatchWebSocketController(
         logger.info(joinMessage.toString())
 
         val playerId = joinMessage.playerId
+        val playerPreferences = joinMessage.playerPreferences
 
         val match = matchService.getMatch(matchId) ?: run {
             logger.warn("Join attempt for unknown match: $matchId")
@@ -284,6 +335,13 @@ class MatchWebSocketController(
         if (match.players.any { player -> player.playerId == playerId }) {
             match.connectedPlayers.add(joinMessage.playerId) // add the player as having connect to the match
         }
+        val index = match.players.indexOfFirst { it.playerId == playerId }
+        if (index != -1) { //-1 indicates not found!
+            match.players[index] = when (val player = match.players[index]) {
+                is Player.Anonymous -> player.copy(playerPreferences = playerPreferences)
+                is Player.Bot -> player
+            }
+        }
         val matchState = matchService.createMatchStateMessage(match)
         messagingTemplate.convertAndSendToUser(
             joinMessage.playerId,
@@ -292,7 +350,7 @@ class MatchWebSocketController(
         )
 
         //when both players are connected start the match
-        if (match.connectedPlayers.size == 2 && match.matchStarted.compareAndSet(false, true)) {
+        if (match.connectedPlayers.size == 2 && match.matchStarted.compareAndSet(expectedValue = false, newValue = true)) {
             startMatch(matchId)
             val matchState = matchService.createMatchStateMessage(match)
             messagingTemplate.convertAndSend(

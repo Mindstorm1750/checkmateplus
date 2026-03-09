@@ -5,6 +5,7 @@ import io.grpc.ManagedChannelBuilder
 import jakarta.annotation.PostConstruct
 import jakarta.annotation.PreDestroy
 import kotlinx.serialization.json.Json
+import org.checkmateplus.chessLibrary.botEngine.BotConfiguration
 import org.checkmateplus.chessLibrary.playerModels.*
 import org.checkmateplus.gameserver.proto.GameServerProto
 import org.checkmateplus.gameserver.proto.ServerAllocatorGrpc

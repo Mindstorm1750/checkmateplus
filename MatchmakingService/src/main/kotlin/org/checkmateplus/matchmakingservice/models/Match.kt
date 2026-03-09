@@ -1,8 +1,7 @@
 package org.checkmateplus.matchmakingservice.models
 
 import kotlinx.serialization.Serializable
-import org.checkmateplus.chessLibrary.playerModels.BotConfiguration
-import org.checkmateplus.chessLibrary.playerModels.BotModelType
+import org.checkmateplus.chessLibrary.botEngine.BotConfiguration
 import org.checkmateplus.chessLibrary.playerModels.Player
 import org.checkmateplus.chessLibrary.playerModels.MatchStatus
 import org.checkmateplus.chessLibrary.playerModels.MatchType

@@ -4,11 +4,13 @@ import org.checkmateplus.chessLibrary.botEngine.BotEngine
 import org.checkmateplus.chessLibrary.chessEngine.*
 import org.checkmateplus.chessLibrary.chessEngine.Colour.BLACK
 import org.checkmateplus.chessLibrary.chessEngine.Colour.WHITE
-import org.checkmateplus.chessLibrary.playerModels.BotConfiguration
-import org.checkmateplus.chessLibrary.playerModels.BotModelType
+import org.checkmateplus.chessLibrary.botEngine.BotConfiguration
+import org.checkmateplus.chessLibrary.botEngine.BotModelType
 import org.checkmateplus.chessLibrary.playerModels.MatchType
 import org.checkmateplus.chessLibrary.playerModels.Player
 import org.checkmateplus.chessLibrary.playerModels.TimeControl
+import org.checkmateplus.chessLibrary.playerModels.history.MatchRecord
+import org.checkmateplus.chessLibrary.playerModels.history.Turn
 import org.checkmateplus.gameserver.models.MatchState
 import org.checkmateplus.gameserver.models.messages.MatchStateMessage
 import org.checkmateplus.gameserver.models.messages.MoveMessage
@@ -17,6 +19,7 @@ import org.checkmateplus.gameserver.models.messages.TimeUpdateMessage
 import org.springframework.stereotype.Service
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedQueue
 
 /**
  * Service for managing chess matches, including state, timers, and game logic.
@@ -25,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap
 class MatchService {
     private val matches = ConcurrentHashMap<String, MatchState>()
     private val timers = ConcurrentHashMap<String, Timer>()
+    private val matchRecords = ConcurrentLinkedQueue<MatchRecord>()
 
 
     /**
@@ -43,7 +47,7 @@ class MatchService {
         botConfiguration: BotConfiguration?
     ): MatchState {
         val matchState = MatchState(
-            players, matchId, timeControl, matchType, botConfiguration
+            players as MutableList<Player>, matchId, timeControl, matchType, botConfiguration
         )
 
         matches[matchId] = matchState
@@ -67,23 +71,32 @@ class MatchService {
         val match = matches[matchId] ?: throw IllegalArgumentException("Match not found: $matchId")
         val board = match.board ?: throw IllegalStateException("Board not initialized")
 
+        val boardBefore = board.copy() //copy our board we do copy() do avoid object reference
+        //which would cause the before board to be mutated
+        val timeTaken = match.activePlayerTimeAtTurnStart -
+                if (match.activeTurn == WHITE) match.whitePlayerTime else match.blackPlayerTime
 
-        // execute the move on the local board
-        match.board = board.applyMove(
-            Move(
-                from = moveMessage.from.toSquare() ?: throw IllegalArgumentException("Invalid from square"),
-                to = moveMessage.to.toSquare() ?: throw IllegalArgumentException("Invalid to square"),
-                promotion = moveMessage.promotion
-            )
-
+        val move = Move(
+            from = moveMessage.from.toSquare() ?: throw IllegalArgumentException("Invalid from square"),
+            to = moveMessage.to.toSquare() ?: throw IllegalArgumentException("Invalid to square"),
+            promotion = moveMessage.promotion
         )
+        // execute the move on the local board
+        match.board = board.applyMove(move)
         // Update time with increment
         updateTimeAfterMove(match, match.board)
 
         //flip the active turn
         flipTurn(match)
 
-
+        val turn = Turn(
+            player = match.players.first { it.playerId == moveMessage.playerId },
+            move = move,
+            board = boardBefore,
+            fen = boardBefore.toFen(),
+            timeTaken = timeTaken
+        )
+        match.turnHistory.add(turn)
         // Create move notification
         val moveNotification = MoveNotification(
             matchId = matchId,
@@ -144,13 +157,6 @@ class MatchService {
                 when (board.sideToMove) {
                     WHITE -> {
                         match.whitePlayerTime--
-                        onTimeUpdate(
-                            TimeUpdateMessage(
-                                matchId = matchId,
-                                whitePlayerTime = match.whitePlayerTime,
-                                blackPlayerTime = match.blackPlayerTime
-                            )
-                        )
                         if (match.whitePlayerTime <= 0) {
                             match.whitePlayerTime = 0
                             onTimeExpired("WHITE")
@@ -161,13 +167,6 @@ class MatchService {
 
                     BLACK -> {
                         match.blackPlayerTime--
-                        onTimeUpdate(
-                            TimeUpdateMessage(
-                                matchId = matchId,
-                                whitePlayerTime = match.whitePlayerTime,
-                                blackPlayerTime = match.blackPlayerTime
-                            )
-                        )
                         if (match.blackPlayerTime <= 0) {
                             match.blackPlayerTime = 0
                             onTimeExpired("BLACK")
@@ -176,6 +175,14 @@ class MatchService {
                         }
                     }
                 }
+
+                onTimeUpdate(
+                    TimeUpdateMessage(
+                        matchId = matchId,
+                        whitePlayerTime = match.whitePlayerTime,
+                        blackPlayerTime = match.blackPlayerTime
+                    )
+                )
             }
         }, 1000, 1000)
     }
@@ -276,6 +283,9 @@ class MatchService {
     fun calculateMove(board: Board, botModelType: BotModelType): Move {
         return BotEngine.create(botModelType).getMove(board)
 
+    }
+    fun addMatchRecord(record: MatchRecord) {
+        matchRecords.add(record)
     }
 }
 

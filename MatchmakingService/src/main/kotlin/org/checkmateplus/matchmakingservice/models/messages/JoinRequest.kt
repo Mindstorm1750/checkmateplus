@@ -1,6 +1,6 @@
 package org.checkmateplus.matchmakingservice.models.messages
 
-import org.checkmateplus.chessLibrary.playerModels.BotConfiguration
+import org.checkmateplus.chessLibrary.botEngine.BotConfiguration
 import org.checkmateplus.chessLibrary.playerModels.MatchType
 import org.checkmateplus.chessLibrary.playerModels.TimeControl
 
