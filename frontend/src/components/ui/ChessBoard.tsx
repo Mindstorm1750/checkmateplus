@@ -202,7 +202,7 @@ const Clock = ({ time, topClock }: { time: number, topClock: boolean }) => {
     const seconds = formatter((time % 60).toString());
 
     return (
-        <div className={`${topClock ? 'rounded-t-lg' : 'rounded-b-lg'} w-1/8 justify-center items-center text-xs md:text-md lg:text-lg border-outline border-2 text-center p-2`}>{`${minutes}:${seconds}`}</div>
+        <div className={`${topClock ? 'rounded-t-lg' : 'rounded-b-lg'} flex justify-center items-center text-[0.65rem] sm:text-sm md:text-base lg:text-lg border-outline border-2 text-center p-2 w-[12.5%]`}>{`${minutes}:${seconds}`}</div>
     )
 }
 

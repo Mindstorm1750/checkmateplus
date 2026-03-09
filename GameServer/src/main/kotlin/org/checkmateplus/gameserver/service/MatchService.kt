@@ -144,6 +144,13 @@ class MatchService {
                 when (board.sideToMove) {
                     WHITE -> {
                         match.whitePlayerTime--
+                        onTimeUpdate(
+                            TimeUpdateMessage(
+                                matchId = matchId,
+                                whitePlayerTime = match.whitePlayerTime,
+                                blackPlayerTime = match.blackPlayerTime
+                            )
+                        )
                         if (match.whitePlayerTime <= 0) {
                             match.whitePlayerTime = 0
                             onTimeExpired("WHITE")
@@ -154,6 +161,13 @@ class MatchService {
 
                     BLACK -> {
                         match.blackPlayerTime--
+                        onTimeUpdate(
+                            TimeUpdateMessage(
+                                matchId = matchId,
+                                whitePlayerTime = match.whitePlayerTime,
+                                blackPlayerTime = match.blackPlayerTime
+                            )
+                        )
                         if (match.blackPlayerTime <= 0) {
                             match.blackPlayerTime = 0
                             onTimeExpired("BLACK")
@@ -162,14 +176,6 @@ class MatchService {
                         }
                     }
                 }
-
-                onTimeUpdate(
-                    TimeUpdateMessage(
-                        matchId = matchId,
-                        whitePlayerTime = match.whitePlayerTime,
-                        blackPlayerTime = match.blackPlayerTime
-                    )
-                )
             }
         }, 1000, 1000)
     }
