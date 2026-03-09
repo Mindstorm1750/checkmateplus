@@ -57,7 +57,6 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
       },
       onStompError: (frame: { headers: { [x: string]: string; }; }) => {
         console.log({ error: frame });
-        console.log({ error: frame });
       },
     });
 
@@ -67,7 +66,9 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
 
   const joinQueue = () => {
     if (stompClient.current?.connected) {
-      const joinRequest: JoinRequest = { displayName: `UserWhoJoinedAt${Date.now()}`, matchType: 'CASUAL_PVP', timeControl: timeControl == "ANY" ? undefined : timeControl }; // TODO use player's displayName (or playerId if types/classes have changed)
+      // TODO use player's displayName (or playerId if types/classes have changed) in the JoinRequest
+      // TODO randomise animation preference (updatePreferences) and send it in JoinRequest
+      const joinRequest: JoinRequest = { displayName: `UserWhoJoinedAt${Date.now()}`, matchType: 'CASUAL_PVP', timeControl: timeControl == "ANY" ? undefined : timeControl };
       stompClient.current.publish({
         destination: "/app/join",
         body: JSON.stringify(joinRequest)

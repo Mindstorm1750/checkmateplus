@@ -1,4 +1,5 @@
 import Layout from "@/components/Layout";
+import { BackArrowLink } from "@/components/ui/back-arrow-link";
 import ChessBoard, { type ChessBoardProps } from "@/components/ui/ChessBoard";
 import { algebraicToSquare, fenToBoard, squareToAlgebraic } from "@/lib/chess.helpers";
 import type { JoinMatchMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/JoinMatchMessage";
@@ -177,6 +178,7 @@ function Match() {
                         pieceOrigins={pieceOrigins} />
                 </div>
             </div>
+            {isGameOver && <BackArrowLink />}
         </Layout>
     )
 }
