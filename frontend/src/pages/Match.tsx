@@ -37,7 +37,7 @@ function Match() {
     }, [matchId]);
 
     const connect = () => {
-        const socket = new SockJS(`http://${websocketUrl}:8090/match`);
+        const socket = new SockJS(`https://${websocketUrl}/match`);
         // websocketUrl should really be http://localhost:8090 or http://127.0.0.1:8090 and '/match' is to be added by frontend here
 
         const client = new Client({

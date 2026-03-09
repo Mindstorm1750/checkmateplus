@@ -89,6 +89,7 @@ message RegisterServerRequest {
   string ip_address = 2;
   int32 port = 3;
   int32 max_concurrent_matches = 4;
+  string websocket_url = 5;
 }
 
 message RegisterServerResponse {

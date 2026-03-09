@@ -1,0 +1,7 @@
+user_access:
+  access_as:
+    agent: {}
+  projects:
+    - id: jhl28/checkmate
+  groups:
+    - id: jhl28

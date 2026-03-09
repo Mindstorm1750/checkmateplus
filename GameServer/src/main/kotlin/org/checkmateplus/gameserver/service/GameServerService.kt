@@ -15,6 +15,9 @@ import org.checkmateplus.gameserver.proto.GameServerProto
 import org.checkmateplus.gameserver.proto.MatchManagerGrpc
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.availability.AvailabilityChangeEvent
+import org.springframework.boot.availability.LivenessState
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.grpc.server.service.GrpcService
 import org.springframework.scheduling.annotation.Scheduled
 import java.util.concurrent.TimeUnit
@@ -32,7 +35,9 @@ class GameServerService(
     @Value("\${gameservermanager.port}") private val managerPort: Int,
     @Value("\${gameserver.advertise.host}") private val advertiseHost: String,
     @Value("\${gameserver.advertise.grpc-port}") private val advertiseGrpcPort: Int,
-    @Value("\${gameserver.max-concurrent-matches:5}") private val maxConcurrentMatches: Int
+    @Value("\${gameserver.advertiseWebsocketUrl}") private val advertiseWebsocketUrl: String,
+    @Value("\${gameserver.max-concurrent-matches:5}") private val maxConcurrentMatches: Int,
+    private val eventPublisher: ApplicationEventPublisher
 ) : GameServerGrpc.GameServerImplBase() {
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -40,14 +45,23 @@ class GameServerService(
     private lateinit var stub: MatchManagerGrpc.MatchManagerBlockingStub
     private val serverId = System.getenv("HOSTNAME") ?: "localhost"
 
+    companion object {
+        private const val MAX_RETRY_ATTEMPTS = 10
+        private const val INITIAL_BACKOFF_MS = 2_000L
+        private const val MAX_BACKOFF_MS = 60_000L
+        private const val BACKOFF_MULTIPLIER = 2.0
+    }
+
     @PostConstruct
     fun initialize() {
-        channel = ManagedChannelBuilder.forAddress(managerHost, managerPort) //this needs to be changed
+        channel = ManagedChannelBuilder.forAddress(managerHost, managerPort)
             .usePlaintext().build()
 
         stub = MatchManagerGrpc.newBlockingStub(channel)
 
-        registerServer()
+        // Run registration in a background thread so we don't block Spring startup.
+        // The server stays in BROKEN liveness state until registration succeeds.
+        Thread(::registerWithRetry, "registration-thread").start()
     }
 
     @PreDestroy
@@ -55,23 +69,64 @@ class GameServerService(
         channel.shutdown().awaitTermination(5, TimeUnit.SECONDS)
     }
 
-    private fun registerServer() {
-        try {
-            val request =
-                GameServerProto.RegisterServerRequest.newBuilder().setServerId(serverId).setIpAddress(advertiseHost)
-                    .setPort(advertiseGrpcPort).setMaxConcurrentMatches(maxConcurrentMatches).build()
+    /**
+     * Attempts to register with the Match Manager, retrying with exponential backoff
+     * if the manager is not yet available (e.g. during K8s startup ordering).
+     * Liveness is set to CORRECT only after a successful registration, so k8s
+     * will not route traffic until this server is fully ready.
+     */
+    private fun registerWithRetry() {
+        var attempt = 0
+        var backoffMs = INITIAL_BACKOFF_MS
+
+        while (true) {
+            attempt++
+            logger.info("Attempting registration with Match Manager (attempt $attempt/$MAX_RETRY_ATTEMPTS)")
+
+            if (registerServer()) return
+
+            if (attempt >= MAX_RETRY_ATTEMPTS) {
+                logger.error("Exhausted all $MAX_RETRY_ATTEMPTS registration attempts. Marking server as BROKEN.")
+                AvailabilityChangeEvent.publish(eventPublisher, this, LivenessState.BROKEN)
+                return
+            }
+
+            logger.warn("Registration failed. Retrying in ${backoffMs}ms...")
+            Thread.sleep(backoffMs)
+            backoffMs = minOf((backoffMs * BACKOFF_MULTIPLIER).toLong(), MAX_BACKOFF_MS)
+        }
+    }
+
+    /**
+     * Sends a single registration request to the Match Manager.
+     * @return true if registration succeeded, false otherwise.
+     */
+    private fun registerServer(): Boolean {
+        return try {
+            val request = GameServerProto.RegisterServerRequest.newBuilder()
+                .setServerId(serverId)
+                .setIpAddress(advertiseHost)
+                .setPort(advertiseGrpcPort)
+                .setMaxConcurrentMatches(maxConcurrentMatches)
+                .setWebsocketUrl(advertiseWebsocketUrl.ifEmpty { "ws://$advertiseHost:8090" })
+                .build()
 
             val response = stub.registerServer(request)
 
             if (response.success) {
                 logger.info("Registered with manager: ${response.message}")
+                AvailabilityChangeEvent.publish(eventPublisher, this, LivenessState.CORRECT)
+                true
             } else {
-                logger.error("Registration failed: ${response.message}")
+                logger.error("Registration rejected by manager: ${response.message}")
+                false
             }
         } catch (e: Exception) {
-            logger.error("Failed to register", e)
+            logger.error("Registration attempt threw an exception: ${e.message}")
+            false
         }
     }
+
 
     /**
      * Allocates a new match on this server based on a request from the Match Manager.

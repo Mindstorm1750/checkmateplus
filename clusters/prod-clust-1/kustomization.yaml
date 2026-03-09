@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - infrastructure.yaml
+  - flux-app-sync.yaml
+  - namespace.yaml
+  - gitrepository.yaml
+  - sealed-secrets-helmrepository.yaml
+  - sealed-secrets-helmrelease.yaml
+  - gitlab-auth-sealed-secret.yaml
+  - gitlab-registry-sealed-secret.yaml
+  - cloudflared-sealed-secret.yaml

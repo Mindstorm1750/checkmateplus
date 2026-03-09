@@ -20,4 +20,5 @@ data class GameServerInstance(
     var ipAddress: String,
     var port: Int,
     var lastheartbeatTime: Long,
+    val websocketUrl: String
 )

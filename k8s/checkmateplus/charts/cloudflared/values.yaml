@@ -1,0 +1,63 @@
+# Default values for cloudflared.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: cloudflare/cloudflared
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: [ ]
+nameOverride: ""
+fullnameOverride: ""
+
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 128Mi
+
+serviceAccount:
+  create: false
+  name: "checkmateplus-default"
+  #THESE BELOW ARE JUST FOR SHOW
+  #THE ROUTES ARE MANAGED IN THE CLOUDFLARE CONSOLE!!!
+  #THIS SUCKS, SHOULD PROB MOVE TO A COMMMUNITY
+  #CLOUDFLARE GATEWAY FOR AUTO-INGRESS SUPPORT!!!
+ingress:
+  - hostname: checkmateplus.org
+    service: http://checkmateplus-frontend.checkmateplus.svc.cluster.local:80
+  - hostname: gs.checkmateplus.org
+    service: http://checkmateplus-gameserver.checkmateplus.svc.cluster.local:8090
+  - service: http_status:404
+podAnnotations: { }
+
+podSecurityContext: { }
+# fsGroup: 2000
+
+securityContext: { }
+  # capabilities:
+  #   drop:
+  #   - ALL
+# readOnlyRootFilesystem: true
+# runAsNonRoot: true
+# runAsUser: 1000
+#   memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: { }
+
+tolerations: [ ]
+
+affinity: { }

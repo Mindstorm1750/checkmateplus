@@ -1,0 +1,204 @@
+# Default values for checkmateplus.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+global:
+  registry: git.cs.kent.ac.uk:5050/jhl28/checkmate
+  namespace: checkmateplus
+  environment: prod
+  publicDomain: checkmateplus.org
+
+frontend:
+  enabled: true
+  replicas: 1
+  image:
+    repository: git.cs.kent.ac.uk:5050/jhl28/checkmate/frontend
+    tag: latest
+  port: 80
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  service:
+    type: ClusterIP
+  serviceAccount:
+    create: false
+    name: "checkmateplus-default"
+gameserver:
+  enabled: true
+  image:
+    repository: git.cs.kent.ac.uk:5050/jhl28/checkmate/gameserver
+    tag: latest
+  replicaCount: 1
+  service:
+    httpPort: 8090
+    grpcPort: 9091
+env:
+  GAMESERVERMANAGER_HOST: "{{ .Release.Name }}-gameservermanager"
+  GAMESERVERMANAGER_PORT: "9090"
+  GAMESERVER_ADVERTISE_HOST: "{{ .Release.Name }}-gameserver"
+  GAMESERVER_ADVERTISE_GRPCPORT: "9091"
+  GAMESERVER_MAXCONCURRENTMATCHES: "25"
+  SPRING_DATA_REDIS_HOST: "{{ .Release.Name }}-redis-master"
+  SPRING_DATA_REDIS_PORT: "6379"
+  SPRING_PROFILES_ACTIVE: prod
+  resources:
+    requests:
+      cpu: 250m
+      memory: 128Mi
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+  serviceAccount:
+    create: false
+    name: "checkmateplus-default"
+
+gameservermanager:
+  enabled: true
+  image:
+    repository: git.cs.kent.ac.uk:5050/jhl28/checkmate/gameservermanager
+    tag: latest
+  replicaCount: 1
+  service:
+    httpPort: 8081
+    grpcPort: 9090
+  env:
+    SPRING_PROFILES_ACTIVE: prod
+    SPRING_DATA_REDIS_HOST: "{{ .Release.Name }}-redis-master"
+    SPRING_DATA_REDIS_PORT: "6379"
+  resources:
+    requests:
+      cpu: 200m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  serviceAccount:
+    create: false
+    name: "checkmateplus-default"
+
+matchmakingservice:
+  enabled: true
+  image:
+    repository: git.cs.kent.ac.uk:5050/jhl28/checkmate/matchmakingservice
+    tag: latest
+  replicaCount: 1
+  service:
+    httpPort: 8080
+  env:
+    SPRING_PROFILES_ACTIVE: prod
+    GAMESERVERMANAGER_HOST: "{{ .Release.Name }}-gameservermanager"
+    GAMESERVERMANAGER_PORT: "9090"
+    SPRING_DATA_REDIS_HOST: "{{ .Release.Name }}-redis-master"
+    SPRING_DATA_REDIS_PORT: "6379"
+  resources:
+    requests:
+      cpu: 200m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  serviceAccount:
+    create: false
+    name: "checkmateplus-default"
+
+
+
+cloudflared:
+  enabled: true
+  image:
+    repository: cloudflare/cloudflared
+    tag: latest
+  replicaCount: 1
+  tunnelToken: ""  # pass via --set at deploy time
+  #THE TOKEN IS IN THE GITLAB CI/CD VARS
+
+  #THESE BELOW ARE JUST FOR SHOW
+  #THE ROUTES ARE MANAGED IN THE CLOUDFLARE CONSOLE!!!
+  #THIS SUCKS, SHOULD PROB MOVE TO A COMMMUNITY
+  #CLOUDFLARE GATEWAY FOR AUTO-INGRESS SUPPORT!!!
+  ingress:
+    - hostname: checkmateplus.org
+      service: http://checkmateplus-frontend.checkmateplus.svc.cluster.local:80
+    - hostname: ws.checkmateplus.org
+      service: http://checkmateplus-matchmakingservice.checkmateplus.svc.cluster.local:8080
+    - hostname: gs0.checkmateplus.org
+      service: http://checkmateplus-gameserver-0.checkmateplus-gameserver.checkmateplus.svc.cluster.local:8090
+    - service: http_status:404
+
+redis:
+  namespaceOverride: checkmateplus
+  enabled: true
+  auth:
+    enabled: false
+  master:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+  replica:
+    replicaCount: 1
+
+podAnnotations: {}
+
+
+
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

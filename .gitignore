@@ -121,3 +121,6 @@ bin/
 
 ### Kotlin ###
 .kotlin
+### Helm Chart Packages from dep update ###
+*.tgz
+*.lock

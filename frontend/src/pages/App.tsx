@@ -113,10 +113,10 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
       webSocketFactory: () => socket,
       debug: (str: string) => console.log(str),
       onConnect: () => {
-        // Subscribe to your specific user queue for status updates
-        client.subscribe('/user/queue/status', (message: IMessage) => {
-          const body: QueueStatus = JSON.parse(message.body);
-        });
+        // // Subscribe to your specific user queue for status updates
+        // client.subscribe('/user/queue/status', (message: IMessage) => {
+        //   const body: QueueStatus = JSON.parse(message.body);
+        // });
 
         // Subscribe to match found events
         client.subscribe('/user/queue/match', (message: IMessage) => {
@@ -127,7 +127,7 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
 
         joinQueue(); // send join request immediately after connecting
       },
-      onStompError: (frame: { headers: { [x: string]: string; }; }) => {
+      onStompError: () => {
       },
     });
 
