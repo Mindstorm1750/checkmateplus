@@ -43,6 +43,9 @@ sealed class Player {
         override val joinedQueueAt: Instant = Clock.System.now(),
         override val skillRating: Int? = null,
         val difficulty: Int = 1,
-        val botModelType: BotModelType = BotModelType.RANDOM
+        val botConfiguration: BotConfiguration = BotConfiguration(
+            botModelType = BotModelType.RANDOM,
+            botMoveTimeModelType = BotMoveTimeModelType.NODELAY
+        ),
     ) : Player()
 }

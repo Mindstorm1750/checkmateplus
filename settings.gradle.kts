@@ -4,5 +4,5 @@ include(
     "ChessLibrary",
     "MatchmakingService",
     "GameServer",
-    "GameServerManager"
+    "GameServerManager",
 )

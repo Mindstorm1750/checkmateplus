@@ -56,7 +56,7 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
         joinQueue(); // send join request immediately after connecting
       },
       onStompError: (frame: { headers: { [x: string]: string; }; }) => {
-        console.log({error: frame});
+        console.log({ error: frame });
       },
     });
 
@@ -113,7 +113,7 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
       webSocketFactory: () => socket,
       debug: (str: string) => console.log(str),
       onConnect: () => {
-        // // Subscribe to your specific user queue for status updates
+        // Subscribe to your specific user queue for status updates
         // client.subscribe('/user/queue/status', (message: IMessage) => {
         //   const body: QueueStatus = JSON.parse(message.body);
         // });
@@ -127,8 +127,8 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
 
         joinQueue(); // send join request immediately after connecting
       },
-      onStompError: () => {
-      },
+      // onStompError: (frame: { headers: { [x: string]: string; }; }) => {
+      // },
     });
 
     client.activate();
@@ -137,7 +137,7 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
 
   const joinQueue = () => {
     if (stompClient.current?.connected) {
-      const joinRequest: JoinRequest = { displayName: `UserWhoJoinedAt${Date.now()}`, matchType: 'PVE', botModelType: 'MINMAX', timeControl }; // TODO use player's displayName (or playerId if types/classes have changed)
+      const joinRequest: JoinRequest = { displayName: `UserWhoJoinedAt${Date.now()}`, matchType: 'PVE', botConfiguration: { botModelType: 'MINMAX', botMoveTimeModelType: 'REALISTIC' }, timeControl }; // TODO use player's displayName (or playerId if types/classes have changed)
       stompClient.current.publish({
         destination: "/app/join",
         body: JSON.stringify(joinRequest)
@@ -155,7 +155,7 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
         <DialogHeader>
           <DialogTitle className="font-bold">{titleText}</DialogTitle>
         </DialogHeader>
-        <SelectTimeControl callBack={setTimeControl}/>
+        <SelectTimeControl callBack={setTimeControl} />
         <DialogFooter>
           <DialogClose asChild>
             <Button variant='outline'>Cancel</Button>
@@ -167,7 +167,7 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
   )
 }
 
-export const SelectTimeControl = ({callBack}: {callBack: Dispatch<SetStateAction<TimeControl | undefined>>}) => {
+export const SelectTimeControl = ({ callBack }: { callBack: Dispatch<SetStateAction<TimeControl | undefined>> }) => {
   return (<Select onValueChange={(timeControl) => callBack(timeControl as TimeControl)}>
     <SelectTrigger>
       <SelectValue placeholder='Select a time control' />

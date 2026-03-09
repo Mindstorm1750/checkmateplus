@@ -1,4 +1,4 @@
-import type { BotModelType } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/BotModelType";
+import type { BotConfiguration } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/BotConfiguration";
 import type { MatchType } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/MatchType";
 import type { TimeControl } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/TimeControl";
 
@@ -7,4 +7,4 @@ import type { TimeControl } from "@/lib/stompMessageTypes/ChessLibrary/PlayerMod
  *
  * @property displayName The name the player wish to display during the match.
  */
-export type JoinRequest= { displayName: String, matchType: MatchType, timeControl?: TimeControl,  botModelType?: BotModelType }
+export type JoinRequest = { displayName: String, matchType: MatchType, timeControl?: TimeControl,  botConfiguration?: BotConfiguration }

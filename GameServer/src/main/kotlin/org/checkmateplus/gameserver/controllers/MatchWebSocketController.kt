@@ -1,10 +1,20 @@
 package org.checkmateplus.gameserver.controllers
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import org.checkmateplus.chessLibrary.botEngine.calculateMoveTimeDelayMs
 import org.checkmateplus.chessLibrary.chessEngine.Colour
 import org.checkmateplus.chessLibrary.chessEngine.Colour.BLACK
 import org.checkmateplus.chessLibrary.chessEngine.Colour.WHITE
 import org.checkmateplus.chessLibrary.chessEngine.toAlgebraic
+import org.checkmateplus.chessLibrary.chessEngine.toSquare
 import org.checkmateplus.chessLibrary.playerModels.MatchType
+import org.checkmateplus.chessLibrary.playerModels.MoveTimeModelFeatures
 import org.checkmateplus.chessLibrary.playerModels.Player
 import org.checkmateplus.gameserver.models.MatchState
 import org.checkmateplus.gameserver.models.messages.*
@@ -67,6 +77,12 @@ class MatchWebSocketController(
         moveMessage: MoveMessage
     ) {
         try {
+            val match = matchService.getMatch(matchId)
+
+            // these are for if the match is PVE (a bot match) and the bot is using the realistic move time feature
+            val timePlayerTook = match!!.activePlayerTimeAtTurnStart - (if(match.activeTurn == Colour.WHITE) match.whitePlayerTime else match.blackPlayerTime)
+            val wasCapture = match.board?.squares?.get(moveMessage.to.toSquare() ?: throw IllegalArgumentException("moveMessage has no 'to' square")) != null
+
             // Process the move
             val matchState = matchService.processMove(matchId, moveMessage)
 
@@ -86,44 +102,64 @@ class MatchWebSocketController(
             // Handle game end conditions
             handleGameEndConditions(matchId, matchState)
 
-
-            val match = matchService.getMatch(matchId)
-            if (match?.matchType == MatchType.PVE && match.botModelType != null) {
+            if (match.matchType == MatchType.PVE && match.botConfiguration?.botModelType != null) {
                 val botColour = if (match.players[0] is Player.Bot) WHITE else BLACK
 
                 if (botColour == match.activeTurn) {
-                    val botMove = matchService.calculateMove(match.board!!, match.botModelType)
-                    val botMoveMessage = MoveMessage(
-                        matchId,
-                        playerId = match.players.find { it is Player.Bot }?.playerId ?: "BOT",
-                        from = botMove.from.toAlgebraic(),
-                        to = botMove.to.toAlgebraic(),
-                        promotion = botMove.promotion,
-                    )
-                    val botMatchStateMessage = matchService.processMove(matchId, botMoveMessage)
-                    val botMoveNotification = MoveNotification(
-                        matchId,
-                        botMoveMessage.from,
-                        botMoveMessage.to,
-                        botMoveMessage.promotion,
-                        botMoveMessage.playerId
-                    )
-                    val botStateMessage = matchService.createMatchStateMessage(match, botMoveNotification)
+                    CoroutineScope(Dispatchers.Default).launch {
+                        val botMove = coroutineScope {
+                            val moveTimeModelFeatures = MoveTimeModelFeatures(
+                                wasCapture = wasCapture,
+                                moveNumber = match.board?.fullMoveNumber ?: 0,
+                                initialTime = match.timeControl.minutes * 60,
+                                increment = match.timeControl.increment,
+                                timeRemaining = (if (match.activeTurn == Colour.WHITE) match.whitePlayerTime else match.blackPlayerTime).toDouble(),
+                                timeOpponentTook = timePlayerTook.toDouble(),
+                                numberOfLegalMoves = match.board?.generateLegalMoves()?.size ?: 0,
+                                inCheck = match.board?.isInCheck(match.activeTurn) ?: false,
+                            )
+                            val moveDeferred = async(Dispatchers.Default) {
+                                matchService.calculateMove(match.board!!, match.botConfiguration.botModelType)
+                            }
+                            val delayDeferred = async {
+                                    delay(calculateMoveTimeDelayMs(match.botConfiguration.botMoveTimeModelType, moveTimeModelFeatures))
+                            }
+                            awaitAll(moveDeferred, delayDeferred)
+                            moveDeferred.await()
+                        }
 
-                    // Broadcast updated state to all players
-                    messagingTemplate.convertAndSend(
-                        "/topic/match/$matchId/state",
-                        botStateMessage
-                    )
-
-                    // Send the specific move notification
-                    matchState.lastMove?.let { lastMove ->
-                        messagingTemplate.convertAndSend(
-                            "/topic/match/$matchId/moves",
-                            botMoveNotification
+                        val botMoveMessage = MoveMessage(
+                            matchId,
+                            playerId = match.players.find { it is Player.Bot }?.playerId ?: "BOT",
+                            from = botMove.from.toAlgebraic(),
+                            to = botMove.to.toAlgebraic(),
+                            promotion = botMove.promotion,
                         )
+                        val botMatchStateMessage = matchService.processMove(matchId, botMoveMessage)
+                        val botMoveNotification = MoveNotification(
+                            matchId,
+                            botMoveMessage.from,
+                            botMoveMessage.to,
+                            botMoveMessage.promotion,
+                            botMoveMessage.playerId
+                        )
+                        val botStateMessage = matchService.createMatchStateMessage(match, botMoveNotification)
+
+                        // Broadcast updated state to all players
+                        messagingTemplate.convertAndSend(
+                            "/topic/match/$matchId/state",
+                            botStateMessage
+                        )
+
+                        // Send the specific move notification
+                        matchState.lastMove?.let { lastMove ->
+                            messagingTemplate.convertAndSend(
+                                "/topic/match/$matchId/moves",
+                                botMoveNotification
+                            )
+                        }
+                        handleGameEndConditions(matchId, botStateMessage)
                     }
-                    handleGameEndConditions(matchId, botStateMessage)
                 }
             }
 
@@ -307,7 +343,7 @@ class MatchWebSocketController(
         val activeTurn = match.activeTurn
         val botSide = if(match.whitePlayer is Player.Bot) WHITE else BLACK
         if (activeTurn == WHITE && botSide == WHITE ) {
-            val botMove = matchService.calculateMove(match.board!!, match.botModelType!!)
+            val botMove = matchService.calculateMove(match.board!!, match.botConfiguration?.botModelType!!)
             val botMoveMessage = MoveMessage(
                 matchId,
                 playerId = match.players.find { it is Player.Bot }?.playerId ?: "BOT",

@@ -6,7 +6,9 @@ import io.grpc.stub.StreamObserver
 import jakarta.annotation.PostConstruct
 import jakarta.annotation.PreDestroy
 import org.checkmateplus.chessLibrary.chessEngine.Colour
+import org.checkmateplus.chessLibrary.playerModels.BotConfiguration
 import org.checkmateplus.chessLibrary.playerModels.BotModelType
+import org.checkmateplus.chessLibrary.playerModels.BotMoveTimeModelType
 import org.checkmateplus.chessLibrary.playerModels.MatchType
 import org.checkmateplus.chessLibrary.playerModels.Player
 import org.checkmateplus.chessLibrary.playerModels.TimeControl
@@ -139,14 +141,18 @@ class GameServerService(
         request: GameServerProto.AllocateMatchRequest,
         responseObserver: StreamObserver<GameServerProto.AllocateMatchResponse>
     ) {
-
         try {
-
             logger.info("Allocating match ${request.matchId}")
             val whitePlayer: Player
             val blackPlayer: Player
-            if (!(request.botModelType == null || request.botModelType == "null")) {
-                val bot = Player.Bot(botModelType = BotModelType.valueOf(request.botModelType))
+            val botConfiguration: BotConfiguration? = if (request.hasBotConfiguration()) {
+                BotConfiguration(
+                    botModelType = BotModelType.valueOf(request.botConfiguration.botModelType.name),
+                    botMoveTimeModelType = BotMoveTimeModelType.valueOf(request.botConfiguration.botMoveTimeModelType.name)
+                )
+            } else null
+            if (botConfiguration != null) {
+                val bot = Player.Bot(botConfiguration = botConfiguration)
                 val human = Player.Anonymous(
                     displayName = request.whitePlayerName, playerId = request.whitePlayerId
                 )
@@ -189,7 +195,7 @@ class GameServerService(
                 players = listOf(whitePlayer, blackPlayer),
                 timeControl = timeControl,
                 matchType = MatchType.valueOf(request.matchType),
-                botModelType = if(request.botModelType == "null") null else BotModelType.valueOf(request.botModelType)
+                botConfiguration = botConfiguration
             )
             logger.info("Created match: ${request.matchId} with players $whitePlayer & $blackPlayer of type ${request.matchType}")
             val response =
