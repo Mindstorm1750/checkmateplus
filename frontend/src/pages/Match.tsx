@@ -33,7 +33,7 @@ function Match() {
     const [isPlayerWhite, setIsPlayerWhite] = useState<Boolean>(true);
     const [isGameOver, setIsGameOver] = useState<Boolean>(false);
     const [gameOverMessage, setGameOverMessage] = useState<String>();
-    const { preferences, updatePreferences } = usePreferences();
+    const { updatePreferences } = usePreferences();
     const stompClient = useRef<Client | null>(null);
     useEffect(() => {
         connect();
