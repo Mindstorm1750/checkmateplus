@@ -85,14 +85,7 @@
 
             for (square in 0..63) {
                 val piece = squares[square] ?: continue
-                val pieceValue = when (piece.type) {
-                    PieceType.PAWN -> 100
-                    PieceType.KNIGHT -> 320
-                    PieceType.BISHOP -> 330
-                    PieceType.ROOK -> 500
-                    PieceType.QUEEN -> 900
-                    PieceType.KING -> 20000
-                }
+                val pieceValue = pieceValue(piece.type)
 
                 if (piece.color == Colour.WHITE) {
                     score += pieceValue
@@ -407,6 +400,27 @@
             }
         }
 
+        /**
+         * Used to speed up minimaxAlg by prioritising the searching of moves that are likely to be good
+         */
+        fun orderMoves(moves: List<Move>): List<Move> {
+            return moves.sortedByDescending { move ->
+                var priority = 0
+                val moveTarget: PieceType? = squares[move.to]?.type
+                val pieceMoved: PieceType = squares[move.from]!!.type
+                if(moveTarget != null) {
+                    // prioritise captures of valuable pieces, especially if they're captured by a low-value piece
+                    priority += 2 * pieceValue(moveTarget) - pieceValue(pieceMoved)
+                }
+                if(move.promotion != null) {
+                    // prioritise promotions in general, with more priority to more valuable promotions
+                    priority += pieceValue(move.promotion)
+                }
+
+                priority
+            }
+        }
+
         //check if given colors king is in check
         fun isInCheck(color: Colour): Boolean {
             val kingSquare = squares.indexOfFirst {
@@ -515,7 +529,7 @@
                 return evaluate()
             }
 
-            val legalMoves = generateLegalMoves()
+            val legalMoves = orderMoves(generateLegalMoves())
             var currentAlpha = alpha
             var currentBeta = beta
 
@@ -594,6 +608,15 @@
                 }
 
                 return Board(squares = squares)
+            }
+
+            fun pieceValue(type: PieceType) = when (type) {
+                PieceType.PAWN -> 100
+                PieceType.KNIGHT -> 320
+                PieceType.BISHOP -> 330
+                PieceType.ROOK -> 500
+                PieceType.QUEEN -> 900
+                PieceType.KING -> 20000
             }
         }
 

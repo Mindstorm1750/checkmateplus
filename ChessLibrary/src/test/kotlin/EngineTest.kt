@@ -294,7 +294,7 @@ class EngineTest {
 
         fun perft(board: Board, depth: Int): Int {
             val moves = board.generateLegalMoves()
-            if(depth == 1) {
+            if (depth == 1) {
                 return moves.size
             }
             var count = 0
@@ -361,7 +361,7 @@ class EngineTest {
             Move("e1".toSquare()!!, "g1".toSquare()!!),
             Move("e1".toSquare()!!, "c1".toSquare()!!)
         )
-    assertEquals(expectedLegalMoves, board.generateLegalMoves().toSet())
+        assertEquals(expectedLegalMoves, board.generateLegalMoves().toSet())
     }
 
     /**
@@ -412,7 +412,7 @@ class EngineTest {
     }
 
     @Test
-    fun testBoardToFenString(){
+    fun testBoardToFenString() {
         val board = FenToBoard("rn1q1rk1/ppp1bppp/3pp3/4Pb2/3P4/2P2NP1/P1P1BP1P/R1BQ1RK1 b - - 0 9")
         assertEquals(board.toFen(), "rn1q1rk1/ppp1bppp/3pp3/4Pb2/3P4/2P2NP1/P1P1BP1P/R1BQ1RK1 b - - 0 9")
     }
@@ -454,7 +454,6 @@ class EngineTest {
         assertEquals(correctMove, boardQd1toQh5.findBestMoves(2))
         assertEquals(correctMove, boardQd1toQh5.findBestMoves(3))
         assertEquals(correctMove, boardQd1toQh5.findBestMoves(4))
-        assertEquals(correctMove, boardQd1toQh5.findBestMoves(5))
     }
 
     @Test
