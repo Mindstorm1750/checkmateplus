@@ -461,7 +461,7 @@
             val legalMoves = generateLegalMoves()
             if (legalMoves.isEmpty()) return null
 
-            var bestMove = legalMoves[0]
+            val bestMoves = mutableListOf<Move>()//new list to allow for random move choice
             //create best score based on white or black playing (max vs min)
             var bestScore = if (sideToMove == Colour.WHITE) Int.MIN_VALUE else Int.MAX_VALUE
 
@@ -469,20 +469,26 @@
                 val newBoard = applyMove(move)
 
                 val score = newBoard.minimaxAlg(depth - 1, Int.MIN_VALUE, Int.MAX_VALUE)
-                if(sideToMove==Colour.WHITE){
-                    if(score>bestScore){ //White check for best move
+                if(sideToMove==Colour.WHITE) {
+                    if (score > bestScore) { //White check for best move
                         bestScore = score
-                        bestMove = move
+                        bestMoves.clear()
+                        bestMoves.add(move)
+                    } else if (score == bestScore){
+                        bestMoves.add(move)
                     }
 
                 } else{
                     if(score<bestScore){ //Black check for best move
                         bestScore = score
-                        bestMove = move
+                        bestMoves.clear()
+                        bestMoves.add(move)
+                    } else if (score == bestScore){
+                        bestMoves.add(move)
                     }
                 }
             }
-            return bestMove
+            return bestMoves.randomOrNull()
         }
 
 
