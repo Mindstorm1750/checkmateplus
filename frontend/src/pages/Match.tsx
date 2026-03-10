@@ -14,6 +14,7 @@ import { Client, type IMessage } from "@stomp/stompjs";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router";
 import SockJS from 'sockjs-client/dist/sockjs';
+import type {PlayerPreferences} from "@/lib/stompMessageTypes/GameServer/models/messages/PlayerPreferences.ts";
 
 function Match() {
     /**
@@ -33,7 +34,7 @@ function Match() {
     const [isPlayerWhite, setIsPlayerWhite] = useState<Boolean>(true);
     const [isGameOver, setIsGameOver] = useState<Boolean>(false);
     const [gameOverMessage, setGameOverMessage] = useState<String>();
-    const { updatePreferences } = usePreferences();
+    const { preferences, updatePreferences } = usePreferences();
     const stompClient = useRef<Client | null>(null);
     useEffect(() => {
         connect();
@@ -141,8 +142,12 @@ function Match() {
         if (stompClient.current?.connected) {
             const randomAnimationType = Math.random() > 0.5 ? 'FUN' : 'NORMAL';
             updatePreferences({ animationType: randomAnimationType });
-            // send randomAnimationType to backend, NOT preferences.animationType (stale)
-            const joinRequest: JoinMatchMessage = { playerId, matchId: matchId, playerName: `UserWhoJoinedAt${Date.now()}` }; // TODO use player's displayName (or playerId if types/classes have changed)
+            const preferencesForMatch: PlayerPreferences = {
+                boardColour: preferences.boardColor, // boardColour can be read from the now outdated preferences object because we didn't modify it
+                animationType: randomAnimationType
+            }
+            // TODO use player's displayName (or playerId if types/classes have changed)
+            const joinRequest: JoinMatchMessage = { playerId, matchId: matchId, playerName: `UserWhoJoinedAt${Date.now()}`, playerPreferences: preferencesForMatch };
 
             stompClient.current.publish({
                 destination: `/app/match/${matchId}/join`,

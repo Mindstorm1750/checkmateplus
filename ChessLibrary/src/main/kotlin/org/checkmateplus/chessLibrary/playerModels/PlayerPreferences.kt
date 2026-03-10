@@ -5,5 +5,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class PlayerPreferences (
     val boardColour: String,
-    val funAnimation: Boolean,
+    val animationType: String,
 )

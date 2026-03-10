@@ -1,5 +1,9 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 
+/**
+ * Closely related to the PlayerPreferences type.
+ * This type is more restrictive to reflect the actual options users choose from.
+ */
 export type Preferences = {
   boardColor: 'BROWN' | 'BLUE' | 'GREEN';
   animationType: 'NORMAL' | 'FUN';
