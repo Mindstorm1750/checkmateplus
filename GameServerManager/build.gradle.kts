@@ -90,10 +90,10 @@ tasks.bootBuildImage {
     var tag = ""
     var projectname = project.name.lowercase(Locale.getDefault())
     var projectVersion = project.version.toString().lowercase()
-    var CommitSha = System.getenv("CI_COMMIT_SHA") ?: ""
-    if (CommitSha != "") {
-        tag = CommitSha
-    } else tag = projectVersion
+    var commitSha = System.getenv("CI_COMMIT_SHA") ?: ""
+    tag = if (commitSha != "") {
+        commitSha
+    } else projectVersion
     imageName = "git.cs.kent.ac.uk:5050/jhl28/checkmate/${projectname}:${tag}"
     environment.set(mapOf(
         "BP_SPRING_AOT_ENABLED" to "true",
