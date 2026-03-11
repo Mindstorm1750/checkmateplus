@@ -139,36 +139,24 @@ class MatchWebSocketController(
                             promotion = botMove.promotion,
                         )
                         val botMatchStateMessage = matchService.processMove(matchId, botMoveMessage)
-                        val botMoveNotification = MoveNotification(
-                            matchId,
-                            botMoveMessage.from,
-                            botMoveMessage.to,
-                            botMoveMessage.promotion,
-                            botMoveMessage.playerId
-                        )
-                        val botStateMessage = matchService.createMatchStateMessage(match, botMoveNotification)
 
                         // Broadcast updated state to all players
                         messagingTemplate.convertAndSend(
                             "/topic/match/$matchId/state",
-                            botStateMessage
+                            botMatchStateMessage
                         )
 
                         // Send the specific move notification
                         matchState.lastMove?.let { lastMove ->
                             messagingTemplate.convertAndSend(
                                 "/topic/match/$matchId/moves",
-                                botMoveNotification
+                                botMatchStateMessage
                             )
                         }
-                        handleGameEndConditions(matchId, botStateMessage)
+                        handleGameEndConditions(matchId, botMatchStateMessage)
                     }
                 }
             }
-
-            // Handle game end conditions
-            handleGameEndConditions(matchId, matchState)
-
         } catch (e: IllegalArgumentException) {
             // Send error to the player who made the invalid move
             messagingTemplate.convertAndSendToUser(
