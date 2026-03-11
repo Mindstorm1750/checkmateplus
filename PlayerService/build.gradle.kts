@@ -42,10 +42,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("io.grpc:grpc-services")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.springframework.grpc:spring-grpc-client-spring-boot-starter")
-    implementation("org.springframework.grpc:spring-grpc-server-web-spring-boot-starter")
     implementation("org.springframework.security:spring-security-webauthn")
     implementation("tools.jackson.module:jackson-module-kotlin")
+    implementation("org.springframework.grpc:spring-grpc-spring-boot-starter")
     compileOnly("org.projectlombok:lombok")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     runtimeOnly("org.postgresql:postgresql")
@@ -62,6 +61,13 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.springframework.grpc:spring-grpc-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    implementation(project(":ChessLibrary"))
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+    implementation("dev.samstevens.totp:totp:1.7.1") {
+        exclude(group = "com.google.zxing", module = "javase") //resolve vulnerability cve 8.8
+        //actually care cause this is the TOTP lib
+    }
+    implementation("com.google.zxing:core:3.5.3")
 }
 
 dependencyManagement {
@@ -88,25 +94,6 @@ hibernate {
     }
 }
 
-protobuf {
-    protoc {
-        artifact = "com.google.protobuf:protoc"
-    }
-    plugins {
-        id("grpc") {
-            artifact = "io.grpc:protoc-gen-grpc-java"
-        }
-    }
-    generateProtoTasks {
-        all().forEach {
-            it.plugins {
-                id("grpc") {
-                    option("@generated=omit")
-                }
-            }
-        }
-    }
-}
 protobuf {
     protoc {
         artifact = "com.google.protobuf:protoc"

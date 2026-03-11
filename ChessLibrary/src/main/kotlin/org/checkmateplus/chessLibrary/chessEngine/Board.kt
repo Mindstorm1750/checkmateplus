@@ -1,10 +1,11 @@
     package org.checkmateplus.chessLibrary.chessEngine
 
 
+    import kotlinx.serialization.Serializable
     import kotlin.math.abs
     private const val MATE_SCORE = 1000000
 
-
+    @Serializable
     data class Board(
         val squares: Array<Piece?> = Array(64) { null },
         val sideToMove: Colour = Colour.WHITE,

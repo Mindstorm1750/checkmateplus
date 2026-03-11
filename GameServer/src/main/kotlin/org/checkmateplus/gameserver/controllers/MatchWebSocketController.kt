@@ -116,7 +116,7 @@ class MatchWebSocketController(
                                 moveNumber = match.board?.fullMoveNumber ?: 0,
                                 initialTime = match.timeControl.minutes * 60,
                                 increment = match.timeControl.increment,
-                                timeRemaining = (if (match.activeTurn == Colour.WHITE) match.whitePlayerTime else match.blackPlayerTime).toDouble(),
+                                timeRemaining = (if (match.activeTurn == WHITE) match.whitePlayerTime else match.blackPlayerTime).toDouble(),
                                 timeOpponentTook = timePlayerTook.toDouble(),
                                 numberOfLegalMoves = match.board?.generateLegalMoves()?.size ?: 0,
                                 inCheck = match.board?.isInCheck(match.activeTurn) ?: false,
@@ -389,6 +389,23 @@ class MatchWebSocketController(
                         )
                     )
                 )
+                val winner = if (losingColor == "WHITE") MatchOutcome.BLACK_WINS else MatchOutcome.WHITE_WINS
+                val match = matchService.getMatch(matchId)
+                matchService.addMatchRecord(MatchRecord(
+                    board = match?.board!!,
+                    players = match.players,
+                    matchId = match.matchId,
+                    timeControl = match.timeControl,
+                    matchType = match.matchType,
+                    botConfiguration = match.botConfiguration,
+                    matchOutcome = winner,
+                    whitePlayer = match.whitePlayer!!,
+                    blackPlayer = match.blackPlayer!!,
+                    remainingWhitePlayerTime = match.whitePlayerTime,
+                    remainingBlackPlayerTime = match.blackPlayerTime,
+                    matchStatus = MatchStatus.COMPLETED,
+                    history = match.turnHistory
+                ))
             }
         )
 

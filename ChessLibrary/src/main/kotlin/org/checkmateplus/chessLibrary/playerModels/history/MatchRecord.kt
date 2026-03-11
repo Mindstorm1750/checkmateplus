@@ -1,12 +1,13 @@
 package org.checkmateplus.chessLibrary.playerModels.history
 
+import kotlinx.serialization.Serializable
 import org.checkmateplus.chessLibrary.botEngine.BotConfiguration
 import org.checkmateplus.chessLibrary.chessEngine.Board
 import org.checkmateplus.chessLibrary.playerModels.MatchStatus
 import org.checkmateplus.chessLibrary.playerModels.MatchType
 import org.checkmateplus.chessLibrary.playerModels.Player
 import org.checkmateplus.chessLibrary.playerModels.TimeControl
-
+@Serializable
 data class MatchRecord(
     val board: Board, //Final Board
     val players: List<Player>,
