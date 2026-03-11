@@ -2,7 +2,7 @@ import Layout from "@/components/Layout";
 import { BackArrowLink } from "@/components/ui/back-arrow-link";
 import ChessBoard, { type ChessBoardProps } from "@/components/ui/ChessBoard";
 import { algebraicToSquare, fenToBoard, squareToAlgebraic } from "@/lib/chess.helpers";
-import { usePreferences } from "@/lib/PreferencesContext";
+import { usePreferences, type Preferences } from "@/lib/PreferencesContext";
 import type { JoinMatchMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/JoinMatchMessage";
 import type { MatchEventMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchEventMessage";
 import type { MatchStateMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchStateMessage";
@@ -140,7 +140,7 @@ function Match() {
 
     const joinGame = () => {
         if (stompClient.current?.connected) {
-            const randomAnimationType = Math.random() > 0.5 ? 'FUN' : 'NORMAL';
+            const randomAnimationType: Preferences['animationType'] = Math.random() > 0.5 ? 'FUN' : 'NORMAL';
             updatePreferences({ animationType: randomAnimationType });
             const preferencesForMatch: PlayerPreferences = {
                 boardColour: preferences.boardColor, // boardColour can be read from the now outdated preferences object because we didn't modify it
