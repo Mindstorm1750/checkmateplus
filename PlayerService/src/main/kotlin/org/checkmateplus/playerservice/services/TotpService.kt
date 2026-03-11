@@ -17,7 +17,7 @@ class TotpService {
     private val codeGenerator = DefaultCodeGenerator()
     private val timeProvider = SystemTimeProvider()
     private val codeVerifier = DefaultCodeVerifier(codeGenerator, timeProvider).apply {
-        setAllowedTimePeriodDiscrepancy(2) // allow 2 periods drift
+        setAllowedTimePeriodDiscrepancy(2)
     }
 
     fun generateSecret(): String = secretGenerator.generate()
@@ -31,10 +31,7 @@ class TotpService {
             .digits(6)
             .period(30)
             .build()
-            .let { data ->
-                ZxingPngQrGenerator().generate(data)
-                    .let { "data:image/png;base64," + Base64.getEncoder().encodeToString(it) }
-            }
+            .uri
     }
 
     fun verify(secret: String, code: String): Boolean {

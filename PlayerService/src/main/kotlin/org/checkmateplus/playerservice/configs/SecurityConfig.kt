@@ -4,6 +4,7 @@ import org.checkmateplus.playerservice.services.JwtService
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.annotation.Order
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.annotation.web.invoke
@@ -17,6 +18,7 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod
 import org.springframework.security.oauth2.core.oidc.IdTokenClaimNames
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
+import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
@@ -30,15 +32,43 @@ class SecurityConfig(
 ) {
 
     @Bean
-    fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
+    @Order(1)
+    fun publicFilterChain(http: HttpSecurity): SecurityFilterChain {
+        http {
+            securityMatcher("/graphql", "/graphql/**", "/graphiql", "/graphiql/**", "/actuator/health/**","/error")
+            csrf { disable() }
+            cors { }
+            authorizeHttpRequests {
+                authorize(anyRequest, permitAll)
+            }
+        }
+        return http.build()
+    }
+
+    @Bean
+    @Order(2)
+    fun oauthFilterChain(http: HttpSecurity): SecurityFilterChain {
+        http {
+            securityMatcher("/oauth2/**", "/login/oauth2/**")
+            csrf { disable() }
+            cors { }
+            authorizeHttpRequests {
+                authorize(anyRequest, permitAll)
+            }
+            oauth2Login {
+                authenticationSuccessHandler = googleOAuth2SuccessHandler
+            }
+        }
+        return http.build()
+    }
+
+    @Bean
+    @Order(3)
+    fun securedFilterChain(http: HttpSecurity): SecurityFilterChain {
         http {
             csrf { disable() }
             cors { }
             authorizeHttpRequests {
-                authorize("/graphql", permitAll)
-                authorize("/actuator/health/**", permitAll)
-                authorize("/oauth2/**", permitAll)
-                authorize("/login/**", permitAll)
                 authorize(anyRequest, authenticated)
             }
             oauth2ResourceServer {
@@ -46,9 +76,6 @@ class SecurityConfig(
                     jwtDecoder = jwtService.decoder
                     jwtAuthenticationConverter = jwtAuthenticationConverter()
                 }
-            }
-            oauth2Login {
-                authenticationSuccessHandler = googleOAuth2SuccessHandler
             }
             sessionManagement {
                 sessionCreationPolicy = SessionCreationPolicy.IF_REQUIRED

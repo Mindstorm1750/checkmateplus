@@ -4,4 +4,5 @@ class AuthResponse(
     val jwt: String,
     val playerId: String,
     val displayName: String,
+    val isGuest: Boolean,
 )

@@ -43,7 +43,7 @@ class AuthenticationService(
         val account = AccountEntity(
             username = username,
             totpSecret = secret,
-            totpEnabled = false,
+            totpEnabled = true,
             player = player
         )
         accountRepository.save(account)
@@ -57,7 +57,8 @@ class AuthenticationService(
 
 
     fun confirmTotp(playerId: String, code: String): AuthResponse {
-        val account = accountRepository.findById(playerId).orElseThrow() ?: throw IllegalArgumentException("Not a registered player")
+        val account = accountRepository.findByPlayerPlayerId(playerId)
+            ?: throw IllegalArgumentException("Account not found")
 
         val secret = account.totpSecret ?: throw IllegalStateException("No TOTP secret found")
 
@@ -122,21 +123,17 @@ class AuthenticationService(
             playerPreferencesJson = null
         )
         playerRepository.save(player)
-        return issueAuth(player)
+        return issueAuth(player, isGuest = true)
     }
 
-    private fun issueAuth(player: PlayerEntity): AuthResponse {
-        val jwt = jwtService.generate(player.playerId, player.displayName)
-        return AuthResponse(
-            jwt,
-            player.playerId,
-            player.displayName
-        )
+    private fun issueAuth(player: PlayerEntity, isGuest: Boolean = false): AuthResponse {
+        val jwt = jwtService.generate(player.playerId, player.displayName, isGuest)
+        return AuthResponse(jwt, player.playerId, player.displayName, isGuest)
     }
     fun getProfile(playerId: String): PlayerProfile {
 
-        val account = accountRepository.findById(playerId)
-        .orElseThrow { throw IllegalArgumentException("No account found") }
+        val account = accountRepository.findByPlayerPlayerId(playerId)
+            ?: throw IllegalArgumentException("Account not found")
         return PlayerProfile(
             playerId = account.player.playerId,
             displayName = account.player.displayName,
