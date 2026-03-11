@@ -1,0 +1,37 @@
+type Mutation {
+    # Registration
+    register(username: String!): RegisterResponse      # step 1 - returns QR code
+    confirmTotp(code: String!): AuthResponse           # step 2 - activates account
+
+    # Login
+    loginWithTotp(username: String!, code: String!): AuthResponse
+
+    # Guest
+    loginAsGuest: AuthResponse
+
+    # Google OAuth handled via Spring Security redirect, not GraphQL
+}
+
+type Query {
+    me: PlayerProfile
+}
+
+type RegisterResponse {
+    qrCodeUri: String!
+    secret: String!
+    playerId: String!
+}
+
+type AuthResponse {
+    jwt: String!
+    playerId: String!
+    displayName: String!
+}
+
+type PlayerProfile {
+    playerId: String!
+    displayName: String!
+    username: String
+    skillRating: Int
+    totpEnabled: Boolean!
+}

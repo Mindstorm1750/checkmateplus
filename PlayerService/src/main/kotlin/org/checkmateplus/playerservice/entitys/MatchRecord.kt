@@ -9,6 +9,7 @@ import org.checkmateplus.chessLibrary.playerModels.MatchStatus
 import org.checkmateplus.chessLibrary.playerModels.MatchType
 import org.checkmateplus.chessLibrary.playerModels.TimeControl
 import org.checkmateplus.chessLibrary.playerModels.history.MatchOutcome
+import org.checkmateplus.playerservice.entitys.players.PlayerEntity
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
 

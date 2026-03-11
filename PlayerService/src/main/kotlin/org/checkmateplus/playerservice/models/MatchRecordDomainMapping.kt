@@ -10,7 +10,7 @@ import org.checkmateplus.chessLibrary.playerModels.history.MatchOutcome
 import org.checkmateplus.chessLibrary.playerModels.history.Turn
 import org.checkmateplus.gameserver.proto.GameServerProto
 import org.checkmateplus.playerservice.entitys.MatchRecordEntity
-import org.checkmateplus.playerservice.entitys.PlayerEntity
+import org.checkmateplus.playerservice.entitys.players.PlayerEntity
 import org.checkmateplus.playerservice.proto.PlayerServiceProto
 import kotlin.time.Instant
 

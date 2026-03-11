@@ -1,4 +1,4 @@
-package org.checkmateplus.playerservice.entitys
+package org.checkmateplus.playerservice.entitys.players
 
 import jakarta.persistence.Column
 import jakarta.persistence.DiscriminatorColumn

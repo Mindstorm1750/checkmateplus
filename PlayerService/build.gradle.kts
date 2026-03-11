@@ -45,6 +45,8 @@ dependencies {
     implementation("org.springframework.security:spring-security-webauthn")
     implementation("tools.jackson.module:jackson-module-kotlin")
     implementation("org.springframework.grpc:spring-grpc-spring-boot-starter")
+    implementation("org.springframework.boot:spring-boot-starter-security-oauth2-client")
+    implementation("org.springframework.boot:spring-boot-starter-security-oauth2-resource-server")
     compileOnly("org.projectlombok:lombok")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     runtimeOnly("org.postgresql:postgresql")
@@ -63,11 +65,12 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     implementation(project(":ChessLibrary"))
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
-    implementation("dev.samstevens.totp:totp:1.7.1") {
+    implementation("dev.samstevens.totp:totp-spring-boot-starter:1.7.1") {
         exclude(group = "com.google.zxing", module = "javase") //resolve vulnerability cve 8.8
         //actually care cause this is the TOTP lib
     }
     implementation("com.google.zxing:core:3.5.3")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
 }
 
 dependencyManagement {

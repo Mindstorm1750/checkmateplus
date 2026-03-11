@@ -1,9 +1,9 @@
 package org.checkmateplus.playerservice.services
 
 import kotlinx.serialization.json.Json
-import org.checkmateplus.playerservice.entitys.AnonymousPlayerEntity
-import org.checkmateplus.playerservice.entitys.BotPlayerEntity
-import org.checkmateplus.playerservice.entitys.PlayerEntity
+import org.checkmateplus.playerservice.entitys.players.AnonymousPlayerEntity
+import org.checkmateplus.playerservice.entitys.players.BotPlayerEntity
+import org.checkmateplus.playerservice.entitys.players.PlayerEntity
 import org.checkmateplus.playerservice.models.toDomain
 import org.checkmateplus.playerservice.models.toEntity
 import org.checkmateplus.playerservice.proto.PlayerServiceProto
