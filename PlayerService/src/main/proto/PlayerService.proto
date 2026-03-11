@@ -99,12 +99,16 @@ message PlayerPreferences {
 message Player {
   string player_id = 1;
   string display_name = 2;
-  int64 joined_queue_at_epoch_ms = 3; // Instant as epoch millis
+  int64 joined_queue_at_epoch_ms = 3;
   optional int32 skill_rating = 4;
+  optional double rating_deviation = 8;
+  optional double volatility = 9;
+
 
   oneof player_type {
     AnonymousPlayer anonymous = 5;
     BotPlayer bot = 6;
+    RegisteredPlayer registered = 7;
   }
 }
 
@@ -115,6 +119,9 @@ message AnonymousPlayer {
 message BotPlayer {
   int32 difficulty = 1;
   BotConfiguration bot_configuration = 2;
+}
+message RegisteredPlayer {
+  optional PlayerPreferences player_preferences = 1;
 }
 
 message Turn {
@@ -139,4 +146,5 @@ message MatchRecord {
   MatchStatus match_status = 11;
   repeated Turn history = 12;
   optional BotConfiguration bot_configuration = 13;
+  int32 matchCreatedAt = 14;
 }

@@ -7,6 +7,8 @@ import org.checkmateplus.chessLibrary.playerModels.MatchStatus
 import org.checkmateplus.chessLibrary.playerModels.MatchType
 import org.checkmateplus.chessLibrary.playerModels.Player
 import org.checkmateplus.chessLibrary.playerModels.TimeControl
+import kotlin.time.Instant
+
 @Serializable
 data class MatchRecord(
     val board: Board, //Final Board
@@ -21,5 +23,6 @@ data class MatchRecord(
     val remainingWhitePlayerTime: Int,
     val remainingBlackPlayerTime: Int,
     val matchStatus: MatchStatus,
-    val history: List<Turn>
+    val history: List<Turn>,
+    val matchCreationTime: Instant
 )

@@ -1,20 +1,57 @@
 type Mutation {
-    # Registration
-    register(username: String!): RegisterResponse      # step 1 - returns QR code
-    confirmTotp(code: String!): AuthResponse           # step 2 - activates account
-
-    # Login
-    loginWithTotp(username: String!, code: String!): AuthResponse
-
-    # Guest
-    loginAsGuest: AuthResponse
-
-    # Google OAuth handled via Spring Security redirect, not GraphQL
+    register(username: String!): RegisterResponse!
+    confirmTotp(code: String!): AuthResponse!
+    loginWithTotp(username: String!, code: String!): AuthResponse!
+    loginAsGuest: AuthResponse!
+    refresh(refreshToken: String!): AuthResponse!
+    logout(refreshToken: String!): Boolean!
 }
 
 type Query {
     me: PlayerProfile
+    playerStats(playerId: String!): PlayerStats
+    matchHistory(playerId: String!, afterCursor: String, size: Int = 20): MatchHistoryPage
 }
+
+type PlayerStats {
+    playerId: String!
+    displayName: String!
+    skillRating: Int
+    ratingDeviation: Float
+    wins: Int!
+    losses: Int!
+    draws: Int!
+    totalGames: Int!
+    winRate: Int!
+    winsAsWhite: Int!
+    winsAsBlack: Int!
+    gamesAsWhite: Int!
+    gamesAsBlack: Int!
+    currentStreak: Int!
+    longestWinStreak: Int!
+    averageGameDurationMs: Float!
+    favouriteTimeControl: String
+    memberSinceEpochMs: Float!
+}
+
+type MatchHistoryPage {
+    matches: [MatchSummary!]!
+    nextCursor: String
+    hasMore: Boolean!
+}
+
+type MatchSummary {
+    matchId: String!
+    opponentId: String
+    result: MatchResult!
+    colour: String!
+    matchType: String!
+    timeControl: String!
+    gameDurationMs: Float
+    createdAtEpochMs: Float!
+}
+
+enum MatchResult { WIN LOSS DRAW}
 
 type RegisterResponse {
     qrCodeUri: String!
@@ -24,8 +61,10 @@ type RegisterResponse {
 
 type AuthResponse {
     jwt: String!
+    refreshToken: String
     playerId: String!
     displayName: String!
+    isGuest: Boolean!
 }
 
 type PlayerProfile {

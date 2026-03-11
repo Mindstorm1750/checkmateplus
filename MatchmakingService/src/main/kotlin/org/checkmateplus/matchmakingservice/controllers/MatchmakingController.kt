@@ -11,6 +11,8 @@ import org.springframework.aot.hint.annotation.RegisterReflectionForBinding
 import org.springframework.messaging.handler.annotation.MessageMapping
 import org.springframework.messaging.handler.annotation.Payload
 import org.springframework.messaging.simp.SimpMessagingTemplate
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.stereotype.Controller
 import java.security.Principal
 import kotlin.time.ExperimentalTime
@@ -42,21 +44,28 @@ class MatchmakingController(
      * If a match is formed, it immediately requests a server allocation and notifies players.
      *
      * @param request Details of the join request, including display name.
-     * @param principal The authenticated user joining the queue.
+     * @param jwt The authenticated user joining the queue.
      */
     @OptIn(ExperimentalTime::class)
     @MessageMapping("/join")
-    fun joinGame(@Payload request: JoinRequest, principal: Principal) {
+    fun joinGame(@Payload request: JoinRequest, @AuthenticationPrincipal jwt: Jwt) {
         //  Use the ID from the principal
-        val securePlayerId = principal.name
+        val securePlayerId = jwt.subject
+        val displayName = jwt.getClaim<String>("displayName") ?: request.displayName
+        val isGuest = jwt.getClaim<Boolean>("guest") ?: false
 
-        // Create the player object using the ID
-        val player = Player.Anonymous(
-            displayName = request.displayName,
-            playerId = securePlayerId
-        )
-
-        logger.info("Player $securePlayerId (${player.displayName}) joining queue")
+        val player = if (isGuest) {
+            Player.Anonymous(
+                displayName = displayName,
+                playerId = securePlayerId
+            )
+        } else {
+            Player.Registered(
+                displayName = displayName,
+                playerId = securePlayerId
+            )
+        }
+        logger.info("${player.javaClass.name} $securePlayerId (${player.displayName}) joining queue")
 
         try {
             // Add to queue

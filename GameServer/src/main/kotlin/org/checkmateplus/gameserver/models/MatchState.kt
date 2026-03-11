@@ -11,6 +11,8 @@ import org.checkmateplus.chessLibrary.playerModels.TimeControl
 import org.checkmateplus.chessLibrary.playerModels.history.Turn
 import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 @OptIn(ExperimentalAtomicApi::class)
 class MatchState(
@@ -19,6 +21,7 @@ class MatchState(
     val timeControl: TimeControl,
     val matchType: MatchType,
     val botConfiguration: BotConfiguration? = null,
+    val createdAt: Instant = Clock.System.now(),
 ) {
     var board: Board? = null
     var whitePlayerTime: Int = timeControl.minutes * 60 //set up timers

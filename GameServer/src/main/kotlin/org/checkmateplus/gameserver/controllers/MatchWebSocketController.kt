@@ -8,7 +8,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.checkmateplus.chessLibrary.botEngine.calculateMoveTimeDelayMs
-import org.checkmateplus.chessLibrary.chessEngine.Colour
 import org.checkmateplus.chessLibrary.chessEngine.Colour.BLACK
 import org.checkmateplus.chessLibrary.chessEngine.Colour.WHITE
 import org.checkmateplus.chessLibrary.chessEngine.toAlgebraic
@@ -27,6 +26,7 @@ import org.springframework.aot.hint.annotation.RegisterReflectionForBinding
 import org.springframework.messaging.handler.annotation.DestinationVariable
 import org.springframework.messaging.handler.annotation.MessageMapping
 import org.springframework.messaging.simp.SimpMessagingTemplate
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.stereotype.Controller
 import java.security.Principal
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
@@ -81,7 +81,8 @@ class MatchWebSocketController(
     ) {
         try {
             val match = matchService.getMatch(matchId)
-
+            val securePlayerId = (principal as JwtAuthenticationToken).token.subject
+            if (moveMessage.playerId != securePlayerId) throw IllegalAccessException("Player mismatch")
             // these are for if the match is PVE (a bot match) and the bot is using the realistic move time feature
             val timePlayerTook = match!!.activePlayerTimeAtTurnStart - (if(match.activeTurn == WHITE) match.whitePlayerTime else match.blackPlayerTime)
             val wasCapture = match.board?.squares?.get(moveMessage.to.toSquare() ?: throw IllegalArgumentException("moveMessage has no 'to' square")) != null
@@ -160,7 +161,7 @@ class MatchWebSocketController(
         } catch (e: IllegalArgumentException) {
             // Send error to the player who made the invalid move
             messagingTemplate.convertAndSendToUser(
-                moveMessage.playerId,
+                principal.name,
                 "/queue/errors",
                 mapOf(
                     "error" to (e.message ?: "Invalid move"),
@@ -221,7 +222,8 @@ class MatchWebSocketController(
                     remainingWhitePlayerTime = match.whitePlayerTime,
                     remainingBlackPlayerTime = match.blackPlayerTime,
                     matchStatus = MatchStatus.COMPLETED,
-                    history = match.turnHistory
+                    history = match.turnHistory,
+                    matchCreationTime = match.createdAt
                 ))
             }
 
@@ -250,7 +252,8 @@ class MatchWebSocketController(
                     remainingWhitePlayerTime = match.whitePlayerTime,
                     remainingBlackPlayerTime = match.blackPlayerTime,
                     matchStatus = MatchStatus.COMPLETED,
-                    history = match.turnHistory
+                    history = match.turnHistory,
+                    matchCreationTime = match.createdAt
                 ))
             }
 
@@ -279,7 +282,8 @@ class MatchWebSocketController(
                     remainingWhitePlayerTime = match.whitePlayerTime,
                     remainingBlackPlayerTime = match.blackPlayerTime,
                     matchStatus = MatchStatus.COMPLETED,
-                    history = match.turnHistory
+                    history = match.turnHistory,
+                    matchCreationTime = match.createdAt
                 ))
             }
         }
@@ -295,11 +299,12 @@ class MatchWebSocketController(
     @MessageMapping("/match/{matchId}/join")
     fun joinMatch(
         @DestinationVariable matchId: String,
+        principal: Principal,
         joinMessage: JoinMatchMessage
     ) {
         logger.info(joinMessage.toString())
-
-        val playerId = joinMessage.playerId
+        val securePlayerId = (principal as JwtAuthenticationToken).token.subject
+        if (joinMessage.playerId != securePlayerId) throw IllegalAccessException("Player mismatch")
         val playerPreferences = joinMessage.playerPreferences
 
         val match = matchService.getMatch(matchId) ?: run {
@@ -320,14 +325,15 @@ class MatchWebSocketController(
             )
         )
 
-        if (match.players.any { player -> player.playerId == playerId }) {
+        if (match.players.any { player -> player.playerId == securePlayerId }) {
             match.connectedPlayers.add(joinMessage.playerId) // add the player as having connect to the match
         }
-        val index = match.players.indexOfFirst { it.playerId == playerId }
+        val index = match.players.indexOfFirst { it.playerId == securePlayerId }
         if (index != -1) { //-1 indicates not found!
             match.players[index] = when (val player = match.players[index]) {
                 is Player.Anonymous -> player.copy(playerPreferences = playerPreferences)
                 is Player.Bot -> player
+                is Player.Registered -> player.copy(playerPreferences = playerPreferences)
             }
         }
         val matchState = matchService.createMatchStateMessage(match)
@@ -354,7 +360,7 @@ class MatchWebSocketController(
      *
      * @param matchId The unique identifier of the match.
      */
-    @MessageMapping("/match/{matchId}/start")
+    //@MessageMapping("/match/{matchId}/start") disabled not used!!!
     fun startMatch(@DestinationVariable matchId: String) {
         matchService.startTimer(
             matchId,
@@ -392,7 +398,8 @@ class MatchWebSocketController(
                     remainingWhitePlayerTime = match.whitePlayerTime,
                     remainingBlackPlayerTime = match.blackPlayerTime,
                     matchStatus = MatchStatus.COMPLETED,
-                    history = match.turnHistory
+                    history = match.turnHistory,
+                    matchCreationTime = match.createdAt
                 ))
             }
         )
@@ -453,8 +460,11 @@ class MatchWebSocketController(
     @MessageMapping("/match/{matchId}/draw/offer")
     fun offerDraw(
         @DestinationVariable matchId: String,
-        drawOffer: DrawOfferMessage
+        drawOffer: DrawOfferMessage,
+        principal: Principal
     ) {
+        val securePlayerId = (principal as JwtAuthenticationToken).token.subject
+        if (drawOffer.offeredBy != securePlayerId) throw IllegalAccessException("Player mismatch")
         messagingTemplate.convertAndSend(
             "/topic/match/$matchId/draw-offer",
             drawOffer
@@ -470,8 +480,11 @@ class MatchWebSocketController(
     @MessageMapping("/match/{matchId}/draw/respond")
     fun respondToDraw(
         @DestinationVariable matchId: String,
-        response: DrawResponseMessage
+        response: DrawResponseMessage,
+        principal: Principal
     ) {
+        val securePlayerId = (principal as JwtAuthenticationToken).token.subject
+        if (response.playerId != securePlayerId) throw IllegalAccessException("Player mismatch")
         if (response.accepted) {
             matchService.acceptDraw(matchId)
             messagingTemplate.convertAndSend(
@@ -504,8 +517,11 @@ class MatchWebSocketController(
     @MessageMapping("/match/{matchId}/resign")
     fun resign(
         @DestinationVariable matchId: String,
-        resignMessage: ResignMessage
+        resignMessage: ResignMessage,
+        principal: Principal
     ) {
+        val securePlayerId = (principal as JwtAuthenticationToken).token.subject
+        if (resignMessage.playerId != securePlayerId) throw IllegalAccessException("Player mismatch")
         val winner = matchService.resign(matchId, resignMessage.playerId)
 
         messagingTemplate.convertAndSend(

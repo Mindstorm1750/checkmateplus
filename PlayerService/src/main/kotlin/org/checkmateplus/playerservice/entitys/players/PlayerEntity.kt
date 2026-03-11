@@ -14,14 +14,16 @@ import kotlin.time.Instant
 @Entity
 @Table(name = "players")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-@DiscriminatorColumn(name = "player_type", discriminatorType = DiscriminatorType.STRING)
+@DiscriminatorColumn(name = "player_type")
 abstract class PlayerEntity(
     @Id val playerId: String,
     val displayName: String,
     @Column(name = "joined_queue_at")
     val joinedQueueAtEpochMs: Long,
-    val skillRating: Int?
-){
+    var skillRating: Int?,
+    var ratingDeviation: Double?,
+    var volatility: Double?
+) {
     @get:Transient
     val joinedQueueAt: Instant
         get() = Instant.fromEpochMilliseconds(joinedQueueAtEpochMs)

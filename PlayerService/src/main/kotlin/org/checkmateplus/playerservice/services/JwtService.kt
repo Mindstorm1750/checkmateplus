@@ -24,12 +24,15 @@ import kotlin.time.toJavaInstant
 class JwtService(
     @Value("\${jwt.secret}") private val secret: String,
     @Value("\${jwt.expiry-ms:86400000}") private val expiryMs: Long,
-    @Value("\${jwt.guest-expiry-ms:3600000}") private val guestExpiryMs: Long
+    @Value("\${jwt.guest-expiry-ms:3600000}") private val guestExpiryMs: Long,
+    @Value("\${jwt.refresh-expiry-ms:2592000000}") private val refreshExpiryMs: Long
 ) {
     private val secretKey: SecretKey by lazy {
         val decoded = Base64.getDecoder().decode(secret)
         SecretKeySpec(decoded, "HmacSHA256")
     }
+    fun generateRefreshExpiry(): Long =
+        Clock.System.now().toEpochMilliseconds() + refreshExpiryMs
 
     val encoder: JwtEncoder by lazy {
         NimbusJwtEncoder(ImmutableSecret(secretKey))

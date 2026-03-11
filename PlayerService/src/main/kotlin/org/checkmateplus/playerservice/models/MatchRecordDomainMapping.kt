@@ -26,10 +26,11 @@ fun PlayerServiceProto.MatchRecord.toEntity(
     matchOutcome = matchOutcome.toDomain(),
     whitePlayer = whitePlayer,
     blackPlayer = blackPlayer,
-    remainingWhitePlayerTime = remainingWhitePlayerTime,
-    remainingBlackPlayerTime = remainingBlackPlayerTime,
+    remainingWhitePlayerTime = remainingWhitePlayerTime.toLong(),
+    remainingBlackPlayerTime = remainingBlackPlayerTime.toLong(),
     matchStatus = matchStatus.toDomain(),
-    historyJson = Json.encodeToString(historyList.map { it.toDomain() })
+    historyJson = Json.encodeToString(historyList.map { it.toDomain() }),
+    createdAtEpochMs = matchCreatedAt.toLong()
 )
 
 fun PlayerServiceProto.Board.toDomain(): Board = Board(
@@ -61,24 +62,43 @@ fun PlayerServiceProto.Move.toDomain(): Move = Move(
 )
 
 
-fun PlayerServiceProto.Player.toDomain(): Player = when {
-    hasAnonymous() -> Player.Anonymous(
-        playerId = playerId,
-        displayName = displayName,
-        skillRating = if (hasSkillRating()) skillRating else null,
-        joinedQueueAt = Instant.fromEpochMilliseconds(joinedQueueAtEpochMs),
-        playerPreferences = if (anonymous.hasPlayerPreferences())
-            anonymous.playerPreferences.toDomain() else null
-    )
-    hasBot() -> Player.Bot(
-        playerId = playerId,
-        displayName = displayName,
-        skillRating = if (hasSkillRating()) skillRating else null,
-        difficulty = bot.difficulty,
-        joinedQueueAt = Instant.fromEpochMilliseconds(joinedQueueAtEpochMs),
-        botConfiguration = bot.botConfiguration.toDomain()
-    )
-    else -> throw IllegalArgumentException("Unknown player type for player: $playerId")
+fun PlayerServiceProto.Player.toDomain(): Player {
+    val ratingDeviation = if (hasRatingDeviation()) ratingDeviation else null
+    val volatility = if (hasVolatility()) volatility else null
+
+    return when {
+        hasAnonymous() -> Player.Anonymous(
+            playerId = playerId,
+            displayName = displayName,
+            skillRating = if (hasSkillRating()) skillRating else null,
+            ratingDeviation = ratingDeviation,
+            volatility = volatility,
+            joinedQueueAt = Instant.fromEpochMilliseconds(joinedQueueAtEpochMs),
+            playerPreferences = if (anonymous.hasPlayerPreferences())
+                anonymous.playerPreferences.toDomain() else null
+        )
+        hasBot() -> Player.Bot(
+            playerId = playerId,
+            displayName = displayName,
+            skillRating = if (hasSkillRating()) skillRating else null,
+            ratingDeviation = ratingDeviation,
+            volatility = volatility,
+            joinedQueueAt = Instant.fromEpochMilliseconds(joinedQueueAtEpochMs),
+            difficulty = bot.difficulty,
+            botConfiguration = bot.botConfiguration.toDomain()
+        )
+        hasRegistered() -> Player.Registered(
+            playerId = playerId,
+            displayName = displayName,
+            skillRating = if (hasSkillRating()) skillRating else null,
+            ratingDeviation = ratingDeviation,
+            volatility = volatility,
+            joinedQueueAt = Instant.fromEpochMilliseconds(joinedQueueAtEpochMs),
+            playerPreferences = if (registered.hasPlayerPreferences())
+                registered.playerPreferences.toDomain() else null
+        )
+        else -> throw IllegalArgumentException("Unknown player type for player: $playerId")
+    }
 }
 
 fun PlayerServiceProto.PlayerPreferences.toDomain(): PlayerPreferences = PlayerPreferences(

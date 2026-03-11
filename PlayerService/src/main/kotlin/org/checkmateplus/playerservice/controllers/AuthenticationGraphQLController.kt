@@ -48,4 +48,14 @@ class AuthenticationGraphQLController(
             ?: throw IllegalStateException("Not authenticated")
         return authService.getProfile(playerId)
     }
+
+    @MutationMapping
+    fun refresh(@Argument refreshToken: String): AuthResponse =
+        authService.refresh(refreshToken)
+
+    @MutationMapping
+    fun logout(@Argument refreshToken: String): Boolean {
+        authService.logout(refreshToken)
+        return true
+    }
 }

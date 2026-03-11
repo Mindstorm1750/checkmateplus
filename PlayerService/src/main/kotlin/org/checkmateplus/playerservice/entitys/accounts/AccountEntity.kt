@@ -29,6 +29,8 @@ class AccountEntity(
 
     @Column(name = "google_id", unique = true, nullable = true)
     var googleId: String? = null,
+    @Column(name = "time_registered", nullable = false)
+    var timeRegisteredAt: Long? = null,
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "player_id", nullable = false)

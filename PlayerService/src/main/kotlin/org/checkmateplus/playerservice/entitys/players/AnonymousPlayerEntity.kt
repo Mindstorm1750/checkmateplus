@@ -14,12 +14,13 @@ class AnonymousPlayerEntity(
     playerId: String,
     displayName: String,
     joinedQueueAt: Long,
-    skillRating: Int?,
-    @Column(name = "player_preferences")
+    skillRating: Int? = null,
+    ratingDeviation: Double? = null,
+    volatility: Double? = null,
+    @Column(name = "player_preferences", columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
-    val playerPreferencesJson: String?
-) : PlayerEntity(playerId, displayName, joinedQueueAt, skillRating) {
-
+    val playerPreferencesJson: String? = null
+) : PlayerEntity(playerId, displayName, joinedQueueAt, skillRating, ratingDeviation, volatility) {
     @get:Transient
     val playerPreferences: PlayerPreferences?
         get() = playerPreferencesJson?.let { Json.decodeFromString(it) }

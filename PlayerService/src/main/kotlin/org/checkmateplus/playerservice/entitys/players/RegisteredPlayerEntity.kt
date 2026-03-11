@@ -14,14 +14,14 @@ import org.hibernate.type.SqlTypes
 class RegisteredPlayerEntity(
     playerId: String,
     displayName: String,
-    joinedQueueAtEpochMs: Long,
-    skillRating: Int?,
-    @Column(name = "player_preferences")
+    joinedQueueAt: Long,
+    skillRating: Int? = 1200,
+    ratingDeviation: Double? = 350.0,
+    volatility: Double? = 0.06,
+    @Column(name = "player_preferences", columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
-    val playerPreferencesJson: String?
-
-) : PlayerEntity(playerId, displayName, joinedQueueAtEpochMs, skillRating) {
-
+    val playerPreferencesJson: String? = null
+) : PlayerEntity(playerId, displayName, joinedQueueAt, skillRating, ratingDeviation, volatility) {
     @get:Transient
     val playerPreferences: PlayerPreferences?
         get() = playerPreferencesJson?.let { Json.decodeFromString(it) }

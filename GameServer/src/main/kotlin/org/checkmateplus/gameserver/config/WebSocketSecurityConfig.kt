@@ -16,22 +16,13 @@ class WebSocketSecurityConfig {
         messages: MessageMatcherDelegatingAuthorizationManager.Builder
     ): AuthorizationManager<Message<*>> {
         return messages
-            // Allow connection handshake
-            .nullDestMatcher().permitAll()
-
-            // Allow subscription to topics and queues
-            .simpSubscribeDestMatchers("/topic/**").permitAll()
-            .simpSubscribeDestMatchers("/queue/**").permitAll()
-            .simpSubscribeDestMatchers("/user/queue/**").permitAll()
-
-            // Allow sending messages to /app/match/** endpoints
-            .simpDestMatchers("/app/match/**").permitAll()
-
-            // Deny everything else
+            .nullDestMatcher().authenticated()
+            .simpSubscribeDestMatchers("/topic/**").authenticated()
+            .simpSubscribeDestMatchers("/user/queue/**").authenticated()
+            .simpDestMatchers("/app/match/**").authenticated()
             .anyMessage().denyAll()
             .build()
     }
-
     @Bean("csrfChannelInterceptor")
     fun csrfChannelInterceptor(): ChannelInterceptor {
         return object : ChannelInterceptor {}
