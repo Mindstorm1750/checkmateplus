@@ -1,7 +1,7 @@
 import Layout from "@/components/Layout";
 import { BackArrowLink } from "@/components/ui/back-arrow-link";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { usePreferences, type Preferences } from "@/lib/PreferencesContext"
+import { usePreferences, type Preferences } from "@/lib/PreferencesProvider"
 
 function Settings() {
   const { preferences, updatePreferences } = usePreferences();

@@ -2,7 +2,7 @@ import { isMoveInMoves, legalMoves, pieceToSvg } from "@/lib/chess.helpers";
 import type { Board, Move, Square } from "@/types/Chess.type"
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion"
-import { usePreferences } from "@/lib/PreferencesContext";
+import { usePreferences } from "@/lib/PreferencesProvider";
 import { BOARD_THEMES } from "@/lib/board.theme";
 import { Dialog, DialogContent, DialogHeader } from "./dialog";
 import { DialogDescription } from "@radix-ui/react-dialog";

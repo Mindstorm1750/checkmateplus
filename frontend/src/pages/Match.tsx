@@ -2,7 +2,7 @@ import Layout from "@/components/Layout";
 import { BackArrowLink } from "@/components/ui/back-arrow-link";
 import ChessBoard, { type ChessBoardProps } from "@/components/ui/ChessBoard";
 import { algebraicToSquare, fenToBoard, squareToAlgebraic } from "@/lib/chess.helpers";
-import { usePreferences, type Preferences } from "@/lib/PreferencesContext";
+import { usePreferences, type Preferences } from "@/lib/PreferencesProvider";
 import type { JoinMatchMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/JoinMatchMessage";
 import type { MatchEventMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchEventMessage";
 import type { MatchStateMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchStateMessage";
