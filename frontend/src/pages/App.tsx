@@ -14,6 +14,7 @@ import { Info } from "lucide-react"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 import type { QueueStatus } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/QueueStatus"
 import type { BotConfiguration } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/BotConfiguration"
+import { useJwt } from "@/lib/JwtProvider"
 
 function App() {
   const navigate = useNavigate();
@@ -35,12 +36,16 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
   const descriptionText = "Get matched with other players";
   const navigate = useNavigate();
   const stompClient = useRef<Client | null>(null);
+  const jwtContext = useJwt();
 
   const connect = () => {
     const socket = new SockJS(import.meta.env.VITE_BASE_URL + 'matchmaking');
 
     const client = new Client({
       webSocketFactory: () => socket,
+      connectHeaders: {
+        Authorization: `Bearer ${jwtContext.jwt}`
+      },
       debug: (str: string) => console.log(str),
       onConnect: () => {
         // Subscribe to your specific user queue for status updates
@@ -115,12 +120,16 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
   const [timeControl, setTimeControl] = useState<TimeControl | "ANY">();
   const navigate = useNavigate();
   const stompClient = useRef<Client | null>(null);
+  const jwtContext = useJwt();
 
   const connect = () => {
     const socket = new SockJS(import.meta.env.VITE_BASE_URL + 'matchmaking');
 
     const client = new Client({
       webSocketFactory: () => socket,
+      connectHeaders: {
+        Authorization: `Bearer ${jwtContext.jwt}`
+      },
       debug: (str: string) => console.log(str),
       onConnect: () => {
         // Subscribe to your specific user queue for status updates

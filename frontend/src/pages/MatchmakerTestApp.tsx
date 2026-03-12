@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Client, type IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client/dist/sockjs';
+import { useJwt } from '@/lib/JwtProvider';
 
 // 1. Define types for your messages
 interface MatchFoundEvent {
@@ -20,6 +21,7 @@ const MatchmakerTestApp: React.FC = () => {
   const [status, setStatus] = useState<string>('Disconnected');
   const [logs, setLogs] = useState<string[]>([]);
   const [matchData, setMatchData] = useState<MatchFoundEvent | null>(null);
+  const jwtContext = useJwt();
 
   const stompClient = useRef<Client | null>(null);
 
@@ -33,6 +35,9 @@ const MatchmakerTestApp: React.FC = () => {
 
     const client = new Client({
       webSocketFactory: () => socket,
+      connectHeaders: {
+        Authorization: `Bearer ${jwtContext.jwt}`
+      },
       debug: (str: string) => addLog(str),
       onConnect: () => {
         setConnected(true);
@@ -76,34 +81,34 @@ const MatchmakerTestApp: React.FC = () => {
   };
 
   return (
-      <div style={{ padding: '20px', fontFamily: 'Arial' }}>
-        <h1>Matchmaking Test Tool</h1>
-        <div style={{ marginBottom: '20px' }}>
-          <input
-              placeholder="Display Name"
-              value={playerName}
-              onChange={(e) => setPlayerName(e.target.value)}
-              style={{ padding: '8px', marginRight: '10px' }}
-          />
-          <button onClick={connect} disabled={connected}>Connect</button>
-          <button onClick={joinQueue} disabled={!connected || !!matchData}>Join Queue</button>
-        </div>
+    <div style={{ padding: '20px', fontFamily: 'Arial' }}>
+      <h1>Matchmaking Test Tool</h1>
+      <div style={{ marginBottom: '20px' }}>
+        <input
+          placeholder="Display Name"
+          value={playerName}
+          onChange={(e) => setPlayerName(e.target.value)}
+          style={{ padding: '8px', marginRight: '10px' }}
+        />
+        <button onClick={connect} disabled={connected}>Connect</button>
+        <button onClick={joinQueue} disabled={!connected || !!matchData}>Join Queue</button>
+      </div>
 
-        <div style={{ display: 'flex', gap: '20px' }}>
-          <div style={{ flex: 1, padding: '15px', background: '#f0f0f0' }}>
-            <h3>State: {status}</h3>
-            {matchData && (
-                <div style={{ background: '#d4edda', padding: '10px' }}>
-                  <p><strong>Opponent:</strong> {matchData.opponentName}</p>
-                  <p><strong>Server:</strong> {matchData.websocketUrl}</p>
-                </div>
-            )}
-          </div>
-          <div style={{ flex: 1, height: '300px', overflowY: 'auto', background: '#333', color: '#fff', padding: '10px' }}>
-            {logs.map((log, i) => <div key={i} style={{ fontSize: '12px' }}>{log}</div>)}
-          </div>
+      <div style={{ display: 'flex', gap: '20px' }}>
+        <div style={{ flex: 1, padding: '15px', background: '#f0f0f0' }}>
+          <h3>State: {status}</h3>
+          {matchData && (
+            <div style={{ background: '#d4edda', padding: '10px' }}>
+              <p><strong>Opponent:</strong> {matchData.opponentName}</p>
+              <p><strong>Server:</strong> {matchData.websocketUrl}</p>
+            </div>
+          )}
+        </div>
+        <div style={{ flex: 1, height: '300px', overflowY: 'auto', background: '#333', color: '#fff', padding: '10px' }}>
+          {logs.map((log, i) => <div key={i} style={{ fontSize: '12px' }}>{log}</div>)}
         </div>
       </div>
+    </div>
   );
 };
 

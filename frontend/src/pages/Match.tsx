@@ -14,7 +14,8 @@ import { Client, type IMessage } from "@stomp/stompjs";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router";
 import SockJS from 'sockjs-client/dist/sockjs';
-import type {PlayerPreferences} from "@/lib/stompMessageTypes/GameServer/models/messages/PlayerPreferences.ts";
+import type { PlayerPreferences } from "@/lib/stompMessageTypes/GameServer/models/messages/PlayerPreferences.ts";
+import { useJwt } from "@/lib/JwtProvider";
 
 function Match() {
     /**
@@ -36,16 +37,20 @@ function Match() {
     const [gameOverMessage, setGameOverMessage] = useState<String>();
     const { preferences, updatePreferences } = usePreferences();
     const stompClient = useRef<Client | null>(null);
+    const jwtContext = useJwt();
     useEffect(() => {
         connect();
     }, [matchId]);
 
     const connect = () => {
-        const socket = new SockJS(`https://${websocketUrl}/match`);
+        const socket = new SockJS(`http://${websocketUrl}/match`);
         // websocketUrl should really be http://localhost:8090 or http://127.0.0.1:8090 and '/match' is to be added by frontend here
 
         const client = new Client({
             webSocketFactory: () => socket,
+            connectHeaders: {
+                Authorization: `Bearer ${jwtContext.jwt}`
+            },
             debug: (str: string) => console.log(str),
             onConnect: () => {
 
