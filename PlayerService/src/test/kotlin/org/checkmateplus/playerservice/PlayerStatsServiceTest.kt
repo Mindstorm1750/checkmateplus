@@ -8,6 +8,7 @@ import org.checkmateplus.playerservice.entitys.MatchRecordEntity
 import org.checkmateplus.playerservice.entitys.players.RegisteredPlayerEntity
 import org.checkmateplus.playerservice.repository.MatchRecordRepository
 import org.checkmateplus.playerservice.repository.PlayerRepository
+import org.checkmateplus.playerservice.repository.RegisteredPlayerRepository
 import org.checkmateplus.playerservice.services.PlayerStatsService
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
@@ -17,14 +18,20 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
 import org.mockito.Mockito.`when`
 import org.mockito.junit.jupiter.MockitoExtension
-import java.util.Optional
+import java.util.*
 import kotlin.time.Clock
 
 @ExtendWith(MockitoExtension::class)
 class PlayerStatsServiceTest {
 
-    @Mock lateinit var matchRecordRepository: MatchRecordRepository
-    @Mock lateinit var playerRepository: PlayerRepository
+    @Mock
+    lateinit var matchRecordRepository: MatchRecordRepository
+
+    @Mock
+    lateinit var playerRepository: PlayerRepository
+
+    @Mock
+    lateinit var RegisteredPlayerRepository: RegisteredPlayerRepository
 
     lateinit var service: PlayerStatsService
 
@@ -42,7 +49,11 @@ class PlayerStatsServiceTest {
 
     @BeforeEach
     fun setup() {
-        service = PlayerStatsService(matchRecordRepository, playerRepository)
+        service = PlayerStatsService(
+            matchRecordRepository, playerRepository,
+            RegisteredPlayerRepository
+        )
+
     }
 
     private fun makeMatch(
@@ -51,10 +62,14 @@ class PlayerStatsServiceTest {
         blackId: String = opponentId,
         createdAt: Long = Clock.System.now().toEpochMilliseconds()
     ): MatchRecordEntity {
-        val white = RegisteredPlayerEntity(playerId = whiteId, displayName = "W",
-            joinedQueueAt = Clock.System.now().toEpochMilliseconds())
-        val black = RegisteredPlayerEntity(playerId = blackId, displayName = "B",
-            joinedQueueAt = Clock.System.now().toEpochMilliseconds())
+        val white = RegisteredPlayerEntity(
+            playerId = whiteId, displayName = "W",
+            joinedQueueAt = Clock.System.now().toEpochMilliseconds()
+        )
+        val black = RegisteredPlayerEntity(
+            playerId = blackId, displayName = "B",
+            joinedQueueAt = Clock.System.now().toEpochMilliseconds()
+        )
         return MatchRecordEntity(
             matchId = "match-${System.nanoTime()}",
             boardJson = "{}",
@@ -81,12 +96,14 @@ class PlayerStatsServiceTest {
     @Test
     fun `getStats returns correct win loss draw counts`() {
         `when`(playerRepository.findById(playerId)).thenReturn(Optional.of(player))
-        `when`(matchRecordRepository.findByWhitePlayerPlayerIdOrBlackPlayerPlayerId(playerId, playerId)).thenReturn(listOf(
-            makeMatch(MatchOutcome.WHITE_WINS),  // win (player is white)
-            makeMatch(MatchOutcome.BLACK_WINS),  // loss (player is white)
-            makeMatch(MatchOutcome.DRAW),
-            makeMatch(MatchOutcome.WHITE_WINS, whiteId = opponentId, blackId = playerId) // loss (player is black)
-        ))
+        `when`(matchRecordRepository.findByWhitePlayerPlayerIdOrBlackPlayerPlayerId(playerId, playerId)).thenReturn(
+            listOf(
+                makeMatch(MatchOutcome.WHITE_WINS),  // win (player is white)
+                makeMatch(MatchOutcome.BLACK_WINS),  // loss (player is white)
+                makeMatch(MatchOutcome.DRAW),
+                makeMatch(MatchOutcome.WHITE_WINS, whiteId = opponentId, blackId = playerId) // loss (player is black)
+            )
+        )
 
         val stats = service.getStats(playerId)
 
@@ -99,7 +116,9 @@ class PlayerStatsServiceTest {
     @Test
     fun `getStats winRate is 0 when no games played`() {
         `when`(playerRepository.findById(playerId)).thenReturn(Optional.of(player))
-        `when`(matchRecordRepository.findByWhitePlayerPlayerIdOrBlackPlayerPlayerId(playerId,playerId)).thenReturn(emptyList())
+        `when`(matchRecordRepository.findByWhitePlayerPlayerIdOrBlackPlayerPlayerId(playerId, playerId)).thenReturn(
+            emptyList()
+        )
 
         val stats = service.getStats(playerId)
         assertEquals(0, stats.winRate)
@@ -109,10 +128,12 @@ class PlayerStatsServiceTest {
     @Test
     fun `getStats winRate is 100 when all games won`() {
         `when`(playerRepository.findById(playerId)).thenReturn(Optional.of(player))
-        `when`(matchRecordRepository.findByWhitePlayerPlayerIdOrBlackPlayerPlayerId(playerId,playerId)).thenReturn(listOf(
-            makeMatch(MatchOutcome.WHITE_WINS),
-            makeMatch(MatchOutcome.WHITE_WINS),
-        ))
+        `when`(matchRecordRepository.findByWhitePlayerPlayerIdOrBlackPlayerPlayerId(playerId, playerId)).thenReturn(
+            listOf(
+                makeMatch(MatchOutcome.WHITE_WINS),
+                makeMatch(MatchOutcome.WHITE_WINS),
+            )
+        )
 
         val stats = service.getStats(playerId)
         assertEquals(100, stats.winRate)
@@ -121,12 +142,16 @@ class PlayerStatsServiceTest {
     @Test
     fun `getStats calculates winsAsWhite and winsAsBlack correctly`() {
         `when`(playerRepository.findById(playerId)).thenReturn(Optional.of(player))
-        `when`(matchRecordRepository
-            .findByWhitePlayerPlayerIdOrBlackPlayerPlayerId(playerId, playerId))
-            .thenReturn(listOf(
-                makeMatch(MatchOutcome.WHITE_WINS, whiteId = playerId, blackId = opponentId),
-                makeMatch(MatchOutcome.BLACK_WINS, whiteId = opponentId, blackId = playerId),
-            ))
+        `when`(
+            matchRecordRepository
+                .findByWhitePlayerPlayerIdOrBlackPlayerPlayerId(playerId, playerId)
+        )
+            .thenReturn(
+                listOf(
+                    makeMatch(MatchOutcome.WHITE_WINS, whiteId = playerId, blackId = opponentId),
+                    makeMatch(MatchOutcome.BLACK_WINS, whiteId = opponentId, blackId = playerId),
+                )
+            )
 
         val stats = service.getStats(playerId)
         assertEquals(1, stats.winsAsWhite)
@@ -137,12 +162,14 @@ class PlayerStatsServiceTest {
     fun `getStats currentStreak counts consecutive wins from most recent`() {
         val now = Clock.System.now().toEpochMilliseconds()
         `when`(playerRepository.findById(playerId)).thenReturn(Optional.of(player))
-        `when`(matchRecordRepository.findByWhitePlayerPlayerIdOrBlackPlayerPlayerId(playerId,playerId)).thenReturn(listOf(
-            makeMatch(MatchOutcome.WHITE_WINS, createdAt = now - 3000),
-            makeMatch(MatchOutcome.DRAW,       createdAt = now - 2000),
-            makeMatch(MatchOutcome.WHITE_WINS, createdAt = now - 1000),
-            makeMatch(MatchOutcome.WHITE_WINS, createdAt = now),
-        ))
+        `when`(matchRecordRepository.findByWhitePlayerPlayerIdOrBlackPlayerPlayerId(playerId, playerId)).thenReturn(
+            listOf(
+                makeMatch(MatchOutcome.WHITE_WINS, createdAt = now - 3000),
+                makeMatch(MatchOutcome.DRAW, createdAt = now - 2000),
+                makeMatch(MatchOutcome.WHITE_WINS, createdAt = now - 1000),
+                makeMatch(MatchOutcome.WHITE_WINS, createdAt = now),
+            )
+        )
 
         val stats = service.getStats(playerId)
         assertEquals(2, stats.currentStreak)
@@ -152,14 +179,16 @@ class PlayerStatsServiceTest {
     fun `getStats longestWinStreak finds correct streak`() {
         val now = Clock.System.now().toEpochMilliseconds()
         `when`(playerRepository.findById(playerId)).thenReturn(Optional.of(player))
-        `when`(matchRecordRepository.findByWhitePlayerPlayerIdOrBlackPlayerPlayerId(playerId,playerId)).thenReturn(listOf(
-            makeMatch(MatchOutcome.WHITE_WINS, createdAt = now - 5000),
-            makeMatch(MatchOutcome.WHITE_WINS, createdAt = now - 4000),
-            makeMatch(MatchOutcome.WHITE_WINS, createdAt = now - 3000),
-            makeMatch(MatchOutcome.DRAW,       createdAt = now - 2000),
-            makeMatch(MatchOutcome.WHITE_WINS, createdAt = now - 1000),
-            makeMatch(MatchOutcome.WHITE_WINS, createdAt = now),
-        ))
+        `when`(matchRecordRepository.findByWhitePlayerPlayerIdOrBlackPlayerPlayerId(playerId, playerId)).thenReturn(
+            listOf(
+                makeMatch(MatchOutcome.WHITE_WINS, createdAt = now - 5000),
+                makeMatch(MatchOutcome.WHITE_WINS, createdAt = now - 4000),
+                makeMatch(MatchOutcome.WHITE_WINS, createdAt = now - 3000),
+                makeMatch(MatchOutcome.DRAW, createdAt = now - 2000),
+                makeMatch(MatchOutcome.WHITE_WINS, createdAt = now - 1000),
+                makeMatch(MatchOutcome.WHITE_WINS, createdAt = now),
+            )
+        )
 
         val stats = service.getStats(playerId)
         assertEquals(3, stats.longestWinStreak)
@@ -172,8 +201,10 @@ class PlayerStatsServiceTest {
         val matches = (1..5).map {
             makeMatch(MatchOutcome.WHITE_WINS, createdAt = now - it * 1000L)
         }
-        `when`(matchRecordRepository
-            .findByWhitePlayerPlayerIdOrBlackPlayerPlayerIdOrderByCreatedAtEpochMsDesc(playerId, playerId))
+        `when`(
+            matchRecordRepository
+                .findByWhitePlayerPlayerIdOrBlackPlayerPlayerIdOrderByCreatedAtEpochMsDesc(playerId, playerId)
+        )
             .thenReturn(matches)
 
         val page = service.getMatchHistory(playerId, null, 3)
@@ -185,12 +216,16 @@ class PlayerStatsServiceTest {
 
     @Test
     fun `getMatchHistory hasMore is false when results fit in one page`() {
-        `when`(matchRecordRepository
-            .findByWhitePlayerPlayerIdOrBlackPlayerPlayerIdOrderByCreatedAtEpochMsDesc(playerId, playerId))
-            .thenReturn(listOf(
-                makeMatch(MatchOutcome.WHITE_WINS),
-                makeMatch(MatchOutcome.DRAW)
-            ))
+        `when`(
+            matchRecordRepository
+                .findByWhitePlayerPlayerIdOrBlackPlayerPlayerIdOrderByCreatedAtEpochMsDesc(playerId, playerId)
+        )
+            .thenReturn(
+                listOf(
+                    makeMatch(MatchOutcome.WHITE_WINS),
+                    makeMatch(MatchOutcome.DRAW)
+                )
+            )
 
         val page = service.getMatchHistory(playerId, null, 10)
 
@@ -205,8 +240,10 @@ class PlayerStatsServiceTest {
         val matches = (1..5).map {
             makeMatch(MatchOutcome.WHITE_WINS, createdAt = now - it * 1000L)
         }
-        `when`(matchRecordRepository
-            .findByWhitePlayerPlayerIdOrBlackPlayerPlayerIdOrderByCreatedAtEpochMsDesc(playerId, playerId))
+        `when`(
+            matchRecordRepository
+                .findByWhitePlayerPlayerIdOrBlackPlayerPlayerIdOrderByCreatedAtEpochMsDesc(playerId, playerId)
+        )
             .thenReturn(matches)
 
         val firstPage = service.getMatchHistory(playerId, null, 2)
@@ -218,8 +255,10 @@ class PlayerStatsServiceTest {
 
     @Test
     fun `getMatchHistory returns empty when no matches`() {
-        `when`(matchRecordRepository
-            .findByWhitePlayerPlayerIdOrBlackPlayerPlayerIdOrderByCreatedAtEpochMsDesc(playerId, playerId))
+        `when`(
+            matchRecordRepository
+                .findByWhitePlayerPlayerIdOrBlackPlayerPlayerIdOrderByCreatedAtEpochMsDesc(playerId, playerId)
+        )
             .thenReturn(emptyList())
 
         val page = service.getMatchHistory(playerId, null, 10)
