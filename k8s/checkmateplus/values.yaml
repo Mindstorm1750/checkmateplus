@@ -131,11 +131,11 @@ playerservice:
   secretName: checkmateplus-playerservice-secret
   resources:
     requests:
-      cpu: 200m
+      cpu: 500m
       memory: 256Mi
     limits:
-      cpu: 500m
-      memory: 512Mi
+      cpu: 1000m
+      memory: 1024Mi
   serviceAccount:
     create: false
     name: "checkmateplus-default"
@@ -230,7 +230,7 @@ postgresql:
               remaining_black_time_ms   BIGINT       NOT NULL,
               match_status              VARCHAR(50)  NOT NULL,
               match_history             JSONB        DEFAULT '[]',
-              createdatepochms          BIGINT       NOT NULL,
+              created_at_epoch_ms       BIGINT       NOT NULL,
               CONSTRAINT pk_match_records       PRIMARY KEY (match_id),
               CONSTRAINT fk_match_white_player  FOREIGN KEY (white_player_id) REFERENCES players (player_id),
               CONSTRAINT fk_match_black_player  FOREIGN KEY (black_player_id) REFERENCES players (player_id)
