@@ -85,14 +85,7 @@
 
             for (square in 0..63) {
                 val piece = squares[square] ?: continue
-                val pieceValue = when (piece.type) {
-                    PieceType.PAWN -> 100
-                    PieceType.KNIGHT -> 320
-                    PieceType.BISHOP -> 330
-                    PieceType.ROOK -> 500
-                    PieceType.QUEEN -> 900
-                    PieceType.KING -> 20000
-                }
+                val pieceValue = pieceValue(piece.type)
 
                 if (piece.color == Colour.WHITE) {
                     score += pieceValue
@@ -407,6 +400,27 @@
             }
         }
 
+        /**
+         * Used to speed up minimaxAlg by prioritising the searching of moves that are likely to be good
+         */
+        fun orderMoves(moves: List<Move>): List<Move> {
+            return moves.sortedByDescending { move ->
+                var priority = 0
+                val moveTarget: PieceType? = squares[move.to]?.type
+                val pieceMoved: PieceType = squares[move.from]!!.type
+                if(moveTarget != null) {
+                    // prioritise captures of valuable pieces, especially if they're captured by a low-value piece
+                    priority += 2 * pieceValue(moveTarget) - pieceValue(pieceMoved)
+                }
+                if(move.promotion != null) {
+                    // prioritise promotions in general, with more priority to more valuable promotions
+                    priority += pieceValue(move.promotion)
+                }
+
+                priority
+            }
+        }
+
         //check if given colors king is in check
         fun isInCheck(color: Colour): Boolean {
             val kingSquare = squares.indexOfFirst {
@@ -461,7 +475,7 @@
             val legalMoves = generateLegalMoves()
             if (legalMoves.isEmpty()) return null
 
-            var bestMove = legalMoves[0]
+            val bestMoves = mutableListOf<Move>()//new list to allow for random move choice
             //create best score based on white or black playing (max vs min)
             var bestScore = if (sideToMove == Colour.WHITE) Int.MIN_VALUE else Int.MAX_VALUE
 
@@ -469,20 +483,26 @@
                 val newBoard = applyMove(move)
 
                 val score = newBoard.minimaxAlg(depth - 1, Int.MIN_VALUE, Int.MAX_VALUE)
-                if(sideToMove==Colour.WHITE){
-                    if(score>bestScore){ //White check for best move
+                if(sideToMove==Colour.WHITE) {
+                    if (score > bestScore) { //White check for best move
                         bestScore = score
-                        bestMove = move
+                        bestMoves.clear()
+                        bestMoves.add(move)
+                    } else if (score == bestScore){
+                        bestMoves.add(move)
                     }
 
                 } else{
                     if(score<bestScore){ //Black check for best move
                         bestScore = score
-                        bestMove = move
+                        bestMoves.clear()
+                        bestMoves.add(move)
+                    } else if (score == bestScore){
+                        bestMoves.add(move)
                     }
                 }
             }
-            return bestMove
+            return bestMoves.randomOrNull()
         }
 
 
@@ -509,7 +529,7 @@
                 return evaluate()
             }
 
-            val legalMoves = generateLegalMoves()
+            val legalMoves = orderMoves(generateLegalMoves())
             var currentAlpha = alpha
             var currentBeta = beta
 
@@ -588,6 +608,15 @@
                 }
 
                 return Board(squares = squares)
+            }
+
+            fun pieceValue(type: PieceType) = when (type) {
+                PieceType.PAWN -> 100
+                PieceType.KNIGHT -> 320
+                PieceType.BISHOP -> 330
+                PieceType.ROOK -> 500
+                PieceType.QUEEN -> 900
+                PieceType.KING -> 20000
             }
         }
 
