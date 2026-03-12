@@ -9,21 +9,30 @@ import Play from './pages/Play.tsx'
 import { PreferencesProvider } from './lib/PreferencesContext.tsx'
 import Settings from './pages/Settings.tsx'
 import Match from './pages/Match.tsx'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import Leaderboard from './pages/Leaderboard.tsx'
+
+const queryClient = new QueryClient()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <PreferencesProvider> {/** For chessboard related preferences (square colours, animations) */}
-      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme"> {/** Website theme */}
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<App />} />
-          <Route path='/test' element={<MatchmakerTestApp />} />
-          <Route path='/play/:colour' element={<Play />} />
-          <Route path='/settings' element={<Settings />} />
-          <Route path='/match' element={<Match />} />
-        </Routes>
-      </BrowserRouter>
-    </ThemeProvider>
-    </PreferencesProvider>
+    <QueryClientProvider client={queryClient}>
+      <PreferencesProvider> {/** For chessboard related preferences (square colours, animations) */}
+        <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme"> {/** Website theme */}
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<App />} />
+              <Route path='/test' element={<MatchmakerTestApp />} />
+              <Route path='/play/:colour' element={<Play />} />
+              <Route path='/settings' element={<Settings />} />
+              <Route path='/match' element={<Match />} />
+              <Route path='/leaderboard' element={<Leaderboard />} />
+            </Routes>
+          </BrowserRouter>
+        </ThemeProvider>
+      </PreferencesProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   </StrictMode>
 )
