@@ -41,3 +41,6 @@ spec:
     matchmakingservice:
       imagePullSecrets:
         - name: gitlab-registry
+    playerservice:
+      imagePullSecrets:
+        - name: gitlab-registry

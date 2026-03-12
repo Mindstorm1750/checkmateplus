@@ -11,6 +11,8 @@ import org.checkmateplus.playerservice.proto.PlayerServiceProto
 import org.checkmateplus.playerservice.repository.MatchRecordRepository
 import org.checkmateplus.playerservice.repository.PlayerRepository
 import org.slf4j.LoggerFactory
+import org.springframework.cache.annotation.CacheEvict
+import org.springframework.cache.annotation.Caching
 import org.springframework.stereotype.Service
 
 @Service
@@ -21,6 +23,11 @@ class MatchRecordService(
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
+    @Caching(evict = [
+        CacheEvict(cacheNames = ["playerStats"], key = "#record.whitePlayer.playerId"),
+        CacheEvict(cacheNames = ["playerStats"], key = "#record.blackPlayer.playerId"),
+        CacheEvict(cacheNames = ["leaderboard"], allEntries = true)
+    ])
     fun save(record: PlayerServiceProto.MatchRecord) {
         val whitePlayer = getOrCreatePlayer(record.whitePlayer)
         val blackPlayer = getOrCreatePlayer(record.blackPlayer)

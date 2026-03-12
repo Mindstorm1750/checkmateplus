@@ -11,6 +11,7 @@ type Query {
     me: PlayerProfile
     playerStats(playerId: String!): PlayerStats
     matchHistory(playerId: String!, afterCursor: String, size: Int = 20): MatchHistoryPage
+    leaderboard(size: Int = 10): [LeaderboardEntry!]!
 }
 
 type PlayerStats {
@@ -49,6 +50,13 @@ type MatchSummary {
     timeControl: String!
     gameDurationMs: Float
     createdAtEpochMs: Float!
+}
+
+type LeaderboardEntry {
+    rank: Int!
+    playerId: String!
+    displayName: String!
+    skillRating: Int!
 }
 
 enum MatchResult { WIN LOSS DRAW}

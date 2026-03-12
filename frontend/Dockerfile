@@ -2,8 +2,8 @@
 FROM node:25-alpine3.22 AS build
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm install --frozen-lockfile
+COPY package.json ./
+RUN npm install
 
 COPY . ./
 RUN npm run build
@@ -12,8 +12,8 @@ RUN npm run build
 FROM node:25-alpine3.22 AS development
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm install --frozen-lockfile
+COPY package.json ./
+RUN npm install
 
 COPY . ./
 

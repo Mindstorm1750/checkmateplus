@@ -5,11 +5,11 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.annotation.Order
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.annotation.web.invoke
 import org.springframework.security.config.http.SessionCreationPolicy
-
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.oauth2.client.registration.ClientRegistration
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
@@ -18,7 +18,6 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod
 import org.springframework.security.oauth2.core.oidc.IdTokenClaimNames
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
-import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
@@ -26,6 +25,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 class SecurityConfig(
     private val jwtService: JwtService,
     private val googleOAuth2SuccessHandler: GoogleOAuth2SuccessHandler
@@ -35,11 +35,17 @@ class SecurityConfig(
     @Order(1)
     fun publicFilterChain(http: HttpSecurity): SecurityFilterChain {
         http {
-            securityMatcher("/graphql", "/graphql/**", "/graphiql", "/graphiql/**", "/actuator/health/**","/error")
+            securityMatcher("/graphql", "/graphql/**", "/graphiql", "/graphiql/**", "/actuator/health/**", "/error")
             csrf { disable() }
             cors { }
             authorizeHttpRequests {
                 authorize(anyRequest, permitAll)
+            }
+            oauth2ResourceServer {
+                jwt {
+                    jwtDecoder = jwtService.decoder
+                    jwtAuthenticationConverter = jwtAuthenticationConverter()
+                }
             }
         }
         return http.build()

@@ -1,0 +1,54 @@
+enabled: true
+replicaCount: 1
+
+image:
+  repository: git.cs.kent.ac.uk:5050/jhl28/checkmate/playerservice
+  tag: latest
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: false
+  name: "checkmateplus-default"
+
+service:
+  type: ClusterIP
+  httpPort: 8095
+  grpcPort: 9092
+
+# Non-sensitive env vars — sensitive values (postgres credentials, JWT secret)
+# are injected via secretKeyRef from checkmateplus-playerservice-secret.
+env:
+  SPRING_PROFILES_ACTIVE: prod
+  ALLOWED_ORIGINS: "https://checkmateplus.org"
+  POSTGRES_HOST: "postgres-postgresql.checkmateplus.svc.cluster.local"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "checkmate"
+
+# Name of the Kubernetes secret holding: postgresUser, postgresPassword, jwtSecret
+secretName: checkmateplus-playerservice-secret
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

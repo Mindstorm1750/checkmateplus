@@ -1,19 +1,25 @@
 package org.checkmateplus.playerservice.services
 
 import org.checkmateplus.playerservice.entitys.MatchRecordEntity
+import org.checkmateplus.playerservice.models.LeaderboardEntry
 import org.checkmateplus.playerservice.models.MatchHistoryPage
 import org.checkmateplus.playerservice.models.PlayerStats
 import org.checkmateplus.playerservice.repository.MatchRecordRepository
 import org.checkmateplus.playerservice.repository.PlayerRepository
+import org.checkmateplus.playerservice.repository.RegisteredPlayerRepository
+import org.springframework.cache.annotation.Cacheable
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import kotlin.math.roundToInt
 
 @Service
 class PlayerStatsService(
     private val matchRecordRepository: MatchRecordRepository,
-    private val playerRepository: PlayerRepository
+    private val playerRepository: PlayerRepository,
+    private val registeredPlayerRepository: RegisteredPlayerRepository
 ) {
 
+    @Cacheable("playerStats", key = "#playerId")
     fun getStats(playerId: String): PlayerStats {
         val player = playerRepository.findById(playerId).orElseThrow {
             IllegalArgumentException("Player not found")
@@ -83,6 +89,19 @@ class PlayerStatsService(
             nextCursor = nextCursor,
             hasMore = hasMore
         )
+    }
+
+    @Cacheable("leaderboard", key = "#size")
+    fun getLeaderboard(size: Int): List<LeaderboardEntry> {
+        val players = registeredPlayerRepository.findAllByOrderBySkillRatingDesc(PageRequest.of(0, size.coerceIn(1, 100)))
+        return players.mapIndexed { index, player ->
+            LeaderboardEntry(
+                rank = index + 1,
+                playerId = player.playerId,
+                displayName = player.displayName,
+                skillRating = player.skillRating ?: 1200
+            )
+        }
     }
 
     private fun calculateStreak(playerId: String, matches: List<MatchRecordEntity>): Int {
