@@ -24,7 +24,8 @@ class SecurityConfig(@Value("\${jwt.secret}") private val jwtSecret: String) {
             .csrf { it.disable() }
             .authorizeHttpRequests { auth ->
                 auth.requestMatchers("/actuator/health/**").permitAll()
-                auth.anyRequest().authenticated()
+                auth.requestMatchers("/matchmaking/**").permitAll() // moved up
+                auth.anyRequest().authenticated()                   // always last
             }
             .oauth2ResourceServer { oauth2 ->
                 oauth2.jwt { jwt ->

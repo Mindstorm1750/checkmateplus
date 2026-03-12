@@ -14,6 +14,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.stereotype.Controller
 import java.security.Principal
 import kotlin.time.ExperimentalTime
@@ -49,8 +50,10 @@ class MatchmakingController(
      */
     @OptIn(ExperimentalTime::class)
     @MessageMapping("/join")
-    fun joinGame(@Payload request: JoinRequest, @AuthenticationPrincipal jwt: Jwt) {
+    fun joinGame(@Payload request: JoinRequest, principal: Principal) {
         //  Use the ID from the principal
+        val jwt = (principal as JwtAuthenticationToken).token
+        // rest of your code unchanged
         val securePlayerId = jwt.subject
         val displayName = jwt.getClaim<String>("displayName") ?: request.displayName
         val isGuest = jwt.getClaim<Boolean>("guest") ?: false

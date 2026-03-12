@@ -20,7 +20,6 @@ class WebSocketConfig(
         // Memory-based message broker to send messages back to the client
         config.enableSimpleBroker("/topic", "/queue")
         config.setApplicationDestinationPrefixes("/app")
-
         // 1-1 notifications
         config.setUserDestinationPrefix("/user")
     }
