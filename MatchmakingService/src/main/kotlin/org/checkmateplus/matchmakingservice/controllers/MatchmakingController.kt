@@ -11,6 +11,7 @@ import org.springframework.aot.hint.annotation.RegisterReflectionForBinding
 import org.springframework.messaging.handler.annotation.MessageMapping
 import org.springframework.messaging.handler.annotation.Payload
 import org.springframework.messaging.simp.SimpMessagingTemplate
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.stereotype.Controller
@@ -104,6 +105,35 @@ class MatchmakingController(
             }
         } catch (e: Exception) {
             logger.error("Error in joinGame for player $securePlayerId", e)
+        }
+    }
+
+    /**
+     * Runs every second to detect MMR range expansions in the competitive queue.
+     * For each player whose range grew, sends a status update and attempts to
+     * find a match with the wider range.
+     */
+    @OptIn(ExperimentalTime::class)
+    @Scheduled(fixedDelay = 1000)
+    fun scanCompetitiveQueue() {
+        val expansions = matchmakingService.pollCompetitiveRangeExpansions()
+        for ((entry, newRange) in expansions) {
+            messagingTemplate.convertAndSendToUser(
+                entry.player.playerId,
+                "/queue/status",
+                mapOf("status" to "QUEUED", "message" to "Expanding search range to ±$newRange MMR...")
+            )
+
+            val match = matchmakingService.tryRematching(entry)
+            if (match != null) {
+                logger.info("Re-match found after range expansion: ${match.matchId}")
+                val allocation = matchmakingService.requestServerForMatch(
+                    match.matchId, match.players[0], match.players[1],
+                    match.timeControl, match.matchType, match.botConfiguration
+                )
+                if (allocation.success) notifyPlayers(match, allocation)
+                else logger.error("Failed to allocate server for re-matched game ${match.matchId}")
+            }
         }
     }
 
