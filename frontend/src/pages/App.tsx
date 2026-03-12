@@ -36,7 +36,7 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
   const descriptionText = "Get matched with other players";
   const navigate = useNavigate();
   const stompClient = useRef<Client | null>(null);
-  const jwtContext = useJwt();
+  const { jwt, isPending: jwtIsPending } = useJwt();
 
   const connect = () => {
     const socket = new SockJS(import.meta.env.VITE_BASE_URL + 'matchmaking');
@@ -44,7 +44,7 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
     const client = new Client({
       webSocketFactory: () => socket,
       connectHeaders: {
-        Authorization: `Bearer ${jwtContext.jwt}`
+        Authorization: `Bearer ${jwt}`
       },
       debug: (str: string) => console.log(str),
       onConnect: () => {
@@ -103,7 +103,7 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
           <DialogClose asChild>
             <Button onClick={() => { stompClient.current?.deactivate(); setInQueue(false) }} variant='outline'>Cancel</Button>
           </DialogClose>
-          <Button onClick={connect} variant={inQueue ? 'secondary' : 'default'} disabled={inQueue || timeControl === undefined}>
+          <Button onClick={connect} variant={inQueue ? 'secondary' : 'default'} disabled={inQueue || timeControl === undefined || jwtIsPending}>
             {inQueue && <Spinner data-icon='inline-start' />}
             {inQueue ? 'Queueing...' : 'Join queue'}
           </Button>
@@ -120,7 +120,7 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
   const [timeControl, setTimeControl] = useState<TimeControl | "ANY">();
   const navigate = useNavigate();
   const stompClient = useRef<Client | null>(null);
-  const jwtContext = useJwt();
+  const { jwt, isPending: jwtIsPending } = useJwt();
 
   const connect = () => {
     const socket = new SockJS(import.meta.env.VITE_BASE_URL + 'matchmaking');
@@ -128,7 +128,7 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
     const client = new Client({
       webSocketFactory: () => socket,
       connectHeaders: {
-        Authorization: `Bearer ${jwtContext.jwt}`
+        Authorization: `Bearer ${jwt}`
       },
       debug: (str: string) => console.log(str),
       onConnect: () => {
@@ -185,7 +185,7 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
           <DialogClose asChild>
             <Button onClick={() => { stompClient.current?.deactivate(); setInQueue(false) }} variant='outline'>Cancel</Button>
           </DialogClose>
-          <Button onClick={connect} variant={inQueue ? 'secondary' : 'default'} disabled={inQueue || timeControl === undefined}>
+          <Button onClick={connect} variant={inQueue ? 'secondary' : 'default'} disabled={inQueue || timeControl === undefined || jwtIsPending}>
             {inQueue && <Spinner data-icon='inline-start' />}
             {inQueue ? 'Joining...' : 'Play'}
           </Button>

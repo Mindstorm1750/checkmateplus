@@ -37,10 +37,13 @@ function Match() {
     const [gameOverMessage, setGameOverMessage] = useState<String>();
     const { preferences, updatePreferences } = usePreferences();
     const stompClient = useRef<Client | null>(null);
-    const jwtContext = useJwt();
+    const { jwt, isPending: jwtIsPending } = useJwt();
+
     useEffect(() => {
-        connect();
-    }, [matchId]);
+        if (!jwtIsPending && jwt) {
+            connect();
+        }
+    }, [matchId, jwtIsPending]);
 
     const connect = () => {
         const socket = new SockJS(`http://${websocketUrl}/match`);
@@ -49,7 +52,7 @@ function Match() {
         const client = new Client({
             webSocketFactory: () => socket,
             connectHeaders: {
-                Authorization: `Bearer ${jwtContext.jwt}`
+                Authorization: `Bearer ${jwt}`
             },
             debug: (str: string) => console.log(str),
             onConnect: () => {
@@ -81,6 +84,7 @@ function Match() {
                     const match: MatchStateMessage = JSON.parse(message.body);
                     console.log("Got initial match state message fen: " + match.fen);
                     setBoardState(fenToBoard(match.fen));
+                    setIsPlayerWhite(match.whitePlayer?.playerId === playerId);
                 });
 
                 // Subscribe to the match state. This will update our board
@@ -129,10 +133,6 @@ function Match() {
                             return newPieceOrigins;
                         });
                     }
-                    setIsPlayerWhite(match.whitePlayer?.playerId === playerId);
-                    // This line corrects the player's board perspective every time a move is made. 
-                    // Unfortunately, this disturbs the functionality of a "flip perspective" button.
-                    // Hence why there currently isn't one.
                 });
 
                 joinGame();

@@ -4,7 +4,6 @@ import './index.css'
 import App from './pages/App.tsx'
 import { ThemeProvider } from './components/theme-provider.tsx'
 import { BrowserRouter, Route, Routes } from 'react-router'
-import MatchmakerTestApp from './pages/MatchmakerTestApp.tsx'
 import Play from './pages/Play.tsx'
 import { PreferencesProvider } from './lib/PreferencesProvider.tsx'
 import Settings from './pages/Settings.tsx'
@@ -25,7 +24,6 @@ createRoot(document.getElementById('root')!).render(
             <BrowserRouter>
               <Routes>
                 <Route path="/" element={<App />} />
-                <Route path='/test' element={<MatchmakerTestApp />} />
                 <Route path='/play/:colour' element={<Play />} />
                 <Route path='/settings' element={<Settings />} />
                 <Route path='/match' element={<Match />} />
