@@ -6,19 +6,16 @@ import { gql } from "./graphql";
 const JwtContext = createContext<JwtContextType | undefined>(undefined);
 
 type JwtContextType = {
-    jwt: string,
-    setJwt: Dispatch<SetStateAction<string>>
+    jwt: string | null,
 }
 
 export function JwtProvider({ children }: { children: ReactNode }) {
-    const [jwt, setJwt] = useState<string>(() => {
-        // Load from localStorage. Default to brown board and normal animations if nothing stored.
-        const saved = localStorage.getItem('jwt');
-        if (!saved) {
-            const queryResult = useQuery({
-                queryKey: ['loginAsGuest'],
-                queryFn: () =>
-                    gql<GuestAuthResponse>(`
+    const [jwt] = useState<string | null>(() => localStorage.getItem('jwt'));
+
+    const queryResult = useQuery({
+        queryKey: ['loginAsGuest'],
+        queryFn: () =>
+            gql<GuestAuthResponse>(`
                         mutation {
                             loginAsGuest {
                                 jwt,
@@ -27,23 +24,20 @@ export function JwtProvider({ children }: { children: ReactNode }) {
                             }
                         }
                         `),
-            })
-            if (queryResult.data) {
-                localStorage.setItem('jwt', queryResult.data.jwt)
-                localStorage.setItem('playerId', queryResult.data.playerId)
-                localStorage.setItem('displayName', queryResult.data.displayName)
-            }
-        }
-        return saved ?? 'error'; // Realistically, the query should give us an actual jwt
-    });
+        enabled: !jwt
+    })
 
-    // Save to localStorage whenever jwt changes.
     useEffect(() => {
-        localStorage.setItem('jwt', jwt);
-    }, [jwt]);
+        if (queryResult.isSuccess && !jwt) {
+            const { jwt: newJwt, displayName, playerId } = queryResult.data.loginAsGuest;
+            localStorage.setItem('jwt', newJwt)
+            localStorage.setItem('displayName', displayName)
+            localStorage.setItem('playerId', playerId)
+        }
+    }, [queryResult])
 
     return (
-        <JwtContext.Provider value={{ jwt, setJwt }}>
+        <JwtContext.Provider value={{ jwt }}>
             {children}
         </JwtContext.Provider>
     );

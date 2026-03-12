@@ -6,6 +6,6 @@ type AuthResponse = {
     isGuest: Boolean
 }
 
-export type GuestAuthResponse = Pick<AuthResponse, "jwt" | "playerId" | "displayName">
+export type GuestAuthResponse = { loginAsGuest: Pick<AuthResponse, "jwt" | "playerId" | "displayName"> }
 
-export type RegisteredAuthResponse = Required<AuthResponse>
+export type RegisteredAuthResponse = { loginAsGuest: Required<AuthResponse> }
