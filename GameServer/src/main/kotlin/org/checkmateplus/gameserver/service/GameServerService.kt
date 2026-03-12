@@ -145,7 +145,7 @@ class GameServerService(
             logger.info("Allocating match ${request.matchId}")
             val whitePlayer: Player
             val blackPlayer: Player
-            val botConfiguration: BotConfiguration? = if (request.hasBotConfiguration()) {
+            val botConfiguration: BotConfiguration? = if (request.hasBotConfiguration() && request.botConfiguration != GameServerProto.BotConfiguration.getDefaultInstance()) {
                 BotConfiguration(
                     botModelType = BotModelType.valueOf(request.botConfiguration.botModelType.name),
                     botMoveTimeModelType = BotMoveTimeModelType.valueOf(request.botConfiguration.botMoveTimeModelType.name)

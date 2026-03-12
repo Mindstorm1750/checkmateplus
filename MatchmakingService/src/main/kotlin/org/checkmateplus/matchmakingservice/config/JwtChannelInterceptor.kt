@@ -35,7 +35,8 @@ class JwtChannelInterceptor(
         val command = accessor.command
         if (command != StompCommand.CONNECT &&
             command != StompCommand.SEND &&
-            command != StompCommand.SUBSCRIBE) {
+            command != StompCommand.SUBSCRIBE &&
+            command != StompCommand.DISCONNECT) {
             return message
         }
 
