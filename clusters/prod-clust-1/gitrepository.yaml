@@ -9,4 +9,4 @@ spec:
   secretRef:
     name: gitlab-auth
   ref:
-    branch: k8s-intergration
+    branch: microservices
