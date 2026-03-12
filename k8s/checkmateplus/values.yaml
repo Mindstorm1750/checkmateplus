@@ -166,7 +166,7 @@ postgresql:
   namespaceOverride: checkmateplus
   enabled: true
   auth:
-    username: checkmate
+    username: checkmateuser
     database: checkmate
     existingSecret: checkmateplus-playerservice-secret
     secretKeys:
