@@ -30,7 +30,7 @@ const ChessBoard = ({
     const [promotionSquare, setPromotionSquare] = useState<Square | null>();
 
     const { preferences } = usePreferences();
-    const { lightSquare, lightSquareSelected, darkSquare, darkSquareSelected } = BOARD_THEMES[preferences.boardColor];
+    const { lightSquare, lightSquareSelected, darkSquare, darkSquareSelected } = BOARD_THEMES[preferences.boardColour];
 
     const squaresView = whitePerspective ? boardState.squares : boardState.squares.toReversed();
     const moves = legalMoves(boardState);

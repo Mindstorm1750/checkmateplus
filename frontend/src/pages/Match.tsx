@@ -2,7 +2,7 @@ import Layout from "@/components/Layout";
 import { BackArrowLink } from "@/components/ui/back-arrow-link";
 import ChessBoard, { type ChessBoardProps } from "@/components/ui/ChessBoard";
 import { algebraicToSquare, fenToBoard, squareToAlgebraic } from "@/lib/chess.helpers";
-import { usePreferences, type Preferences } from "@/lib/PreferencesProvider";
+import { usePreferences } from "@/lib/PreferencesProvider";
 import type { JoinMatchMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/JoinMatchMessage";
 import type { MatchEventMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchEventMessage";
 import type { MatchStateMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchStateMessage";
@@ -14,7 +14,6 @@ import { Client, type IMessage } from "@stomp/stompjs";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router";
 import SockJS from 'sockjs-client/dist/sockjs';
-import type { PlayerPreferences } from "@/lib/stompMessageTypes/GameServer/models/messages/PlayerPreferences.ts";
 import { useJwt } from "@/lib/JwtProvider";
 
 function Match() {
@@ -35,7 +34,7 @@ function Match() {
     const [isPlayerWhite, setIsPlayerWhite] = useState<Boolean>(true);
     const [isGameOver, setIsGameOver] = useState<Boolean>(false);
     const [gameOverMessage, setGameOverMessage] = useState<String>();
-    const { preferences, updatePreferences } = usePreferences();
+    const { preferences } = usePreferences();
     const stompClient = useRef<Client | null>(null);
     const { jwt, isPending: jwtIsPending } = useJwt();
 
@@ -145,14 +144,14 @@ function Match() {
 
     const joinGame = () => {
         if (stompClient.current?.connected) {
-            const randomAnimationType: Preferences['animationType'] = Math.random() > 0.5 ? 'FUN' : 'NORMAL';
-            updatePreferences({ animationType: randomAnimationType });
-            const preferencesForMatch: PlayerPreferences = {
-                boardColour: preferences.boardColor, // boardColour can be read from the now outdated preferences object because we didn't modify it
-                animationType: randomAnimationType
-            }
+            // const randomAnimationType: Preferences['animationType'] = Math.random() > 0.5 ? 'FUN' : 'NORMAL';
+            // updatePreferences({ animationType: randomAnimationType });
+            // const preferencesForMatch: PlayerPreferences = {
+            //     boardColour: preferences.boardColour, // boardColour can be read from the now outdated preferences object because we didn't modify it
+            //     animationType: randomAnimationType
+            // }
             // TODO use player's displayName (or playerId if types/classes have changed)
-            const joinRequest: JoinMatchMessage = { playerId, matchId: matchId, playerName: `UserWhoJoinedAt${Date.now()}`, playerPreferences: preferencesForMatch };
+            const joinRequest: JoinMatchMessage = { playerId, matchId: matchId, playerName: `UserWhoJoinedAt${Date.now()}`, playerPreferences: preferences };
 
             stompClient.current.publish({
                 destination: `/app/match/${matchId}/join`,

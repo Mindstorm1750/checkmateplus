@@ -13,7 +13,6 @@ import { type TimeControl, TimeControlToStringMap } from "@/lib/stompMessageType
 import { Info } from "lucide-react"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 import type { QueueStatus } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/QueueStatus"
-import type { BotConfiguration } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/BotConfiguration"
 import { useJwt } from "@/lib/JwtProvider"
 
 function App() {
@@ -156,11 +155,12 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
 
   const joinQueue = () => {
     if (stompClient.current?.connected) {
-      const randomMoveTimeModelType: BotConfiguration['botMoveTimeModelType'] = Math.random() > 0.5 ? 'REALISTIC' : 'MEDIAN';
+      // const randomMoveTimeModelType: BotConfiguration['botMoveTimeModelType'] = Math.random() > 0.5 ? 'REALISTIC' : 'MEDIAN';
+      // un-comment for randomised botMoveTimeModelType
       const joinRequest: JoinRequest = {
         displayName: `UserWhoJoinedAt${Date.now()}`,
         matchType: 'PVE',
-        botConfiguration: { botModelType: 'MINMAX', botMoveTimeModelType: randomMoveTimeModelType },
+        botConfiguration: { botModelType: 'MINMAX', botMoveTimeModelType: 'REALISTIC' },
         timeControl: timeControl == "ANY" ? undefined : timeControl
       }; // TODO use player's displayName (or playerId if types/classes have changed)
       stompClient.current.publish({
