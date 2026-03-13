@@ -25,7 +25,6 @@ export function JwtProvider({ children }: { children: ReactNode }) {
                             }
                         }
                         `),
-        enabled: !jwt
     })
 
     useEffect(() => {
