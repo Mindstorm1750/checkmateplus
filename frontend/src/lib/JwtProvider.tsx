@@ -28,7 +28,7 @@ export function JwtProvider({ children }: { children: ReactNode }) {
     })
 
     useEffect(() => {
-        if (queryResult.isSuccess && !jwt) {
+        if (queryResult.isSuccess) {
             const { jwt: newJwt, displayName, playerId } = queryResult.data.loginAsGuest;
             localStorage.setItem('jwt', newJwt)
             localStorage.setItem('displayName', displayName)
