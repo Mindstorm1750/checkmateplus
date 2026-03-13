@@ -24,9 +24,8 @@ class MatchRecordService(
     private val logger = LoggerFactory.getLogger(javaClass)
 
     @Caching(evict = [
-        CacheEvict(cacheNames = ["playerStats"], key = "#record.whitePlayer.playerId"),
-        CacheEvict(cacheNames = ["playerStats"], key = "#record.blackPlayer.playerId"),
-        CacheEvict(cacheNames = ["leaderboard"], allEntries = true)
+        CacheEvict(cacheNames = ["playerStats"], allEntries = true),
+        CacheEvict(cacheNames = ["leaderboard"], allEntries = true) //THIS NEEDS REVISITING THIS WILL NOT WORK CORRECTLY!!!
     ])
     fun save(record: PlayerServiceProto.MatchRecord) {
         val whitePlayer = getOrCreatePlayer(record.whitePlayer)
