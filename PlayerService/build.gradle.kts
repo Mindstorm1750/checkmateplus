@@ -94,7 +94,9 @@ tasks.generateJava {
 hibernate {
     enhancement {
         enableAssociationManagement = true
-        enableLazyInitialization = true
+        enableDirtyTracking.set(true)
+        enableLazyInitialization.set(true)
+        enableExtendedEnhancement.set(false)
     }
 }
 

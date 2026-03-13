@@ -17,6 +17,7 @@ import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
 
 @Entity
+
 @Table(name = "match_records")
 class MatchRecordEntity(
 
@@ -44,11 +45,11 @@ class MatchRecordEntity(
     @Column(name = "match_outcome", nullable = false)
     var matchOutcome: MatchOutcome,
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "white_player_id", nullable = false)
     var whitePlayer: PlayerEntity? = null,
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "black_player_id", nullable = false)
     var blackPlayer: PlayerEntity,
 
