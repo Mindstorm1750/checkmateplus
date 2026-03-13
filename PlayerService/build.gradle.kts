@@ -94,8 +94,10 @@ tasks.generateJava {
 hibernate {
     enhancement {
         enableAssociationManagement = true
+        enableLazyInitialization = true
     }
 }
+
 
 protobuf {
     protoc {
