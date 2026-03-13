@@ -31,7 +31,7 @@ gameserver:
   enabled: true
   image:
     repository: git.cs.kent.ac.uk:5050/jhl28/checkmate/gameserver
-    tag: RC-2.0.0
+    tag: RC-2.0.1
   replicaCount: 1
   service:
     httpPort: 8090

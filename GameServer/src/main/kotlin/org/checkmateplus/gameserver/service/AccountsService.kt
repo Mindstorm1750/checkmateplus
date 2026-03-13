@@ -25,30 +25,37 @@ class AccountsService(
     private lateinit var channel: ManagedChannel
     fun sendMatchRecord(matchRecord: MatchRecord): Boolean {
         return try {
+            logger.debug("[$serverId] Sending match record ${matchRecord.matchId}")
             val response = stub.submitMatchRecord(matchRecord.toProto())
             if (response.success) {
                 logger.info("[$serverId] MatchRecord ${matchRecord.matchId} stored successfully")
                 true
             } else {
-                logger.error("[$serverId] MatchRecord ${matchRecord.matchId} rejected: ${response.message}")
+                logger.warn("[$serverId] MatchRecord ${matchRecord.matchId} rejected: ${response.message}")
                 false
             }
         } catch (e: Exception) {
-            logger.error("[$serverId] sendMatchRecord threw an exception: ${e.message}")
+            logger.error(
+                "[$serverId] sendMatchRecord failed for match ${matchRecord.matchId} " +
+                        "targeting $playerserviceHost:$playerservicePort", e
+            )
             false
         }
     }
+
     @PostConstruct
     fun initialize() {
+        logger.info("[$serverId] Connecting to PlayerService at $playerserviceHost:$playerservicePort")
         channel = ManagedChannelBuilder.forAddress(playerserviceHost, playerservicePort)
             .usePlaintext().build()
-
         stub = PlayerServiceGrpc.newBlockingStub(channel)
+        logger.info("[$serverId] PlayerService gRPC channel initialized")
     }
+
     @PreDestroy
     fun shutdown() {
+        logger.info("[$serverId] Shutting down PlayerService gRPC channel")
         channel.shutdown().awaitTermination(5, TimeUnit.SECONDS)
     }
 }
-
 
