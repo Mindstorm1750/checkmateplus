@@ -45,8 +45,8 @@ gameserver:
     SPRING_DATA_REDIS_HOST: "{{ .Release.Name }}-redis-master"
     SPRING_DATA_REDIS_PORT: "6379"
     SPRING_PROFILES_ACTIVE: prod
-    PLAYERSERVICE_GRPC_HOST: "{{ .Release.Name }}-playerservice"
-    PLAYERSERVICE_GRPC_PORT: "9092"
+    PLAYERSERVICE_HOST: "{{ .Release.Name }}-playerservice"
+    PLAYERSERVICE_PORT: "9092"
   jwtSecretName: checkmateplus-playerservice-secret
   resources:
     requests:
