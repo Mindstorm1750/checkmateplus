@@ -123,7 +123,7 @@ playerservice:
   env:
     SPRING_PROFILES_ACTIVE: prod
     ALLOWED_ORIGINS: "https://checkmateplus.org"
-    POSTGRES_HOST: "checkmateplus-postgresql"
+    POSTGRES_HOST: "{{ .Release.Name }}-postgres"
     POSTGRES_PORT: "5432"
     POSTGRES_DB: "checkmate"
     SPRING_DATA_REDIS_HOST: "{{ .Release.Name }}-redis-master"
