@@ -3,7 +3,7 @@ replicaCount: 1
 
 image:
   repository: git.cs.kent.ac.uk:5050/jhl28/checkmate/playerservice
-  tag: latest
+  tag: RC-2.0.0
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []

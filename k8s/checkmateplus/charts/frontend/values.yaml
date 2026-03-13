@@ -7,7 +7,7 @@ replicaCount: 2
 enabled: true
 image:
   repository: git.cs.kent.ac.uk:5050/jhl28/checkmate/frontend
-  tag: latest
+  tag: RC-2.0.0
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []
