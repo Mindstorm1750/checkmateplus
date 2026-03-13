@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { GuestAuthResponse } from "./playerServiceTypes/AuthResponses";
-import { gql } from "./graphql";
+import { gqlNoJwt } from "./graphql";
 
 const JwtContext = createContext<JwtContextType | undefined>(undefined);
 
@@ -16,7 +16,7 @@ export function JwtProvider({ children }: { children: ReactNode }) {
     const queryResult = useQuery({
         queryKey: ['loginAsGuest'],
         queryFn: () =>
-            gql<GuestAuthResponse>(`
+            gqlNoJwt<GuestAuthResponse>(`
                         mutation {
                             loginAsGuest {
                                 jwt,

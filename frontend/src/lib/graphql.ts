@@ -18,3 +18,19 @@ export async function gql<T>(
     return data as T
 }
 
+export async function gqlNoJwt<T>(
+    query: string,
+    variables?: Record<string, unknown>
+): Promise<T> {
+    const res = await fetch(PLAYER_SERVICE_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query, variables }),
+    })
+    const { data, errors } = await res.json()
+    if (errors?.length) throw new Error(errors[0].message)
+    return data as T
+}
+
