@@ -21,7 +21,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     // Load from localStorage. Default to brown board and normal animations if nothing stored.
     const saved = localStorage.getItem('chessPreferences');
     return saved ? JSON.parse(saved) : {
-      boardColor: 'BROWN',
+      boardColour: 'BROWN',
       animationType: 'NORMAL'
     };
   });
