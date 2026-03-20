@@ -104,7 +104,7 @@ class MatchWebSocketController(
                 )
             }
             // Handle game end conditions
-            handleGameEndConditions(matchId, matchState)
+            if (handleGameEndConditions(matchId, matchState)) return
 
             if (match.matchType == MatchType.PVE && match.botConfiguration?.botModelType != null) {
                 val botColour = if (match.players[0] is Player.Bot) WHITE else BLACK
@@ -188,7 +188,7 @@ class MatchWebSocketController(
      * @param matchId The unique identifier of the match.
      * @param matchState The current state of the match.
      */
-    private fun handleGameEndConditions(matchId: String, matchState: MatchStateMessage) {
+    private fun handleGameEndConditions(matchId: String, matchState: MatchStateMessage): Boolean {
         when {
             matchState.isCheckmate -> {
                 val match = matchService.getMatch(matchId)
@@ -225,6 +225,7 @@ class MatchWebSocketController(
                     history = match.turnHistory,
                     matchCreationTime = match.createdAt
                 ))
+                return true
             }
 
             matchState.isStalemate -> {
@@ -255,6 +256,7 @@ class MatchWebSocketController(
                     history = match.turnHistory,
                     matchCreationTime = match.createdAt
                 ))
+                return true
             }
 
             matchState.isDraw -> {
@@ -285,8 +287,10 @@ class MatchWebSocketController(
                     history = match.turnHistory,
                     matchCreationTime = match.createdAt
                 ))
+                return true
             }
         }
+        return false
     }
 
     /**
