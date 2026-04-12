@@ -30,6 +30,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.stereotype.Controller
 import java.security.Principal
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * WebSocket controller for handling real-time chess match interactions.
@@ -126,7 +127,7 @@ class MatchWebSocketController(
                                 matchService.calculateMove(match.board!!, match.botConfiguration.botModelType)
                             }
                             val delayDeferred = async {
-                                delay(calculateMoveTimeDelayMs(match.botConfiguration.botMoveTimeModelType, moveTimeModelFeatures))
+                                delay(calculateMoveTimeDelayMs(match.botConfiguration.botMoveTimeModelType, moveTimeModelFeatures).milliseconds)
                             }
                             awaitAll(moveDeferred, delayDeferred)
                             moveDeferred.await()
