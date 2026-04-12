@@ -183,6 +183,7 @@ class GameManagerService : MatchManagerGrpc.MatchManagerImplBase() {
             val allocateResponse = stub.allocateMatch(allocateRequest)
 
             if (allocateResponse.success) {
+                server.value.activeMatches++
 
                 logger.info("Match ${request.matchId} allocated to ${server.value.serverId}")
                 logger.info("  Server now at ${server.value.activeMatches}/${server.value.maxMatches} )")
