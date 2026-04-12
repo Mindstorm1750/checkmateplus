@@ -30,9 +30,9 @@ function Match() {
      */
     const [pieceOrigins, setPieceOrigins] = useState<Map<Square, Square>>(EMPTY_PIECE_ORIGINS);
     const [clockState, setClockState] = useState<ChessBoardProps['clockState']>();
-    const [isPlayersTurn, setIsPlayersTurn] = useState<Boolean>(false);
-    const [isPlayerWhite, setIsPlayerWhite] = useState<Boolean>(true);
-    const [isGameOver, setIsGameOver] = useState<Boolean>(false);
+    const [isPlayersTurn, setIsPlayersTurn] = useState<boolean>(false);
+    const [isPlayerWhite, setIsPlayerWhite] = useState<boolean>(true);
+    const [isGameOver, setIsGameOver] = useState<boolean>(false);
     const [gameOverMessage, setGameOverMessage] = useState<String>();
     const { preferences } = usePreferences();
     const stompClient = useRef<Client | null>(null);
@@ -184,7 +184,8 @@ function Match() {
                 <div className='w-3/4'>
                     {isGameOver && gameOverMessage && <p>{gameOverMessage}</p>}
                     <ChessBoard
-                        isInteractable={isPlayersTurn && !isGameOver}
+                        isPlayersTurn={isPlayersTurn}
+                        isGameOver={isGameOver}
                         boardState={boardState}
                         clockState={clockState}
                         moveCallback={handleMove}

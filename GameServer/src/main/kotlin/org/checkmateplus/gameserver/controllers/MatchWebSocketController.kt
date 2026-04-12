@@ -132,6 +132,9 @@ class MatchWebSocketController(
                             moveDeferred.await()
                         }
 
+                        val botClock = if(botColour == WHITE) match.whitePlayerTime else match.blackPlayerTime
+                        if (botClock <= 0) return@launch
+
                         val botMoveMessage = MoveMessage(
                             matchId,
                             playerId = match.players.find { it is Player.Bot }?.playerId ?: "BOT",
