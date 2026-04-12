@@ -1,0 +1,31 @@
+package org.checkmateplus.playerservice.configs
+
+import kotlinx.serialization.json.Json
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.data.redis.connection.RedisConnectionFactory
+import org.springframework.data.redis.core.RedisTemplate
+import org.springframework.data.redis.serializer.StringRedisSerializer
+
+@Configuration
+class RedisConfig {
+
+    @Bean
+    fun json(): Json = Json {
+        isLenient = true
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+    }
+
+    @Bean
+    fun redisTemplate(connectionFactory: RedisConnectionFactory): RedisTemplate<String, String> {
+        return RedisTemplate<String, String>().apply {
+            this.connectionFactory = connectionFactory
+            keySerializer = StringRedisSerializer()
+            valueSerializer = StringRedisSerializer()
+            hashKeySerializer = StringRedisSerializer()
+            hashValueSerializer = StringRedisSerializer()
+            afterPropertiesSet()
+        }
+    }
+}

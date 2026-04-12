@@ -5,6 +5,7 @@ import org.checkmateplus.playerservice.models.AuthResponse
 import org.checkmateplus.playerservice.models.PlayerProfile
 import org.checkmateplus.playerservice.models.RegisterResponse
 import org.checkmateplus.playerservice.services.AuthenticationService
+import org.checkmateplus.playerservice.services.OAuthCodeService
 import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.MutationMapping
 import org.springframework.graphql.data.method.annotation.QueryMapping
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Controller
 @Controller
 class AuthenticationGraphQLController(
     private val authService: AuthenticationService,
+    private val oAuthCodeService: OAuthCodeService,
     private val request: HttpServletRequest
 ) {
 
@@ -41,6 +43,11 @@ class AuthenticationGraphQLController(
 
     @MutationMapping
     fun loginAsGuest(): AuthResponse = authService.loginAsGuest()
+
+    @MutationMapping
+    fun exchangeOAuthCode(@Argument code: String): AuthResponse =
+        oAuthCodeService.exchangeCode(code)
+            ?: throw IllegalArgumentException("Invalid or expired OAuth code")
 
     @QueryMapping
     fun me(): PlayerProfile {
