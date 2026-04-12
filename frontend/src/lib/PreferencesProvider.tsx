@@ -20,10 +20,12 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   const [preferences, setPreferences] = useState<Preferences>(() => {
     // Load from localStorage. Default to brown board and normal animations if nothing stored.
     const saved = localStorage.getItem('chessPreferences');
-    return saved ? JSON.parse(saved) : {
-      boardColour: 'BROWN',
-      animationType: 'NORMAL'
+    const defaultPreferences: Preferences = {
+        boardColour: 'BROWN',
+        animationType: 'NORMAL'
     };
+    const loadedPreferences: Preferences | null = saved && JSON.parse(saved);
+    return loadedPreferences?.boardColour ? loadedPreferences : defaultPreferences; // In case the existing preferences uses the old spelling of "boardColor" (without a u)
   });
 
   // Save to localStorage whenever preferences change.
