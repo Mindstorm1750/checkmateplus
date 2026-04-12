@@ -3,6 +3,7 @@ type Mutation {
     confirmTotp(code: String!): AuthResponse!
     loginWithTotp(username: String!, code: String!): AuthResponse!
     loginAsGuest: AuthResponse!
+    exchangeOAuthCode(code: String!): AuthResponse!
     refresh(refreshToken: String!): AuthResponse!
     logout(refreshToken: String!): Boolean!
 }
