@@ -2,7 +2,6 @@ package org.checkmateplus.chessLibrary.botEngine
 
 import org.checkmateplus.chessLibrary.chessEngine.Board
 import org.checkmateplus.chessLibrary.chessEngine.Move
-import org.checkmateplus.chessLibrary.playerModels.BotModelType
 
 /**
  * Base class for all bot engines that can generate moves for a given chess board state.

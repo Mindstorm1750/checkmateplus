@@ -3,7 +3,7 @@ services:
     image: git.cs.kent.ac.uk:5050/jhl28/checkmate/matchmakingservice:latest
     container_name: matchmakingservice
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
+      - jwtSecret=+/J48zc2Hq1vtHZNU+9HGXZ6vP3ZDaX4UtgNWqR7eSY=
     ports:
       - "8080:8080"
     networks:
@@ -18,13 +18,15 @@ services:
     container_name: gameserver
     ports:
       - "8090:8090"
+      - "9091:9091"
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
+      - jwtSecret=+/J48zc2Hq1vtHZNU+9HGXZ6vP3ZDaX4UtgNWqR7eSY=
     networks:
       - game-network
     restart: unless-stopped
     depends_on:
       - gameservermanager
+      - playerservice
 
   gameservermanager:
     image: git.cs.kent.ac.uk:5050/jhl28/checkmate/gameservermanager:latest
@@ -32,8 +34,47 @@ services:
     networks:
       - game-network
     restart: unless-stopped
+
+  playerservice:
+    image: git.cs.kent.ac.uk:5050/jhl28/checkmate/playerservice:0.0.1-snapshot
+
+    container_name: playerservice
+    ports:
+      - "8095:8095"
+      - "9092:9092"
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
+      - jwtSecret=+/J48zc2Hq1vtHZNU+9HGXZ6vP3ZDaX4UtgNWqR7eSY=
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=checkmate
+      - postgresUser=checkmate
+      - postgresPassword=checkmate
+    networks:
+      - game-network
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:18-alpine
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=checkmate
+      - POSTGRES_PASSWORD=checkmate
+      - POSTGRES_DB=checkmate
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - game-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d checkmate"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:8.6.0-alpine
@@ -43,6 +84,10 @@ services:
     networks:
       - game-network
     restart: unless-stopped
+
 networks:
   game-network:
     driver: bridge
+
+volumes:
+  postgres-data:

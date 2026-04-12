@@ -1,7 +1,5 @@
 package org.checkmateplus.chessLibrary.botEngine
 
-import org.checkmateplus.chessLibrary.playerModels.BotMoveTimeModelType
-import org.checkmateplus.chessLibrary.playerModels.MoveTimeModelFeatures
 import kotlin.math.max
 import kotlin.math.pow
 

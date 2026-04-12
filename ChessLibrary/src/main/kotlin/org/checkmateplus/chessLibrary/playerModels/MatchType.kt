@@ -1,8 +1,11 @@
     package org.checkmateplus.chessLibrary.playerModels
 
+    import kotlinx.serialization.Serializable
+
     /**
      * Represents the type of queue a player can join in the matchmaking service.
      */
+    @Serializable
     enum class MatchType {
         /** Casual player versus player match. */
         CASUAL_PVP,

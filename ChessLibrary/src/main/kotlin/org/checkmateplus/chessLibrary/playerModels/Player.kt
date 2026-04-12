@@ -1,6 +1,9 @@
 package org.checkmateplus.chessLibrary.playerModels
 
 import kotlinx.serialization.Serializable
+import org.checkmateplus.chessLibrary.botEngine.BotConfiguration
+import org.checkmateplus.chessLibrary.botEngine.BotModelType
+import org.checkmateplus.chessLibrary.botEngine.BotMoveTimeModelType
 import java.util.UUID
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -16,6 +19,8 @@ sealed class Player {
     @OptIn(ExperimentalTime::class)
     abstract val joinedQueueAt: Instant
     abstract val skillRating: Int?
+    abstract val ratingDeviation: Double?
+    abstract val volatility: Double?
     /**
      * Anonymous player with session-based identity
      */
@@ -24,7 +29,10 @@ sealed class Player {
         override val playerId: String = UUID.randomUUID().toString(),
         override val displayName: String = "Guest${playerId.take(6)}",
         override val joinedQueueAt: Instant = Clock.System.now(),
-        override val skillRating: Int? = null
+        override val skillRating: Int? = null,
+        override val ratingDeviation: Double? = null,
+        override val volatility: Double? = null,
+        var playerPreferences: PlayerPreferences? = null
     ) : Player()
     /**
      * AI or bot player.
@@ -34,7 +42,7 @@ sealed class Player {
      * @property joinedQueueAt The time when the bot joined the queue.
      * @property skillRating The optional skill rating for matchmaking.
      * @property difficulty The AI difficulty level (e.g., 1-10).
-     * @property botModelType The AI model type used by the bot.
+     * @property botConfiguration The AI model type and move time model used by the bot.
      */
     @Serializable
     data class Bot @OptIn(ExperimentalTime::class) constructor(
@@ -42,10 +50,23 @@ sealed class Player {
         override val displayName: String = "Bot-${playerId.take(6)}",
         override val joinedQueueAt: Instant = Clock.System.now(),
         override val skillRating: Int? = null,
+        override val ratingDeviation: Double? = null,
+        override val volatility: Double? = null,
         val difficulty: Int = 1,
         val botConfiguration: BotConfiguration = BotConfiguration(
             botModelType = BotModelType.RANDOM,
             botMoveTimeModelType = BotMoveTimeModelType.NODELAY
         ),
+    ) : Player()
+
+    @Serializable
+    data class Registered @OptIn(ExperimentalTime::class) constructor(
+        override val playerId: String = UUID.randomUUID().toString(),
+        override val displayName: String = "Registered${playerId.take(6)}",
+        override val joinedQueueAt: Instant = Clock.System.now(),
+        override val skillRating: Int? = 1200,
+        override val ratingDeviation: Double? = 350.0,
+        override val volatility: Double? = 0.06,
+        var playerPreferences: PlayerPreferences? = null
     ) : Player()
 }

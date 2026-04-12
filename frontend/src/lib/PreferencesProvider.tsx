@@ -1,7 +1,11 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 
+/**
+ * Closely related to the PlayerPreferences type.
+ * This type is more restrictive to reflect the actual options users choose from.
+ */
 export type Preferences = {
-  boardColor: 'BROWN' | 'BLUE' | 'GREEN';
+  boardColour: 'BROWN' | 'BLUE' | 'GREEN';
   animationType: 'NORMAL' | 'FUN';
 }
 
@@ -16,10 +20,12 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   const [preferences, setPreferences] = useState<Preferences>(() => {
     // Load from localStorage. Default to brown board and normal animations if nothing stored.
     const saved = localStorage.getItem('chessPreferences');
-    return saved ? JSON.parse(saved) : {
-      boardColor: 'BROWN',
-      animationType: 'NORMAL'
+    const defaultPreferences: Preferences = {
+        boardColour: 'BROWN',
+        animationType: 'NORMAL'
     };
+    const loadedPreferences: Preferences | null = saved && JSON.parse(saved);
+    return loadedPreferences?.boardColour ? loadedPreferences : defaultPreferences; // In case the existing preferences uses the old spelling of "boardColor" (without a u)
   });
 
   // Save to localStorage whenever preferences change.

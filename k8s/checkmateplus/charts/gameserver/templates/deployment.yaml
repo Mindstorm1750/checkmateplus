@@ -56,6 +56,9 @@ spec:
             - name: {{ $key }}
               value: {{ tpl $val $ | quote }}
            {{- end }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.jwtSecretName }}
           livenessProbe:
             httpGet:
               path: /actuator/health/liveness

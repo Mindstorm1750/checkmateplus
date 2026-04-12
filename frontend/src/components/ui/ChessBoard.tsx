@@ -1,39 +1,44 @@
-import { isMoveInMoves, legalMoves, pieceToSvg } from "@/lib/chess.helpers";
-import type { Board, Move, Square } from "@/types/Chess.type"
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion"
-import { usePreferences } from "@/lib/PreferencesContext";
-import { BOARD_THEMES } from "@/lib/board.theme";
-import { Dialog, DialogContent, DialogHeader } from "./dialog";
-import { DialogDescription } from "@radix-ui/react-dialog";
-import type { MatchStateMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchStateMessage";
-import { Button } from "./button";
+import {isMoveInMoves, legalMoves, pieceToSvg} from "@/lib/chess.helpers";
+import type {Board, Move, Square} from "@/types/Chess.type"
+import {useState} from "react";
+import {motion, AnimatePresence} from "framer-motion"
+import {usePreferences} from "@/lib/PreferencesProvider";
+import {BOARD_THEMES} from "@/lib/board.theme";
+import {Dialog, DialogContent, DialogHeader} from "./dialog";
+import {DialogDescription} from "@radix-ui/react-dialog";
+import type {MatchStateMessage} from "@/lib/stompMessageTypes/GameServer/models/messages/MatchStateMessage";
+import {Button} from "./button";
 
 export type ChessBoardProps = {
     moveCallback: (move: Move) => void,
     boardState: Board,
-    whitePerspective?: Boolean,
-    isInteractable: Boolean, // used for stopping the player from making moves when it isn't their turn
+    whitePerspective?: boolean,
+    isPlayersTurn: boolean, // used for stopping the player from making moves when it isn't their turn
+    isGameOver: boolean, // used for clocks and also stopping player from making moves
     clockState?: Pick<MatchStateMessage, "whitePlayerTime" | "blackPlayerTime">,
     pieceOrigins: Map<Square, Square>
 }
 
 const ChessBoard = ({
-    moveCallback,
-    boardState,
-    whitePerspective = true,
-    isInteractable,
-    clockState = { whitePlayerTime: 0, blackPlayerTime: 0 },
-    pieceOrigins }: ChessBoardProps) => {
+                        moveCallback,
+                        boardState,
+                        whitePerspective = true,
+                        isPlayersTurn,
+                        isGameOver,
+                        clockState = {whitePlayerTime: 0, blackPlayerTime: 0},
+                        pieceOrigins
+                    }: ChessBoardProps) => {
     const [squareClicked, setSquareClicked] = useState<Square | null>();
     const [askForPromotion, setAskForPromotion] = useState<boolean>(false);
     const [promotionSquare, setPromotionSquare] = useState<Square | null>();
 
-    const { preferences } = usePreferences();
-    const { lightSquare, lightSquareSelected, darkSquare, darkSquareSelected } = BOARD_THEMES[preferences.boardColor];
+    const {preferences} = usePreferences();
+    const {lightSquare, lightSquareSelected, darkSquare, darkSquareSelected} = BOARD_THEMES[preferences.boardColour];
 
     const squaresView = whitePerspective ? boardState.squares : boardState.squares.toReversed();
     const moves = legalMoves(boardState);
+
+    const isInteractable = isPlayersTurn && !isGameOver;
 
     const handleClick = (square: Square) => {
         if (!isInteractable) {
@@ -42,12 +47,10 @@ const ChessBoard = ({
         if (squareClicked === null || squareClicked === undefined) {
             // simply doing !squareClicked causes bugs with the zeroth square as !0 is true.
             setSquareClicked(square);
-        }
-        else if (square == squareClicked) {
+        } else if (square == squareClicked) {
             // unselect a square if clicked twice
             setSquareClicked(null);
-        }
-        else {
+        } else {
             const attemptedMove: Move = {
                 from: squareClicked,
                 to: square
@@ -55,14 +58,12 @@ const ChessBoard = ({
             if (isMoveInMoves(attemptedMove, moves)) {
                 moveCallback(attemptedMove);
                 setSquareClicked(null);
-            }
-            else if (isMoveInMoves({ ...attemptedMove, promotion: 'QUEEN' }, moves)) {
+            } else if (isMoveInMoves({...attemptedMove, promotion: 'QUEEN'}, moves)) {
                 // attempted move is actually to promote a pawn
                 // need to open a dialog
                 setPromotionSquare(square);
                 setAskForPromotion(true);
-            }
-            else {
+            } else {
                 // move is illegal or invalid
                 setSquareClicked(null);
             }
@@ -77,7 +78,8 @@ const ChessBoard = ({
     return (
         <Dialog open={askForPromotion}>
             <div className='flex flex-col w-full'>
-                <Clock topClock={true} time={whitePerspective ? clockState.blackPlayerTime : clockState.whitePlayerTime} />
+                <Clock topClock={true} time={whitePerspective ? clockState.blackPlayerTime : clockState.whitePlayerTime}
+                       isActiveClock={!isPlayersTurn} isGameOver={isGameOver}/>
                 <div className='relative w-full aspect-square'>
                     {/* Just the squares */}
                     <div className='grid grid-cols-8 grid-rows-8 w-full aspect-square absolute inset-0'>
@@ -97,10 +99,11 @@ const ChessBoard = ({
 
                                 return (
                                     <div key={`square-${square}`}
-                                        className={`select-none ${squareColourTheme} relative flex items-center justify-center`}
-                                        onClick={() => handleClick(square as Square)}>
+                                         className={`select-none ${squareColourTheme} relative flex items-center justify-center`}
+                                         onClick={() => handleClick(square as Square)}>
                                         {canMoveHere && (
-                                            <div className={`w-1/3 aspect-square rounded-full ${isLightSquare ? lightSquareSelected : darkSquareSelected}`} />
+                                            <div
+                                                className={`w-1/3 aspect-square rounded-full ${isLightSquare ? lightSquareSelected : darkSquareSelected}`}/>
                                         )}
                                     </div>
                                 )
@@ -109,7 +112,8 @@ const ChessBoard = ({
                     </div>
 
                     {/* Just the pieces */}
-                    <div className='grid grid-cols-8 grid-rows-8 w-full aspect-square absolute inset-0 pointer-events-none'>
+                    <div
+                        className='grid grid-cols-8 grid-rows-8 w-full aspect-square absolute inset-0 pointer-events-none'>
                         {
                             squaresView.map((piece, index) => {
                                 const square = whitePerspective ? index : 63 - index;
@@ -134,8 +138,8 @@ const ChessBoard = ({
                                                     alt={`${piece.colour} ${piece.pieceType}`}
                                                     className="w-4/5 h-4/5 pointer-events-none absolute"
                                                     draggable="false"
-                                                    initial={{ opacity: 0, scale: 1 }}
-                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    initial={{opacity: 0, scale: 1}}
+                                                    animate={{opacity: 1, scale: 1}}
                                                     exit={preferences.animationType === 'FUN' ? {
                                                         x: randomX,
                                                         y: randomY,
@@ -146,7 +150,7 @@ const ChessBoard = ({
                                                         opacity: 0,
                                                         scale: 1
                                                     }}
-                                                    transition={{ duration: 0.3 }}
+                                                    transition={{duration: 0.3}}
                                                 />
                                             )}
                                         </AnimatePresence>
@@ -156,7 +160,9 @@ const ChessBoard = ({
                         }
                     </div>
                 </div>
-                <Clock topClock={false} time={whitePerspective ? clockState.whitePlayerTime : clockState.blackPlayerTime} />
+                <Clock topClock={false}
+                       time={whitePerspective ? clockState.whitePlayerTime : clockState.blackPlayerTime}
+                       isActiveClock={isPlayersTurn} isGameOver={isGameOver}/>
             </div>
             <DialogContent showCloseButton={false}>
                 <DialogHeader>
@@ -182,7 +188,10 @@ const ChessBoard = ({
                                             }
                                         }>
                                         <img
-                                            src={pieceToSvg({ pieceType, colour: boardState.squares[squareClicked!!]?.colour ?? 'WHITE' })} />
+                                            src={pieceToSvg({
+                                                pieceType,
+                                                colour: boardState.squares[squareClicked!!]?.colour ?? 'WHITE'
+                                            })}/>
                                     </Button>
                                 ))
                             }
@@ -194,7 +203,7 @@ const ChessBoard = ({
     )
 }
 
-const Clock = ({ time, topClock }: { time: number, topClock: boolean }) => {
+const Clock = ({time, topClock, isActiveClock, isGameOver}: { time: number, topClock: boolean, isActiveClock: boolean, isGameOver: boolean }) => {
     const formatter = (str: string) => {
         return `${str.length < 2 ? "0" : ""}${str}`
     };
@@ -202,7 +211,8 @@ const Clock = ({ time, topClock }: { time: number, topClock: boolean }) => {
     const seconds = formatter((time % 60).toString());
 
     return (
-        <div className={`${topClock ? 'rounded-t-lg' : 'rounded-b-lg'} flex justify-center items-center text-[0.65rem] sm:text-sm md:text-base lg:text-lg border-outline border-2 text-center p-2 w-[12.5%]`}>{`${minutes}:${seconds}`}</div>
+        <div
+            className={`${topClock ? 'rounded-t-lg' : 'rounded-b-lg'} ${isActiveClock && !isGameOver && 'bg-green-900'} ${isGameOver && time <= 0 && 'bg-red-900'} flex justify-center items-center text-3xl border-outline border-2 text-center p-2 w-[25%]`}>{`${minutes}:${seconds}`}</div>
     )
 }
 

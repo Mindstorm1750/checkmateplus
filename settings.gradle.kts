@@ -5,4 +5,5 @@ include(
     "MatchmakingService",
     "GameServer",
     "GameServerManager",
+    "PlayerService"
 )

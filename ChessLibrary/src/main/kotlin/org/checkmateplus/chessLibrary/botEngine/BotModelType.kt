@@ -1,4 +1,4 @@
-package org.checkmateplus.chessLibrary.playerModels
+package org.checkmateplus.chessLibrary.botEngine
 
 import kotlinx.serialization.Serializable
 

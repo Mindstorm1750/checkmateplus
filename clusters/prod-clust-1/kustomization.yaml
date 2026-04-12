@@ -10,3 +10,4 @@ resources:
   - gitlab-auth-sealed-secret.yaml
   - gitlab-registry-sealed-secret.yaml
   - cloudflared-sealed-secret.yaml
+  - playerservice-sealed-secret.yaml

@@ -7,25 +7,29 @@ import org.springframework.security.authorization.AuthorizationManager
 import org.springframework.security.config.annotation.web.socket.EnableWebSocketSecurity
 import org.springframework.security.messaging.access.intercept.MessageMatcherDelegatingAuthorizationManager
 import org.springframework.messaging.Message
-@Configuration
-@EnableWebSocketSecurity
-class WebSocketSecurityConfig {
-    @Bean
-    fun messageAuthorizationManager(
-        messages: MessageMatcherDelegatingAuthorizationManager.Builder
-    ): AuthorizationManager<Message<*>> {
-        return messages
-            .nullDestMatcher().permitAll()
-            .simpDestMatchers("/app/join").permitAll()
+import org.springframework.messaging.simp.config.ChannelRegistration
+import org.springframework.security.messaging.access.intercept.AuthorizationChannelInterceptor
+import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer
 
-            .simpSubscribeDestMatchers("/user/queue/**", "/topic/**").permitAll() //this needs to be "authenticated"
+@Configuration
+class WebSocketSecurityConfig(
+    private val jwtChannelInterceptor: JwtChannelInterceptor
+) : WebSocketMessageBrokerConfigurer {
+
+    override fun configureClientInboundChannel(registration: ChannelRegistration) {
+        val authManager = MessageMatcherDelegatingAuthorizationManager.builder()
+            .nullDestMatcher().authenticated()
+            .simpDestMatchers("/app/join").authenticated()
+            .simpSubscribeDestMatchers("/user/queue/**", "/topic/**").authenticated()
             .anyMessage().denyAll()
             .build()
+
+        registration.interceptors(
+            jwtChannelInterceptor,
+            AuthorizationChannelInterceptor(authManager)
+        )
     }
 
-    // this disables csrf!
     @Bean("csrfChannelInterceptor")
-    fun csrfChannelInterceptor(): ChannelInterceptor {
-        return object : ChannelInterceptor {}
-    }
+    fun csrfChannelInterceptor(): ChannelInterceptor = object : ChannelInterceptor {}
 }

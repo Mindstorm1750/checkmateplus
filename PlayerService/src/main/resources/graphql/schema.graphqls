@@ -1,0 +1,84 @@
+type Mutation {
+    register(username: String!): RegisterResponse!
+    confirmTotp(code: String!): AuthResponse!
+    loginWithTotp(username: String!, code: String!): AuthResponse!
+    loginAsGuest: AuthResponse!
+    refresh(refreshToken: String!): AuthResponse!
+    logout(refreshToken: String!): Boolean!
+}
+
+type Query {
+    me: PlayerProfile
+    playerStats(playerId: String!): PlayerStats
+    matchHistory(playerId: String!, afterCursor: String, size: Int = 20): MatchHistoryPage
+    leaderboard(size: Int = 10): [LeaderboardEntry!]!
+}
+
+type PlayerStats {
+    playerId: String!
+    displayName: String!
+    skillRating: Int
+    ratingDeviation: Float
+    wins: Int!
+    losses: Int!
+    draws: Int!
+    totalGames: Int!
+    winRate: Int!
+    winsAsWhite: Int!
+    winsAsBlack: Int!
+    gamesAsWhite: Int!
+    gamesAsBlack: Int!
+    currentStreak: Int!
+    longestWinStreak: Int!
+    averageGameDurationMs: Float!
+    favouriteTimeControl: String
+    memberSinceEpochMs: Float!
+}
+
+type MatchHistoryPage {
+    matches: [MatchSummary!]!
+    nextCursor: String
+    hasMore: Boolean!
+}
+
+type MatchSummary {
+    matchId: String!
+    opponentId: String
+    result: MatchResult!
+    colour: String!
+    matchType: String!
+    timeControl: String!
+    gameDurationMs: Float
+    createdAtEpochMs: Float!
+}
+
+type LeaderboardEntry {
+    rank: Int!
+    playerId: String!
+    displayName: String!
+    skillRating: Int!
+}
+
+enum MatchResult { WIN LOSS DRAW}
+
+type RegisterResponse {
+    qrCodeUri: String!
+    secret: String!
+    playerId: String!
+}
+
+type AuthResponse {
+    jwt: String!
+    refreshToken: String
+    playerId: String!
+    displayName: String!
+    isGuest: Boolean!
+}
+
+type PlayerProfile {
+    playerId: String!
+    displayName: String!
+    username: String
+    skillRating: Int
+    totpEnabled: Boolean!
+}

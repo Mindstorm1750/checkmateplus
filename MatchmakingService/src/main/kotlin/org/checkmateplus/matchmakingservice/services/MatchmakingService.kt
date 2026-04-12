@@ -5,6 +5,7 @@ import io.grpc.ManagedChannelBuilder
 import jakarta.annotation.PostConstruct
 import jakarta.annotation.PreDestroy
 import kotlinx.serialization.json.Json
+import org.checkmateplus.chessLibrary.botEngine.BotConfiguration
 import org.checkmateplus.chessLibrary.playerModels.*
 import org.checkmateplus.gameserver.proto.GameServerProto
 import org.checkmateplus.gameserver.proto.ServerAllocatorGrpc
@@ -144,8 +145,8 @@ class MatchmakingService(
                     val candidateMmr = candidate.player.skillRating ?: return@firstOrNull false
 
                     // Use the wider of the two ranges so both players' wait times are respected
-                    val playerRange = calculateMmrRange(entry.player.joinedQueueAt)
-                    val candidateRange = calculateMmrRange(candidate.player.joinedQueueAt)
+                    val playerRange = calculateMmrRange(entry.player)
+                    val candidateRange = calculateMmrRange(candidate.player)
                     val effectiveRange = maxOf(playerRange, candidateRange)
 
                     candidate.player.playerId != entry.player.playerId && candidate.matchType == entry.matchType && isTimeControlCompatible(
@@ -265,11 +266,85 @@ class MatchmakingService(
         return match
     }
 
-    private fun calculateMmrRange(joinedQueueAt: Instant): Int {
-        val secondsWaiting = Clock.System.now().minus(joinedQueueAt).inWholeSeconds
-        val expansions = secondsWaiting / 5 //how long for a range expansion
-        //1 is the min range, 5 is how much it increases by and 50 is the max range we will match
-        return minOf(10 + (expansions * 5), 50).toInt()
+    /**
+     * Scans the competitive queue for players whose MMR search range has expanded
+     * since their last check. For each such player, attempts to find a match with
+     * the wider range.
+     *
+     * @return List of (updated entry, new range) for every player whose range just grew.
+     */
+    fun pollCompetitiveRangeExpansions(): List<Pair<QueueEntry, Int>> {
+        val hashOps = redisTemplate.opsForHash<String, String>()
+        val allEntries = hashOps.entries(PLAYER_QUEUE_MAP).values.map { deserializeQueueEntry(it) }
+
+        val expanded = mutableListOf<Pair<QueueEntry, Int>>()
+        for (entry in allEntries) {
+            if (entry.matchType != MatchType.COMPETITIVE_PVP) continue
+            val currentRange = calculateMmrRange(entry.player)
+            if (currentRange > entry.lastNotifiedRange) {
+                val updated = entry.copy(lastNotifiedRange = currentRange)
+                hashOps.put(PLAYER_QUEUE_MAP, entry.player.playerId, serializeQueueEntry(updated))
+                expanded.add(updated to currentRange)
+            }
+        }
+        return expanded
+    }
+
+    /**
+     * Attempts to find an opponent for a player already in the competitive queue,
+     * triggered after their search range expanded. If a match is found, both players
+     * are removed from the queue.
+     *
+     * @return A [Match] if an opponent was found, null otherwise.
+     */
+    fun tryRematching(entry: QueueEntry): Match? {
+        val hashOps = redisTemplate.opsForHash<String, String>()
+
+        // Guard: player may have already been matched by a concurrent join
+        val currentEntryJson = hashOps.get(PLAYER_QUEUE_MAP, entry.player.playerId) ?: return null
+        val currentEntry = deserializeQueueEntry(currentEntryJson)
+
+        val playerMmr = currentEntry.player.skillRating ?: return null
+        val allEntries = hashOps.entries(PLAYER_QUEUE_MAP).values.map { deserializeQueueEntry(it) }
+
+        val opponent = allEntries.firstOrNull { candidate ->
+            val candidateMmr = candidate.player.skillRating ?: return@firstOrNull false
+            val effectiveRange = maxOf(
+                calculateMmrRange(currentEntry.player),
+                calculateMmrRange(candidate.player)
+            )
+            candidate.player.playerId != currentEntry.player.playerId &&
+                candidate.matchType == currentEntry.matchType &&
+                isTimeControlCompatible(currentEntry.timeControl, candidate.timeControl) &&
+                abs(playerMmr - candidateMmr) <= effectiveRange
+        } ?: return null
+
+        hashOps.delete(PLAYER_QUEUE_MAP, currentEntry.player.playerId)
+        hashOps.delete(PLAYER_QUEUE_MAP, opponent.player.playerId)
+
+        val timeControl = currentEntry.timeControl ?: opponent.timeControl ?: TimeControl.entries.random()
+        logger.info("Re-match found (range expansion): ${currentEntry.player.playerId} ($playerMmr) vs ${opponent.player.playerId} (${opponent.player.skillRating}) [$timeControl]")
+        return createMatch(listOf(currentEntry.player, opponent.player), currentEntry.matchType, timeControl, null)
+    }
+
+    /**
+     * Calculates the current MMR search range for a player.
+     *
+     * Base range expands over time (+25 every 5s, capped at 300).
+     * An RD bonus is added on top: players with high rating deviation (uncertain ratings)
+     * are given a wider window, since a ±200 gap between two new players is far less
+     * meaningful than the same gap between two established ones.
+     *
+     * Example:
+     *   New player    (RD=350): starts at ±50 + 70 = ±120, caps at ±370
+     *   Established   (RD=80):  starts at ±50 + 16 = ±66,  caps at ±316
+     */
+    private fun calculateMmrRange(player: Player): Int {
+        val secondsWaiting = Clock.System.now().minus(player.joinedQueueAt).inWholeSeconds
+        val expansions = secondsWaiting / 5
+        val baseRange = minOf(50 + (expansions * 25), 300).toInt()
+        val rdBonus = ((player.ratingDeviation ?: 350.0) * 0.2).toInt()
+        return baseRange + rdBonus
     }
 
     private fun isTimeControlCompatible(playerA: TimeControl?, playerB: TimeControl?): Boolean {

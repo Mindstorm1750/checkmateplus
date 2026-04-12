@@ -6,9 +6,9 @@ import io.grpc.stub.StreamObserver
 import jakarta.annotation.PostConstruct
 import jakarta.annotation.PreDestroy
 import org.checkmateplus.chessLibrary.chessEngine.Colour
-import org.checkmateplus.chessLibrary.playerModels.BotConfiguration
-import org.checkmateplus.chessLibrary.playerModels.BotModelType
-import org.checkmateplus.chessLibrary.playerModels.BotMoveTimeModelType
+import org.checkmateplus.chessLibrary.botEngine.BotConfiguration
+import org.checkmateplus.chessLibrary.botEngine.BotModelType
+import org.checkmateplus.chessLibrary.botEngine.BotMoveTimeModelType
 import org.checkmateplus.chessLibrary.playerModels.MatchType
 import org.checkmateplus.chessLibrary.playerModels.Player
 import org.checkmateplus.chessLibrary.playerModels.TimeControl
@@ -145,7 +145,7 @@ class GameServerService(
             logger.info("Allocating match ${request.matchId}")
             val whitePlayer: Player
             val blackPlayer: Player
-            val botConfiguration: BotConfiguration? = if (request.hasBotConfiguration()) {
+            val botConfiguration: BotConfiguration? = if (request.hasBotConfiguration() && request.botConfiguration != GameServerProto.BotConfiguration.getDefaultInstance()) {
                 BotConfiguration(
                     botModelType = BotModelType.valueOf(request.botConfiguration.botModelType.name),
                     botMoveTimeModelType = BotMoveTimeModelType.valueOf(request.botConfiguration.botMoveTimeModelType.name)

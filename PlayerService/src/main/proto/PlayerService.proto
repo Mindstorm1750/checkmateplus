@@ -1,0 +1,150 @@
+syntax = "proto3";
+option java_package = "org.checkmateplus.playerservice.proto";
+option java_outer_classname = "PlayerServiceProto";
+
+import "GameServer.proto";
+service PlayerService{
+  rpc SubmitMatchRecord(MatchRecord) returns (MatchRecordResponse);
+}
+
+message MatchRecordResponse{
+  bool success = 1;
+  string message = 2;
+}
+enum MatchOutcome {
+  MATCH_OUTCOME_WHITE_WINS = 0;
+  MATCH_OUTCOME_BLACK_WINS = 1;
+  MATCH_OUTCOME_DRAW = 2;
+  MATCH_OUTCOME_ABANDONED = 3;
+}
+
+enum MatchStatus {
+  MATCH_STATUS_PENDING = 0;
+  MATCH_STATUS_ASSIGNED = 1;
+  MATCH_STATUS_ACTIVE = 2;
+  MATCH_STATUS_COMPLETED = 3;
+  MATCH_STATUS_CANCELLED = 4;
+  MATCH_STATUS_ABANDONED = 5;
+}
+
+enum MatchType {
+  MATCH_TYPE_CASUAL_PVP = 0;
+  MATCH_TYPE_PVE = 1;
+  MATCH_TYPE_COMPETITIVE_PVP = 2;
+}
+
+enum TimeControl {
+  TIME_CONTROL_BULLET_1_0 = 0;
+  TIME_CONTROL_BULLET_2_1 = 1;
+  TIME_CONTROL_BLITZ_3_0 = 2;
+  TIME_CONTROL_BLITZ_5_0 = 3;
+  TIME_CONTROL_RAPID_10_0 = 4;
+  TIME_CONTROL_RAPID_15_10 = 5;
+  TIME_CONTROL_CLASSICAL_30_0 = 6;
+}
+
+enum PieceType {
+  PIECE_TYPE_PAWN = 0;
+  PIECE_TYPE_KNIGHT = 1;
+  PIECE_TYPE_BISHOP = 2;
+  PIECE_TYPE_ROOK = 3;
+  PIECE_TYPE_QUEEN = 4;
+  PIECE_TYPE_KING = 5;
+}
+
+enum Colour {
+  COLOUR_WHITE = 0;
+  COLOUR_BLACK = 1;
+}
+
+//Board
+
+message Piece {
+  PieceType type = 1;
+  Colour colour = 2;
+}
+
+
+message CastlingRights {
+  bool white_kingside = 1;
+  bool white_queenside = 2;
+  bool black_kingside = 3;
+  bool black_queenside = 4;
+}
+
+message Board {
+  repeated Piece squares = 1; // 64 entries; unset/default Piece = empty square
+  Colour side_to_move = 2;
+  CastlingRights castling_rights = 3;
+  optional int32 en_passant_square = 4;
+  int32 half_move_clock = 5;
+  int32 full_move_number = 6;
+}
+
+//move
+
+message Move {
+  int32 from = 1;
+  int32 to = 2;
+  optional PieceType promotion_piece = 3;
+}
+
+//player
+
+message PlayerPreferences {
+  string board_colour = 1;
+  string animation_type = 2;
+}
+
+message Player {
+  string player_id = 1;
+  string display_name = 2;
+  int64 joined_queue_at_epoch_ms = 3;
+  optional int32 skill_rating = 4;
+  optional double rating_deviation = 8;
+  optional double volatility = 9;
+
+
+  oneof player_type {
+    AnonymousPlayer anonymous = 5;
+    BotPlayer bot = 6;
+    RegisteredPlayer registered = 7;
+  }
+}
+
+message AnonymousPlayer {
+  optional PlayerPreferences player_preferences = 1;
+}
+
+message BotPlayer {
+  int32 difficulty = 1;
+  BotConfiguration bot_configuration = 2;
+}
+message RegisteredPlayer {
+  optional PlayerPreferences player_preferences = 1;
+}
+
+message Turn {
+  Player player = 1;
+  Move move = 2;
+  Board board = 3;
+  string fen = 4;
+  int32 time_taken = 5;
+}
+
+message MatchRecord {
+  Board board = 1;
+  repeated Player players = 2;
+  string match_id = 3;
+  TimeControl time_control = 4;
+  MatchType match_type = 5;
+  MatchOutcome match_outcome = 6;
+  Player white_player = 7;
+  Player black_player = 8;
+  int32 remaining_white_player_time = 9;
+  int32 remaining_black_player_time = 10;
+  MatchStatus match_status = 11;
+  repeated Turn history = 12;
+  optional BotConfiguration bot_configuration = 13;
+  int32 matchCreatedAt = 14;
+}

@@ -13,6 +13,7 @@ import { type TimeControl, TimeControlToStringMap } from "@/lib/stompMessageType
 import { Info } from "lucide-react"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 import type { QueueStatus } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/QueueStatus"
+import { useJwt } from "@/lib/JwtProvider"
 
 function App() {
   const navigate = useNavigate();
@@ -34,12 +35,16 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
   const descriptionText = "Get matched with other players";
   const navigate = useNavigate();
   const stompClient = useRef<Client | null>(null);
+  const { jwt, isPending: jwtIsPending } = useJwt();
 
   const connect = () => {
     const socket = new SockJS(import.meta.env.VITE_BASE_URL + 'matchmaking');
 
     const client = new Client({
       webSocketFactory: () => socket,
+      connectHeaders: {
+        Authorization: `Bearer ${jwt}`
+      },
       debug: (str: string) => console.log(str),
       onConnect: () => {
         // Subscribe to your specific user queue for status updates
@@ -69,8 +74,11 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
   const joinQueue = () => {
     if (stompClient.current?.connected) {
       // TODO use player's displayName (or playerId if types/classes have changed) in the JoinRequest
-      // TODO randomise animation preference (updatePreferences) and send it in JoinRequest
-      const joinRequest: JoinRequest = { displayName: `UserWhoJoinedAt${Date.now()}`, matchType: 'CASUAL_PVP', timeControl: timeControl == "ANY" ? undefined : timeControl };
+      const joinRequest: JoinRequest = {
+        displayName: `UserWhoJoinedAt${Date.now()}`,
+        matchType: 'CASUAL_PVP',
+        timeControl: timeControl == "ANY" ? undefined : timeControl
+      };
       stompClient.current.publish({
         destination: "/app/join",
         body: JSON.stringify(joinRequest)
@@ -92,9 +100,9 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
         <SelectTimeControl value={timeControl} callBack={setTimeControl} includeAny />
         <DialogFooter>
           <DialogClose asChild>
-            <Button onClick={() => { stompClient.current?.deactivate(); setInQueue(false) }} variant='outline'>Cancel</Button>{/** TODO: make this button exit queue and disconnect */}
+            <Button onClick={() => { stompClient.current?.deactivate(); setInQueue(false) }} variant='outline'>Cancel</Button>
           </DialogClose>
-          <Button onClick={connect} variant={inQueue ? 'secondary' : 'default'} disabled={inQueue || timeControl === undefined}>
+          <Button onClick={connect} variant={inQueue ? 'secondary' : 'default'} disabled={inQueue || timeControl === undefined || jwtIsPending}>
             {inQueue && <Spinner data-icon='inline-start' />}
             {inQueue ? 'Queueing...' : 'Join queue'}
           </Button>
@@ -111,12 +119,16 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
   const [timeControl, setTimeControl] = useState<TimeControl | "ANY">();
   const navigate = useNavigate();
   const stompClient = useRef<Client | null>(null);
+  const { jwt, isPending: jwtIsPending } = useJwt();
 
   const connect = () => {
     const socket = new SockJS(import.meta.env.VITE_BASE_URL + 'matchmaking');
 
     const client = new Client({
       webSocketFactory: () => socket,
+      connectHeaders: {
+        Authorization: `Bearer ${jwt}`
+      },
       debug: (str: string) => console.log(str),
       onConnect: () => {
         // Subscribe to your specific user queue for status updates
@@ -143,7 +155,14 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
 
   const joinQueue = () => {
     if (stompClient.current?.connected) {
-      const joinRequest: JoinRequest = { displayName: `UserWhoJoinedAt${Date.now()}`, matchType: 'PVE', botConfiguration: { botModelType: 'MINMAX', botMoveTimeModelType: 'REALISTIC' }, timeControl: timeControl == "ANY" ? undefined : timeControl }; // TODO use player's displayName (or playerId if types/classes have changed)
+      // const randomMoveTimeModelType: BotConfiguration['botMoveTimeModelType'] = Math.random() > 0.5 ? 'REALISTIC' : 'MEDIAN';
+      // un-comment for randomised botMoveTimeModelType
+      const joinRequest: JoinRequest = {
+        displayName: `UserWhoJoinedAt${Date.now()}`,
+        matchType: 'PVE',
+        botConfiguration: { botModelType: 'MINMAX', botMoveTimeModelType: 'REALISTIC' },
+        timeControl: timeControl == "ANY" ? undefined : timeControl
+      }; // TODO use player's displayName (or playerId if types/classes have changed)
       stompClient.current.publish({
         destination: "/app/join",
         body: JSON.stringify(joinRequest)
@@ -166,7 +185,7 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
           <DialogClose asChild>
             <Button onClick={() => { stompClient.current?.deactivate(); setInQueue(false) }} variant='outline'>Cancel</Button>
           </DialogClose>
-          <Button onClick={connect} variant={inQueue ? 'secondary' : 'default'} disabled={inQueue || timeControl === undefined}>
+          <Button onClick={connect} variant={inQueue ? 'secondary' : 'default'} disabled={inQueue || timeControl === undefined || jwtIsPending}>
             {inQueue && <Spinner data-icon='inline-start' />}
             {inQueue ? 'Joining...' : 'Play'}
           </Button>

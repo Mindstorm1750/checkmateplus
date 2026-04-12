@@ -2,7 +2,7 @@ import Layout from "@/components/Layout";
 import { BackArrowLink } from "@/components/ui/back-arrow-link";
 import ChessBoard, { type ChessBoardProps } from "@/components/ui/ChessBoard";
 import { algebraicToSquare, fenToBoard, squareToAlgebraic } from "@/lib/chess.helpers";
-import { usePreferences } from "@/lib/PreferencesContext";
+import { usePreferences } from "@/lib/PreferencesProvider";
 import type { JoinMatchMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/JoinMatchMessage";
 import type { MatchEventMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchEventMessage";
 import type { MatchStateMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchStateMessage";
@@ -14,6 +14,7 @@ import { Client, type IMessage } from "@stomp/stompjs";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router";
 import SockJS from 'sockjs-client/dist/sockjs';
+import { useJwt } from "@/lib/JwtProvider";
 
 function Match() {
     /**
@@ -29,15 +30,19 @@ function Match() {
      */
     const [pieceOrigins, setPieceOrigins] = useState<Map<Square, Square>>(EMPTY_PIECE_ORIGINS);
     const [clockState, setClockState] = useState<ChessBoardProps['clockState']>();
-    const [isPlayersTurn, setIsPlayersTurn] = useState<Boolean>(false);
-    const [isPlayerWhite, setIsPlayerWhite] = useState<Boolean>(true);
-    const [isGameOver, setIsGameOver] = useState<Boolean>(false);
+    const [isPlayersTurn, setIsPlayersTurn] = useState<boolean>(false);
+    const [isPlayerWhite, setIsPlayerWhite] = useState<boolean>(true);
+    const [isGameOver, setIsGameOver] = useState<boolean>(false);
     const [gameOverMessage, setGameOverMessage] = useState<String>();
-    const { preferences, updatePreferences } = usePreferences();
+    const { preferences } = usePreferences();
     const stompClient = useRef<Client | null>(null);
+    const { jwt, isPending: jwtIsPending } = useJwt();
+
     useEffect(() => {
-        connect();
-    }, [matchId]);
+        if (!jwtIsPending && jwt) {
+            connect();
+        }
+    }, [matchId, jwtIsPending]);
 
     const connect = () => {
         const socket = new SockJS(`https://${websocketUrl}/match`);
@@ -45,6 +50,9 @@ function Match() {
 
         const client = new Client({
             webSocketFactory: () => socket,
+            connectHeaders: {
+                Authorization: `Bearer ${jwt}`
+            },
             debug: (str: string) => console.log(str),
             onConnect: () => {
 
@@ -75,6 +83,7 @@ function Match() {
                     const match: MatchStateMessage = JSON.parse(message.body);
                     console.log("Got initial match state message fen: " + match.fen);
                     setBoardState(fenToBoard(match.fen));
+                    setIsPlayerWhite(match.whitePlayer?.playerId === playerId);
                 });
 
                 // Subscribe to the match state. This will update our board
@@ -123,10 +132,6 @@ function Match() {
                             return newPieceOrigins;
                         });
                     }
-                    setIsPlayerWhite(match.whitePlayer?.playerId === playerId);
-                    // This line corrects the player's board perspective every time a move is made. 
-                    // Unfortunately, this disturbs the functionality of a "flip perspective" button.
-                    // Hence why there currently isn't one.
                 });
 
                 joinGame();
@@ -139,10 +144,14 @@ function Match() {
 
     const joinGame = () => {
         if (stompClient.current?.connected) {
-            const randomAnimationType = Math.random() > 0.5 ? 'FUN' : 'NORMAL';
-            updatePreferences({ animationType: randomAnimationType });
-            // send randomAnimationType to backend, NOT preferences.animationType (stale)
-            const joinRequest: JoinMatchMessage = { playerId, matchId: matchId, playerName: `UserWhoJoinedAt${Date.now()}` }; // TODO use player's displayName (or playerId if types/classes have changed)
+            // const randomAnimationType: Preferences['animationType'] = Math.random() > 0.5 ? 'FUN' : 'NORMAL';
+            // updatePreferences({ animationType: randomAnimationType });
+            // const preferencesForMatch: PlayerPreferences = {
+            //     boardColour: preferences.boardColour, // boardColour can be read from the now outdated preferences object because we didn't modify it
+            //     animationType: randomAnimationType
+            // }
+            // TODO use player's displayName (or playerId if types/classes have changed)
+            const joinRequest: JoinMatchMessage = { playerId, matchId: matchId, playerName: `UserWhoJoinedAt${Date.now()}`, playerPreferences: preferences };
 
             stompClient.current.publish({
                 destination: `/app/match/${matchId}/join`,
@@ -175,7 +184,8 @@ function Match() {
                 <div className='w-3/4'>
                     {isGameOver && gameOverMessage && <p>{gameOverMessage}</p>}
                     <ChessBoard
-                        isInteractable={isPlayersTurn && !isGameOver}
+                        isPlayersTurn={isPlayersTurn}
+                        isGameOver={isGameOver}
                         boardState={boardState}
                         clockState={clockState}
                         moveCallback={handleMove}

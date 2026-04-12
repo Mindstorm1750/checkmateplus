@@ -131,7 +131,6 @@ container_scanning_gameserver:
   stage: security-test
   needs:
     - job: native-docker-image
-      optional: true
   variables:
     CS_IMAGE: $CI_REGISTRY_IMAGE/gameserver:$CI_COMMIT_SHA
 
@@ -140,7 +139,6 @@ container_scanning_gameservermanager:
   stage: security-test
   needs:
     - job: native-docker-image
-      optional: true
   variables:
     CS_IMAGE: $CI_REGISTRY_IMAGE/gameservermanager:$CI_COMMIT_SHA
 
@@ -149,7 +147,6 @@ container_scanning_matchmaking:
   stage: security-test
   needs:
     - job: native-docker-image
-      optional: true
   variables:
     CS_IMAGE: $CI_REGISTRY_IMAGE/matchmakingservice:$CI_COMMIT_SHA
 
@@ -161,9 +158,6 @@ container_scanning_frontend:
   variables:
     CS_IMAGE: $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHA
 
-container_scanning:
-  rules:
-    - when: never
 sast:
   stage: security-test
 
