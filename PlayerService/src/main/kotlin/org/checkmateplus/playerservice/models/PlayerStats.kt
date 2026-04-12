@@ -1,7 +1,9 @@
 package org.checkmateplus.playerservice.models
 
+import kotlinx.serialization.Serializable
 import org.checkmateplus.chessLibrary.playerModels.TimeControl
 
+@Serializable
 data class PlayerStats(
     val playerId: String,
     val displayName: String,

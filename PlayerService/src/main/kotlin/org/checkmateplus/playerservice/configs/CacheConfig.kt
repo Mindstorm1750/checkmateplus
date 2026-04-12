@@ -6,9 +6,9 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.data.redis.cache.RedisCacheConfiguration
 import org.springframework.data.redis.cache.RedisCacheManager
 import org.springframework.data.redis.connection.RedisConnectionFactory
-import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializer
-import org.springframework.data.redis.serializer.RedisSerializationContext.SerializationPair
-import tools.jackson.databind.ObjectMapper
+import org.springframework.data.redis.serializer.RedisSerializationContext
+import org.springframework.data.redis.serializer.RedisSerializer
+import org.springframework.data.redis.serializer.StringRedisSerializer
 import java.time.Duration
 
 @Configuration
@@ -16,12 +16,13 @@ import java.time.Duration
 class CacheConfig {
 
     @Bean
-    fun cacheManager(redisConnectionFactory: RedisConnectionFactory, objectMapper: ObjectMapper): RedisCacheManager {
-        val valueSerializer = SerializationPair.fromSerializer(GenericJacksonJsonRedisSerializer(objectMapper))
+    fun cacheManager(redisConnectionFactory: RedisConnectionFactory): RedisCacheManager {
+        val jsonSerializer = RedisSerializer.json()
 
         val base = RedisCacheConfiguration.defaultCacheConfig()
-            .serializeValuesWith(valueSerializer)
             .disableCachingNullValues()
+            .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(StringRedisSerializer()))
+            .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(jsonSerializer))
 
         return RedisCacheManager.builder(redisConnectionFactory)
             .withCacheConfiguration("playerStats", base.entryTtl(Duration.ofMinutes(5)))

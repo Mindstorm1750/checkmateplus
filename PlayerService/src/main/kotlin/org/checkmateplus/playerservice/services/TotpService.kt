@@ -4,11 +4,9 @@ import dev.samstevens.totp.code.DefaultCodeGenerator
 import dev.samstevens.totp.code.DefaultCodeVerifier
 import dev.samstevens.totp.code.HashingAlgorithm
 import dev.samstevens.totp.qr.QrData
-import dev.samstevens.totp.qr.ZxingPngQrGenerator
 import dev.samstevens.totp.secret.DefaultSecretGenerator
 import dev.samstevens.totp.time.SystemTimeProvider
 import org.springframework.stereotype.Service
-import java.util.Base64
 
 @Service
 class TotpService {
@@ -37,7 +35,7 @@ class TotpService {
     fun verify(secret: String, code: String): Boolean {
         return try {
             codeVerifier.isValidCode(secret, code)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             false
         }
     }
