@@ -34,7 +34,11 @@ fun PlayerServiceProto.MatchRecord.toEntity(
 )
 
 fun PlayerServiceProto.Board.toDomain(): Board = Board(
-    squares = Array(64) { i -> squaresList.getOrNull(i)?.toDomain() },
+    squares = Array(64) { i ->
+        squaresList.getOrNull(i)
+            ?.takeIf { it != PlayerServiceProto.Piece.getDefaultInstance() }
+            ?.toDomain()
+    },
     sideToMove = sideToMove.toDomain(),
     castlingRights = castlingRights.toDomain(),
     enPassantSquare = if (hasEnPassantSquare()) enPassantSquare else null,
