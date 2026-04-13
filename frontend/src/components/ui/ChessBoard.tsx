@@ -10,38 +10,37 @@ import type { MatchStateMessage } from "@/lib/stompMessageTypes/GameServer/model
 import { Button } from "./button"
 
 export type ChessBoardProps = {
-  moveCallback: (move: Move) => void
-  boardState: Board
-  whitePerspective?: boolean
-  isPlayersTurn: boolean // used for stopping the player from making moves when it isn't their turn
-  isGameOver: boolean // used for clocks and also stopping player from making moves
-  clockState?: Pick<MatchStateMessage, "whitePlayerTime" | "blackPlayerTime">
-  pieceOrigins: Map<Square, Square>
+    moveCallback: (move: Move) => void,
+    boardState: Board,
+    whitePerspective?: boolean,
+    isPlayersTurn: boolean, // used for stopping the player from making moves when it isn't their turn
+    isGameOver: boolean, // used for clocks and also stopping player from making moves
+    isCheck: boolean,
+    clockState?: Pick<MatchStateMessage, "whitePlayerTime" | "blackPlayerTime">,
+    pieceOrigins: Map<Square, Square>
 }
 
 const ChessBoard = ({
-  moveCallback,
-  boardState,
-  whitePerspective = true,
-  isPlayersTurn,
-  isGameOver,
-  clockState = { whitePlayerTime: 0, blackPlayerTime: 0 },
-  pieceOrigins,
-}: ChessBoardProps) => {
-  const [squareClicked, setSquareClicked] = useState<Square | null>()
-  const [askForPromotion, setAskForPromotion] = useState<boolean>(false)
-  const [promotionSquare, setPromotionSquare] = useState<Square | null>()
+                        moveCallback,
+                        boardState,
+                        whitePerspective = true,
+                        isPlayersTurn,
+                        isGameOver,
+                        isCheck,
+                        clockState = {whitePlayerTime: 0, blackPlayerTime: 0},
+                        pieceOrigins
+                    }: ChessBoardProps) => {
+    const [squareClicked, setSquareClicked] = useState<Square | null>();
+    const [askForPromotion, setAskForPromotion] = useState<boolean>(false);
+    const [promotionSquare, setPromotionSquare] = useState<Square | null>();
 
-  const { preferences } = usePreferences()
-  const { lightSquare, lightSquareSelected, darkSquare, darkSquareSelected } =
-    BOARD_THEMES[preferences.boardColour]
+    const {preferences} = usePreferences();
+    const {lightSquare, lightSquareSelected, darkSquare, darkSquareSelected} = BOARD_THEMES[preferences.boardColour];
 
-  const squaresView = whitePerspective
-    ? boardState.squares
-    : boardState.squares.toReversed()
-  const moves = legalMoves(boardState)
+    const squaresView = whitePerspective ? boardState.squares : boardState.squares.toReversed();
+    const moves = legalMoves(boardState);
 
-  const isInteractable = isPlayersTurn && !isGameOver
+    const isInteractable = isPlayersTurn && !isGameOver;
 
   const handleClick = (square: Square) => {
     if (!isInteractable) {
@@ -136,101 +135,95 @@ const ChessBoard = ({
               const square = whitePerspective ? index : 63 - index
               const origin = pieceOrigins.get(square as Square)
 
-              // for the fun animations
-              const randomAngle = -135 + 45 * Math.random()
-              const randomX = Math.cos(randomAngle) * 333
-              const randomY = Math.sin(randomAngle) * 333
-              // 333 is arbitrary. It's just a decent looking distance for the pieces to fly away
+                                // for the fun animations
+                                const randomAngle = -135 + 45 * Math.random();
+                                const randomX = Math.cos(randomAngle) * 333;
+                                const randomY = Math.sin(randomAngle) * 333;
+                                // 333 is arbitrary. It's just a decent looking distance for the pieces to fly away
+                                const checkHighlight = isCheck && piece?.pieceType === 'KING' && piece.colour === boardState.sideToMove;
 
-              return (
-                <div
-                  key={`piece-${square}`}
-                  className="relative flex items-center justify-center"
-                >
-                  <AnimatePresence>
-                    {piece && (
-                      <motion.img
-                        key={`${piece.colour}-${piece.pieceType}-${origin}`}
-                        layoutId={`piece-${piece.colour}-${piece.pieceType}-${origin}`}
-                        src={pieceToSvg(piece)}
-                        alt={`${piece.colour} ${piece.pieceType}`}
-                        className="pointer-events-none absolute h-4/5 w-4/5"
-                        draggable="false"
-                        initial={{ opacity: 0, scale: 1 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={
-                          preferences.animationType === "FUN"
-                            ? {
-                                x: randomX,
-                                y: randomY,
-                                rotate: 540,
-                                opacity: 0,
-                                scale: 0.5,
-                              }
-                            : {
-                                opacity: 0,
-                                scale: 1,
-                              }
+                                return (
+                                    <div
+                                        key={`piece-${square}`}
+                                        className='flex items-center justify-center relative'>
+                                        {checkHighlight && (
+                                            <div
+                                                className="absolute inset-0 pointer-events-none z-0"
+                                                style={{ background: 'radial-gradient(circle, rgba(231,0,11,1) 0%, rgba(231,0,11,0) 100%)' }}
+                                            />
+                                        )}
+                                        <AnimatePresence>
+                                            {piece && (
+                                                <motion.img
+                                                    key={`${piece.colour}-${piece.pieceType}-${origin}`}
+                                                    layoutId={`piece-${piece.colour}-${piece.pieceType}-${origin}`}
+                                                    src={pieceToSvg(piece)}
+                                                    alt={`${piece.colour} ${piece.pieceType}`}
+                                                    className="w-4/5 h-4/5 pointer-events-none absolute"
+                                                    draggable="false"
+                                                    initial={{opacity: 0, scale: 1}}
+                                                    animate={{opacity: 1, scale: 1}}
+                                                    exit={preferences.animationType === 'FUN' ? {
+                                                        x: randomX,
+                                                        y: randomY,
+                                                        rotate: 540,
+                                                        opacity: 0,
+                                                        scale: 0.5,
+                                                    } : {
+                                                        opacity: 0,
+                                                        scale: 1
+                                                    }}
+                                                    transition={{duration: 0.3}}
+                                                />
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                )
+                            })
                         }
-                        transition={{ duration: 0.3 }}
-                      />
-                    )}
-                  </AnimatePresence>
+                    </div>
                 </div>
-              )
-            })}
-          </div>
-        </div>
-        <Clock
-          topClock={false}
-          time={
-            whitePerspective
-              ? clockState.whitePlayerTime
-              : clockState.blackPlayerTime
-          }
-          isActiveClock={isPlayersTurn}
-          isGameOver={isGameOver}
-        />
-      </div>
-      <DialogContent showCloseButton={false}>
-        <DialogHeader>
-          <DialogDescription>
-            <p>Choose piece to promote to:</p>
-            <div className="justify-left mt-4 flex gap-1">
-              {(["QUEEN", "ROOK", "BISHOP", "KNIGHT"] as const).map(
-                (pieceType) => (
-                  <Button
-                    key={pieceType}
-                    className="h-16 w-16 p-1"
-                    onClick={() => {
-                      if (squareClicked && promotionSquare) {
-                        moveCallback({
-                          from: squareClicked,
-                          to: promotionSquare,
-                          promotion: pieceType,
-                        })
-                        setSquareClicked(null)
-                        setAskForPromotion(false)
-                      }
-                    }}
-                  >
-                    <img
-                      src={pieceToSvg({
-                        pieceType,
-                        colour:
-                          boardState.squares[squareClicked!!]?.colour ??
-                          "WHITE",
-                      })}
-                    />
-                  </Button>
-                )
-              )}
+                <Clock topClock={false}
+                       time={whitePerspective ? clockState.whitePlayerTime : clockState.blackPlayerTime}
+                       isActiveClock={isPlayersTurn} isGameOver={isGameOver}/>
             </div>
-          </DialogDescription>
-        </DialogHeader>
-      </DialogContent>
-    </Dialog>
-  )
+            <DialogContent showCloseButton={false}>
+                <DialogHeader>
+                    <DialogDescription>
+                        <p>Choose piece to promote to:</p>
+                        <div className='flex gap-1 justify-left mt-4'>
+                            {
+                                (['QUEEN', 'ROOK', 'BISHOP', 'KNIGHT'] as const).map((pieceType) => (
+                                    <Button
+                                        key={pieceType}
+                                        className='w-16 h-16 p-1'
+                                        onClick={
+                                            () => {
+                                                if (squareClicked && promotionSquare) {
+                                                    moveCallback({
+                                                        from: squareClicked,
+                                                        to: promotionSquare,
+                                                        promotion: pieceType
+                                                    });
+                                                    setSquareClicked(null);
+                                                    setAskForPromotion(false);
+                                                }
+                                            }
+                                        }>
+                                        <img
+                                            src={pieceToSvg({
+                                                pieceType,
+                                                colour: boardState.squares[squareClicked!!]?.colour ?? 'WHITE'
+                                            })}/>
+                                    </Button>
+                                ))
+                            }
+                        </div>
+                    </DialogDescription>
+                </DialogHeader>
+            </DialogContent>
+        </Dialog>
+    )
 }
 
 const Clock = ({

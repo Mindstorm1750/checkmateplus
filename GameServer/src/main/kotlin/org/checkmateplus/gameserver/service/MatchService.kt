@@ -251,18 +251,16 @@ class MatchService(
         match?.board ?: throw IllegalStateException("Board not initialized")
         val boardState = match.board!!.getBoardState()
         var isCheckmate = false
-        var isCheck = false
+        var isCheck = match.board!!.isInCheck(match.activeTurn)
         var isStalemate = false
         var isDraw = false
         if (boardState == BoardState.CHECKMATE) {
             isCheckmate = true
-            isCheck = true
             isStalemate = false
             isDraw = false
         }
         if (boardState == BoardState.STALEMATE) {
             isCheckmate = false
-            isCheck = false
             isStalemate = true
             isDraw = true
         }
