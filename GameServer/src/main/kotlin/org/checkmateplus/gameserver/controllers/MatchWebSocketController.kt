@@ -372,13 +372,7 @@ class MatchWebSocketController(
         //when both players are connected start the match
         if (match.connectedPlayers.size == 2 && match.matchStarted.compareAndSet(expectedValue = false, newValue = true)) {
             startMatch(matchId)
-            val matchState = matchService.createMatchStateMessage(match)
-            messagingTemplate.convertAndSend(
-                "/topic/match/$matchId/state",
-                matchState
-            )
         }
-
     }
 
     /**
@@ -460,12 +454,11 @@ class MatchWebSocketController(
                 botMoveMessage.promotion,
                 botMoveMessage.playerId
             )
-            val botStateMessage = matchService.createMatchStateMessage(match, botMoveNotification)
 
             // Broadcast updated state to all players
             messagingTemplate.convertAndSend(
                 "/topic/match/$matchId/state",
-                botStateMessage
+                botMatchStateMessage
             )
 
             // Send the specific move notification
@@ -475,8 +468,10 @@ class MatchWebSocketController(
                     botMoveNotification
                 )
             }
+        } else {
+            val matchState = matchService.createMatchStateMessage(match)
+            messagingTemplate.convertAndSend("/topic/match/$matchId/state", matchState)
         }
-
     }
 
     /**

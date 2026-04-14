@@ -18,6 +18,7 @@ export type ChessBoardProps = {
     isCheck: boolean,
     clockState?: Pick<MatchStateMessage, "whitePlayerTime" | "blackPlayerTime">,
     pieceOrigins: Map<Square, Square>
+    lastMove?: Move,
 }
 
 const ChessBoard = ({
@@ -28,14 +29,15 @@ const ChessBoard = ({
                         isGameOver,
                         isCheck,
                         clockState = {whitePlayerTime: 0, blackPlayerTime: 0},
-                        pieceOrigins
+                        pieceOrigins,
+                        lastMove
                     }: ChessBoardProps) => {
     const [squareClicked, setSquareClicked] = useState<Square | null>();
     const [askForPromotion, setAskForPromotion] = useState<boolean>(false);
     const [promotionSquare, setPromotionSquare] = useState<Square | null>();
 
     const {preferences} = usePreferences();
-    const {lightSquare, lightSquareSelected, darkSquare, darkSquareSelected} = BOARD_THEMES[preferences.boardColour];
+    const {lightSquare, lightSquareHighlighted, darkSquare, darkSquareHighlighted} = BOARD_THEMES[preferences.boardColour];
 
     const squaresView = whitePerspective ? boardState.squares : boardState.squares.toReversed();
     const moves = legalMoves(boardState);
@@ -74,60 +76,46 @@ const ChessBoard = ({
     }
   }
 
-  /**
-   * The squares and the pieces are done in two seperate <div> components so that the pieces are always rendered "on top" of the squares.
-   * An unfortunate downside is having to do 2 maps.
-   */
-  return (
-    <Dialog open={askForPromotion}>
-      <div className="flex w-full flex-col">
-        <Clock
-          topClock={true}
-          time={
-            whitePerspective
-              ? clockState.blackPlayerTime
-              : clockState.whitePlayerTime
-          }
-          isActiveClock={!isPlayersTurn}
-          isGameOver={isGameOver}
-        />
-        <div className="relative aspect-square w-full">
-          {/* Just the squares */}
-          <div className="absolute inset-0 grid aspect-square w-full grid-cols-8 grid-rows-8">
-            {[...Array(64).keys()].map((index) => {
-              const square = whitePerspective ? index : 63 - index
-              // changing perspective changes the index number of the same square. This is to correct for that.
-              const row = Math.floor(index / 8)
-              const column = index % 8
-              const isLightSquare = (row + column) % 2 === 0
-              const isClickedSquare = squareClicked === square
-              const squareColourTheme = isClickedSquare
-                ? isLightSquare
-                  ? lightSquareSelected
-                  : darkSquareSelected
-                : isLightSquare
-                  ? lightSquare
-                  : darkSquare
-              // canMoveHere is used for the "dots" showing where a selected piece can move.
-              const canMoveHere = moves
-                .filter((move) => move.from === squareClicked)
-                .some((move) => move.to === square)
+    /**
+     * The squares and the pieces are done in two seperate <div> components so that the pieces are always rendered "on top" of the squares.
+     * An unfortunate downside is having to do 2 maps.
+     */
+    return (
+        <Dialog open={askForPromotion}>
+            <div className='flex flex-col w-full'>
+                <Clock topClock={true} time={whitePerspective ? clockState.blackPlayerTime : clockState.whitePlayerTime}
+                       isActiveClock={!isPlayersTurn} isGameOver={isGameOver}/>
+                <div className='relative w-full aspect-square'>
+                    {/* Just the squares */}
+                    <div className='grid grid-cols-8 grid-rows-8 w-full aspect-square absolute inset-0'>
+                        {
+                            [...Array(64).keys()].map((index) => {
+                                const square = whitePerspective ? index : 63 - index;
+                                // changing perspective changes the index number of the same square. This is to correct for that.
+                                const row = Math.floor(index / 8);
+                                const column = index % 8;
+                                const isLightSquare = (row + column) % 2 === 0;
+                                const isClickedSquare = squareClicked === square;
+                                const isLastMoveSquare = lastMove && (square === lastMove.from || square === lastMove.to);
+                                const squareColourTheme = isClickedSquare || isLastMoveSquare ?
+                                    (isLightSquare ? lightSquareHighlighted : darkSquareHighlighted) :
+                                    (isLightSquare ? lightSquare : darkSquare);
+                                // canMoveHere is used for the "dots" showing where a selected piece can move.
+                                const canMoveHere = moves.filter((move) => move.from === squareClicked).some((move) => move.to === square);
 
-              return (
-                <div
-                  key={`square-${square}`}
-                  className={`select-none ${squareColourTheme} relative flex items-center justify-center`}
-                  onClick={() => handleClick(square as Square)}
-                >
-                  {canMoveHere && (
-                    <div
-                      className={`aspect-square w-1/3 rounded-full ${isLightSquare ? lightSquareSelected : darkSquareSelected}`}
-                    />
-                  )}
-                </div>
-              )
-            })}
-          </div>
+                                return (
+                                    <div key={`square-${square}`}
+                                         className={`select-none ${squareColourTheme} relative flex items-center justify-center`}
+                                         onClick={() => handleClick(square as Square)}>
+                                        {canMoveHere && (
+                                            <div
+                                                className={`w-1/3 aspect-square rounded-full ${isLightSquare ? lightSquareHighlighted : darkSquareHighlighted}`}/>
+                                        )}
+                                    </div>
+                                )
+                            })
+                        }
+                    </div>
 
           {/* Just the pieces */}
           <div className="pointer-events-none absolute inset-0 grid aspect-square w-full grid-cols-8 grid-rows-8">

@@ -47,6 +47,7 @@ function Match() {
     const { state }: { state: MatchFoundEvent } = useLocation();
     const { matchId, websocketUrl, playerId } = state; // TODO make playerId persistent
     const [boardState, setBoardState] = useState<Board>(EMPTY_BOARD);
+    const [lastMove, setLastMove] = useState<Move>();
     const [isCheck, setIsCheck] = useState<boolean>(false);
     /**
      * pieceOrigins is used in ChessBoard to animate pieces via framer motion's layoutId. 
@@ -68,9 +69,9 @@ function Match() {
     }
   }, [matchId, jwtIsPending])
 
-  const connect = () => {
-    const socket = new SockJS(`https://${websocketUrl}/match`)
-    // websocketUrl should really be http://localhost:8090 or http://127.0.0.1:8090 and '/match' is to be added by frontend here
+    const connect = () => {
+        const socket = new SockJS(`https://${websocketUrl}/match`);
+        // websocketUrl should really be http://localhost:8090 or http://127.0.0.1:8090 and '/match' is to be added by frontend here
 
         const client = new Client({
             webSocketFactory: () => socket,
@@ -121,6 +122,7 @@ function Match() {
                     }
                     setBoardState(newBoard);
                     setIsCheck(match.isCheck);
+                    setLastMove(match.lastMove && {from: algebraicToSquare(match.lastMove.from), to: algebraicToSquare(match.lastMove.to), promotion: match.lastMove.promotion});
                     if (match.lastMove) {
                         const move = { from: algebraicToSquare(match.lastMove.from), to: algebraicToSquare(match.lastMove.to), promotion: match.lastMove.promotion };
                         setPieceOrigins(prev => {
@@ -216,6 +218,7 @@ function Match() {
             isPlayersTurn={isPlayersTurn}
             isGameOver={isGameOver}
             isCheck={isCheck}
+            lastMove={lastMove}
             boardState={boardState}
             clockState={clockState}
             moveCallback={handleMove}
