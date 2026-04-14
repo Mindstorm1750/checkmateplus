@@ -2,16 +2,16 @@ import com.google.protobuf.gradle.id
 import java.util.Locale
 
 plugins {
-    kotlin("jvm") version "2.3.10"
-    kotlin("plugin.spring") version "2.3.10"
-    kotlin("plugin.serialization") version "2.3.10"
-    id("org.springframework.boot") version "4.0.2"
+    kotlin("jvm") version "2.3.20"
+    kotlin("plugin.spring") version "2.3.20"
+    kotlin("plugin.serialization") version "2.3.20"
+    id("org.springframework.boot") version "4.0.5"
     id("io.spring.dependency-management") version "1.1.7"
     id("com.netflix.dgs.codegen") version "8.3.0"
-    id("org.hibernate.orm") version "7.2.4.Final"
-    id("org.graalvm.buildtools.native") version "0.11.4"
-    id("com.google.protobuf") version "0.9.5"
-    kotlin("plugin.jpa") version "2.2.21"
+    id("org.hibernate.orm") version "7.2.11.Final"
+    id("org.graalvm.buildtools.native") version "1.0.0"
+    id("com.google.protobuf") version "0.9.6"
+    kotlin("plugin.jpa") version "2.3.20"
 }
 
 group = "org.checkmateplus"
@@ -64,7 +64,7 @@ dependencies {
     testImplementation("org.springframework.grpc:spring-grpc-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     implementation(project(":ChessLibrary"))
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
     implementation("dev.samstevens.totp:totp-spring-boot-starter:1.7.1") {
         exclude(group = "com.google.zxing", module = "javase") //resolve vulnerability cve 8.8
         //actually care cause this is the TOTP lib
@@ -103,11 +103,11 @@ hibernate {
 
 protobuf {
     protoc {
-        artifact = "com.google.protobuf:protoc"
+        artifact = "com.google.protobuf:protoc:4.33.2"
     }
     plugins {
         id("grpc") {
-            artifact = "io.grpc:protoc-gen-grpc-java"
+            artifact = "io.grpc:protoc-gen-grpc-java:1.77.1"
         }
     }
     generateProtoTasks {
