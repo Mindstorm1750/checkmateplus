@@ -10,8 +10,11 @@ type JwtContextType = {
     isPending: boolean
 }
 
-export function JwtProvider({ children, isGuest = true }: { children: ReactNode, isGuest?: boolean }) {
+export function JwtProvider({ children}: { children: ReactNode}) {
     const [jwt, setJwt] = useState<string | null>(() => localStorage.getItem('jwt'));
+    const [isGuest] = useState<boolean>(() => {
+        return JSON.parse(localStorage.getItem('isGuest') as string);
+    });
 
     const queryResult = useQuery({
         queryKey: ['loginAsGuest'],
