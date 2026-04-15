@@ -12,6 +12,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import Leaderboard from './pages/Leaderboard.tsx'
 import { JwtProvider } from './lib/JwtProvider.tsx'
+import Login from "@/pages/Login.tsx";
 
 const queryClient = new QueryClient()
 
@@ -28,6 +29,7 @@ createRoot(document.getElementById('root')!).render(
                 <Route path='/settings' element={<Settings />} />
                 <Route path='/match' element={<Match />} />
                 <Route path='/leaderboard' element={<Leaderboard />} />
+                <Route path='/login' element={<Login />} />
               </Routes>
             </BrowserRouter>
           </ThemeProvider>
