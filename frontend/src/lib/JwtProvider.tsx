@@ -10,7 +10,7 @@ type JwtContextType = {
     isPending: boolean
 }
 
-export function JwtProvider({ children }: { children: ReactNode }) {
+export function JwtProvider({ children, isGuest = true }: { children: ReactNode, isGuest?: boolean }) {
     const [jwt, setJwt] = useState<string | null>(() => localStorage.getItem('jwt'));
 
     const queryResult = useQuery({
@@ -25,6 +25,7 @@ export function JwtProvider({ children }: { children: ReactNode }) {
                             }
                         }
                         `),
+        enabled: isGuest,
     })
 
     useEffect(() => {
