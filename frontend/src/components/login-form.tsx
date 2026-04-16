@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useNavigate } from "react-router"
+import { Link, useNavigate } from "react-router"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input"
 import { gqlNoJwt } from "@/lib/graphql"
 import type { TotpLoginResponse } from "@/lib/playerServiceTypes/AuthResponses"
 import { setLocalStorage } from "@/lib/local-storage.helpers.ts"
+import GoogleIcon from "@/assets/icons/google.svg?react"
 
 const LOGIN_WITH_TOTP = `
   mutation LoginWithTotp($username: String!, $code: String!) {
@@ -110,10 +111,12 @@ export function LoginForm({
                   {loading ? "Logging in..." : "Login"}
                 </Button>
                 <Button variant="outline" type="button">
+                  <GoogleIcon />
                   Login with Google
                 </Button>
                 <FieldDescription className="text-center">
-                  Don&apos;t have an account? <a href="#">Sign up</a>
+                  Don&apos;t have an account?{" "}
+                  <Link to="/register">Sign up</Link>
                 </FieldDescription>
               </Field>
             </FieldGroup>

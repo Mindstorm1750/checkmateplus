@@ -8,7 +8,11 @@ import {
 } from "react"
 import type { GuestAuthResponse } from "./playerServiceTypes/AuthResponses"
 import { gqlNoJwt } from "./graphql"
-import {getLocalStorage, setLocalStorage} from "@/lib/local-storage.helpers.ts";
+import {
+  getLocalStorage,
+  setLocalStorage,
+  isGuest,
+} from "@/lib/local-storage.helpers.ts"
 
 const JwtContext = createContext<JwtContextType | undefined>(undefined)
 
@@ -19,9 +23,7 @@ type JwtContextType = {
 
 export function JwtProvider({ children }: { children: ReactNode }) {
   const [jwt, setJwt] = useState<string | null>(() => getLocalStorage("jwt"))
-  const [isGuest] = useState<boolean>(() => {
-    return JSON.parse(getLocalStorage("isGuest") ?? "true")
-  })
+  const [isUserAGuest] = useState<boolean>(() => isGuest())
 
   const queryResult = useQuery({
     queryKey: ["loginAsGuest"],
@@ -35,7 +37,7 @@ export function JwtProvider({ children }: { children: ReactNode }) {
                             }
                         }
                         `),
-    enabled: isGuest,
+    enabled: isUserAGuest,
   })
 
   useEffect(() => {
