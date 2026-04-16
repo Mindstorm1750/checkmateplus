@@ -1,4 +1,4 @@
-import {getLocalStorage} from "@/lib/local-storage.helpers.ts";
+import { getLocalStorage } from "@/lib/local-storage.helpers.ts"
 
 const PLAYER_SERVICE_URL = import.meta.env.VITE_PLAYER_SERVICE_URL + "/graphql"
 

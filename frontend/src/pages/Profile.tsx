@@ -10,7 +10,7 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import { useMatchHistory } from "@/hooks/useMatchHistory"
 import { usePlayerStats } from "@/hooks/usePlayerStats"
-import { getLocalStorage } from "@/lib/local-storage.helpers"
+import { getLocalStorage, isGuest } from "@/lib/local-storage.helpers"
 import { TimeControlToStringMap } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/TimeControl"
 import type { MatchResult } from "@/lib/playerServiceTypes/MatchResult"
 import { useNavigate } from "react-router"
@@ -41,7 +41,6 @@ export default function Profile() {
   const navigate = useNavigate()
   const playerId = getLocalStorage("playerId")
   const displayName = getLocalStorage("displayName")
-  const isGuest = JSON.parse(getLocalStorage("isGuest") ?? "true")
 
   const {
     data: stats,
@@ -60,7 +59,7 @@ export default function Profile() {
 
   const matches = historyPages?.pages.flatMap((p) => p.matches) ?? []
 
-  if (isGuest) {
+  if (isGuest()) {
     return (
       <Layout>
         <Card>
@@ -195,13 +194,7 @@ export default function Profile() {
   )
 }
 
-function StatCard({
-  label,
-  value,
-}: {
-  label: string
-  value: string | number
-}) {
+function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
     <Card>
       <CardContent className="px-4 py-3">

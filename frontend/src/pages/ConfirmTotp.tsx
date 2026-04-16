@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input"
 import { gqlNoJwt } from "@/lib/graphql"
 import type { ConfirmTotpResponse } from "@/lib/playerServiceTypes/AuthResponses"
 import { setLocalStorage } from "@/lib/local-storage.helpers"
+import Layout from "@/components/Layout"
 
 const CONFIRM_TOTP = `
   mutation ConfirmTotp($code: String!) {
@@ -78,63 +79,65 @@ export default function ConfirmTotp() {
   }
 
   return (
-    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle>Set up your authenticator</CardTitle>
-          <CardDescription>
-            Scan the QR code with your authenticator app, then enter the 6-digit
-            code to verify
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center gap-6">
-            <div className="rounded-lg bg-white p-4">
-              <QRCodeSVG value={qrCodeUri} size={200} />
+    <Layout>
+      <div className="flex w-full items-center justify-center md:p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle>Set up your authenticator</CardTitle>
+            <CardDescription>
+              Scan the QR code with your authenticator app, then enter the
+              6-digit code to verify
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col items-center gap-6">
+              <div className="rounded-lg bg-white p-4">
+                <QRCodeSVG value={qrCodeUri} size={200} />
+              </div>
+
+              <details className="w-full text-sm">
+                <summary className="cursor-pointer text-muted-foreground">
+                  Can't scan? Enter this key manually
+                </summary>
+                <code className="mt-2 block rounded bg-muted p-2 text-xs break-all">
+                  {secret}
+                </code>
+              </details>
+
+              <form onSubmit={handleSubmit} className="w-full">
+                <FieldGroup>
+                  <Field>
+                    <FieldLabel htmlFor="totp-code">
+                      Authenticator Code
+                    </FieldLabel>
+                    <Input
+                      id="totp-code"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]{6}"
+                      maxLength={6}
+                      placeholder="000000"
+                      autoComplete="one-time-code"
+                      required
+                      value={code}
+                      onChange={(e) => setCode(e.target.value)}
+                    />
+                    <FieldDescription>
+                      6-digit code from your authenticator app
+                    </FieldDescription>
+                  </Field>
+                  {error && <p className="text-sm text-destructive">{error}</p>}
+                  <Field>
+                    <Button type="submit" disabled={loading}>
+                      {loading ? "Verifying..." : "Verify & Complete Setup"}
+                    </Button>
+                  </Field>
+                </FieldGroup>
+              </form>
             </div>
-
-            <details className="w-full text-sm">
-              <summary className="cursor-pointer text-muted-foreground">
-                Can't scan? Enter this key manually
-              </summary>
-              <code className="mt-2 block rounded bg-muted p-2 text-xs break-all">
-                {secret}
-              </code>
-            </details>
-
-            <form onSubmit={handleSubmit} className="w-full">
-              <FieldGroup>
-                <Field>
-                  <FieldLabel htmlFor="totp-code">
-                    Authenticator Code
-                  </FieldLabel>
-                  <Input
-                    id="totp-code"
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]{6}"
-                    maxLength={6}
-                    placeholder="000000"
-                    autoComplete="one-time-code"
-                    required
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                  />
-                  <FieldDescription>
-                    6-digit code from your authenticator app
-                  </FieldDescription>
-                </Field>
-                {error && <p className="text-sm text-destructive">{error}</p>}
-                <Field>
-                  <Button type="submit" disabled={loading}>
-                    {loading ? "Verifying..." : "Verify & Complete Setup"}
-                  </Button>
-                </Field>
-              </FieldGroup>
-            </form>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          </CardContent>
+        </Card>
+      </div>
+    </Layout>
   )
 }
