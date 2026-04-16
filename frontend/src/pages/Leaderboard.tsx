@@ -1,6 +1,7 @@
 import { useLeaderboard } from "@/hooks/useLeaderboard"
 import { Spinner } from "@/components/ui/spinner"
 import Layout from "@/components/Layout"
+import { BackArrowLink } from "@/components/ui/back-arrow-link.tsx"
 
 export default function Leaderboard() {
   const { data, isLoading, isError } = useLeaderboard(25)
@@ -34,6 +35,7 @@ export default function Leaderboard() {
           </tbody>
         </table>
       )}
+      <BackArrowLink />
     </Layout>
   )
 }
