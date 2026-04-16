@@ -6,7 +6,7 @@ import {
   isGuest,
   signOut,
 } from "@/lib/local-storage.helpers.ts"
-import { User } from "lucide-react"
+import { Trophy, User } from "lucide-react"
 
 export default function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
@@ -17,6 +17,10 @@ export default function Layout({ children }: { children: ReactNode }) {
         <h1 className="text-3xl font-bold">
           <Link to="/">Checkmate+</Link>
         </h1>
+        <Button variant="outline" onClick={() => navigate("/leaderboard")}>
+          <Trophy />
+          Leaderboard
+        </Button>
         {isGuest() ? (
           <div className="flex items-center gap-3">
             <Button>
