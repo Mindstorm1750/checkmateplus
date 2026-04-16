@@ -43,6 +43,9 @@ import {
 } from "@/components/ui/hover-card"
 import type { QueueStatus } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/QueueStatus"
 import { useJwt } from "@/lib/JwtProvider"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
+import type { MatchType } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/MatchType.ts"
+import { getLocalStorage } from "@/lib/local-storage.helpers.ts"
 
 function App() {
   const navigate = useNavigate()
@@ -63,11 +66,13 @@ function App() {
 const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
   const [inQueue, setInQueue] = useState<boolean>(false)
   const [timeControl, setTimeControl] = useState<TimeControl | "ANY">()
+  const [matchType, setMatchType] = useState<MatchType>("COMPETITIVE_PVP")
   const titleText = "Play against humans"
   const descriptionText = "Get matched with other players"
   const navigate = useNavigate()
   const stompClient = useRef<Client | null>(null)
   const { jwt, isPending: jwtIsPending } = useJwt()
+  const isGuest: boolean = JSON.parse(getLocalStorage("isGuest") ?? "true")
 
   const connect = () => {
     const socket = new SockJS(import.meta.env.VITE_BASE_URL + "matchmaking")
@@ -105,10 +110,9 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
 
   const joinQueue = () => {
     if (stompClient.current?.connected) {
-      // TODO use player's displayName (or playerId if types/classes have changed) in the JoinRequest
       const joinRequest: JoinRequest = {
-        displayName: `UserWhoJoinedAt${Date.now()}`,
-        matchType: "CASUAL_PVP",
+        displayName: getLocalStorage("displayName") ?? "",
+        matchType: isGuest ? "CASUAL_PVP" : (matchType ?? "CASUAL_PVP"),
         timeControl: timeControl == "ANY" ? undefined : timeControl,
       }
       stompClient.current.publish({
@@ -131,6 +135,18 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
             {descriptionText}
           </DialogDescription>
         </DialogHeader>
+        {!isGuest && (
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            value={matchType}
+            onValueChange={(e) => setMatchType(e as MatchType)}
+            defaultValue="COMPETITIVE_PVP"
+          >
+            <ToggleGroupItem value="CASUAL_PVP">Casual</ToggleGroupItem>
+            <ToggleGroupItem value="COMPETITIVE_PVP">Ranked</ToggleGroupItem>
+          </ToggleGroup>
+        )}
         <SelectTimeControl
           value={timeControl}
           callBack={setTimeControl}
@@ -208,14 +224,14 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
       // const randomMoveTimeModelType: BotConfiguration['botMoveTimeModelType'] = Math.random() > 0.5 ? 'REALISTIC' : 'MEDIAN';
       // un-comment for randomised botMoveTimeModelType
       const joinRequest: JoinRequest = {
-        displayName: `UserWhoJoinedAt${Date.now()}`,
+        displayName: getLocalStorage("displayName") ?? "",
         matchType: "PVE",
         botConfiguration: {
           botModelType: "MINMAX",
           botMoveTimeModelType: "REALISTIC",
         },
         timeControl: timeControl == "ANY" ? undefined : timeControl,
-      } // TODO use player's displayName (or playerId if types/classes have changed)
+      }
       stompClient.current.publish({
         destination: "/app/join",
         body: JSON.stringify(joinRequest),
