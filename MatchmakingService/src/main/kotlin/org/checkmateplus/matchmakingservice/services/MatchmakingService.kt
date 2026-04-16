@@ -330,7 +330,7 @@ class MatchmakingService(
     /**
      * Calculates the current MMR search range for a player.
      *
-     * Base range expands over time (+25 every 5s, capped at 300).
+     * Base range expands over time (+100 every 5s, capped at 1000).
      * An RD bonus is added on top: players with high rating deviation (uncertain ratings)
      * are given a wider window, since a ±200 gap between two new players is far less
      * meaningful than the same gap between two established ones.
@@ -342,7 +342,7 @@ class MatchmakingService(
     private fun calculateMmrRange(player: Player): Int {
         val secondsWaiting = Clock.System.now().minus(player.joinedQueueAt).inWholeSeconds
         val expansions = secondsWaiting / 5
-        val baseRange = minOf(50 + (expansions * 25), 300).toInt()
+        val baseRange = minOf(100 + (expansions * 100), 1000).toInt()
         val rdBonus = ((player.ratingDeviation ?: 350.0) * 0.2).toInt()
         return baseRange + rdBonus
     }

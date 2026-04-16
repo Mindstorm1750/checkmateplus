@@ -93,7 +93,7 @@ class PlayerStatsService(
 
     @Cacheable("leaderboard", key = "#size")
     fun getLeaderboard(size: Int): List<LeaderboardEntry> {
-        val players = registeredPlayerRepository.findAllByOrderBySkillRatingDesc(PageRequest.of(0, size.coerceIn(1, 100)))
+        val players = registeredPlayerRepository.findAllVerifiedOrderBySkillRatingDesc(PageRequest.of(0, size.coerceIn(1, 100)))
         return players.mapIndexed { index, player ->
             LeaderboardEntry(
                 rank = index + 1,
