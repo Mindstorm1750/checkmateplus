@@ -9,6 +9,7 @@ export async function gql<T>(
   const token = getLocalStorage("jwt")
   const res = await fetch(PLAYER_SERVICE_URL, {
     method: "POST",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -26,6 +27,7 @@ export async function gqlNoJwt<T>(
 ): Promise<T> {
   const res = await fetch(PLAYER_SERVICE_URL, {
     method: "POST",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
     },
