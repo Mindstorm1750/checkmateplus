@@ -10,14 +10,50 @@ import {
   FieldSeparator,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { gqlNoJwt } from "@/lib/graphql.ts"
+import type { RegisterResponse } from "@/lib/playerServiceTypes/AuthResponses.ts"
+import { setLocalStorage } from "@/lib/local-storage.helpers.ts"
+import { useNavigate } from "react-router"
+import { useState } from "react"
 
+const REGISTER_WITH_USERNAME = `
+  mutation Register($username: String!) {
+    register(username: $username) {
+      qrCodeUri
+      secret
+      playerId
+    }
+  }
+`
 export function SignupForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  const navigate = useNavigate()
+  const [username, setUsername] = useState("")
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    setLoading(true)
+
+    try {
+      const data = await gqlNoJwt<RegisterResponse>(REGISTER_WITH_USERNAME, {
+        username,
+      })
+      console.log({ data })
+      navigate("/confirmTOTP", { state: data.register })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed")
+      setLocalStorage("isGuest", "true")
+    } finally {
+      setLoading(false)
+    }
+  }
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <form>
+      <form onSubmit={handleSubmit}>
         <FieldGroup>
           <div className="flex flex-col items-center gap-2 text-center">
             <a
@@ -27,24 +63,31 @@ export function SignupForm({
               <div className="flex size-8 items-center justify-center rounded-md">
                 <GalleryVerticalEnd className="size-6" />
               </div>
-              <span className="sr-only">Acme Inc.</span>
+              <span className="sr-only">CheckmatePlus.</span>
             </a>
-            <h1 className="text-xl font-bold">Welcome to Acme Inc.</h1>
+            <h1 className="text-xl font-bold">Welcome to CheckmatePlus.</h1>
             <FieldDescription>
-              Already have an account? <a href="#">Sign in</a>
+              Already have an account? <a href="/login">Sign in</a>
             </FieldDescription>
           </div>
           <Field>
-            <FieldLabel htmlFor="username">Email</FieldLabel>
+            <FieldLabel htmlFor="username">Username</FieldLabel>
             <Input
               id="username"
-              type="email"
-              placeholder="m@example.com"
+              type="text"
+              placeholder="Enter your username"
               required
+              value={username}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setUsername(e.target.value)
+              }}
             />
           </Field>
+          {error && <p className="text-sm text-destructive">{error}</p>}
           <Field>
-            <Button type="submit">Create Account</Button>
+            <Button type="submit" disabled={loading}>
+              Create Account
+            </Button>
           </Field>
           <FieldSeparator>Or</FieldSeparator>
           <Field className="grid gap-4 sm:grid-cols-2">
