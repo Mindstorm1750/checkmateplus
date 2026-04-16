@@ -8,10 +8,7 @@ import {
 } from "react"
 import type { GuestAuthResponse } from "./playerServiceTypes/AuthResponses"
 import { gqlNoJwt } from "./graphql"
-import {
-  getLocalStorage,
-  setLocalStorage,
-} from "@/lib/local-storage.helpers.ts"
+import {getLocalStorage, setLocalStorage} from "@/lib/local-storage.helpers.ts";
 
 const JwtContext = createContext<JwtContextType | undefined>(undefined)
 
