@@ -15,6 +15,7 @@ import { JwtProvider } from "./lib/JwtProvider.tsx"
 import Login from "@/pages/Login.tsx"
 import Register from "@/pages/Register.tsx"
 import ConfirmTotp from "@/pages/ConfirmTotp.tsx"
+import Profile from "@/pages/Profile.tsx"
 
 const queryClient = new QueryClient()
 
@@ -38,6 +39,7 @@ createRoot(document.getElementById("root")!).render(
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/confirmTOTP" element={<ConfirmTotp />} />
+                <Route path="/profile" element={<Profile />} />
               </Routes>
             </BrowserRouter>
           </ThemeProvider>
