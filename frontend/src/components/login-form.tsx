@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { gqlNoJwt } from "@/lib/graphql"
 import type { TotpLoginResponse } from "@/lib/playerServiceTypes/AuthResponses"
+import { setLocalStorage } from "@/lib/local-storage.helpers.ts"
 
 const LOGIN_WITH_TOTP = `
   mutation LoginWithTotp($username: String!, $code: String!) {
@@ -50,14 +51,14 @@ export function LoginForm({
         code,
       })
       const { jwt, playerId, displayName } = data.loginWithTotp
-      localStorage.setItem("jwt", jwt)
-      localStorage.setItem("playerId", playerId)
-      localStorage.setItem("displayName", displayName)
-      localStorage.setItem("isGuest", "false")
+      setLocalStorage("jwt", jwt)
+      setLocalStorage("playerId", playerId)
+      setLocalStorage("displayName", displayName)
+      setLocalStorage("isGuest", "false")
       navigate("/")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed")
-      localStorage.setItem("isGuest", "true")
+      setLocalStorage("isGuest", "true")
     } finally {
       setLoading(false)
     }
