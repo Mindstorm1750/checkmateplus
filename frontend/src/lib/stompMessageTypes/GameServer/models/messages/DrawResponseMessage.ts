@@ -1,5 +1,5 @@
 export type DrawResponseMessage = {
-    matchId: String,
-    playerId: String,
-    accepted: Boolean
+  matchId: String
+  playerId: String
+  accepted: Boolean
 }

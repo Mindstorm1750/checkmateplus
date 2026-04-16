@@ -49,7 +49,7 @@ export function LoginForm({
         username,
         code,
       })
-      const { jwt, playerId, displayName} = data.loginWithTotp
+      const { jwt, playerId, displayName } = data.loginWithTotp
       localStorage.setItem("jwt", jwt)
       localStorage.setItem("playerId", playerId)
       localStorage.setItem("displayName", displayName)
@@ -103,9 +103,7 @@ export function LoginForm({
                   6-digit code from your authenticator app
                 </FieldDescription>
               </Field>
-              {error && (
-                <p className="text-sm text-destructive">{error}</p>
-              )}
+              {error && <p className="text-sm text-destructive">{error}</p>}
               <Field>
                 <Button type="submit" disabled={loading}>
                   {loading ? "Logging in..." : "Login"}
