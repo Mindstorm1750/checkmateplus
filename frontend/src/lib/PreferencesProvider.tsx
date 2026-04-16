@@ -5,6 +5,10 @@ import {
   useEffect,
   type ReactNode,
 } from "react"
+import {
+  getLocalStorage,
+  setLocalStorage,
+} from "@/lib/local-storage.helpers.ts"
 
 /**
  * Closely related to the PlayerPreferences type.
@@ -27,7 +31,7 @@ const PreferencesContext = createContext<PreferencesContextType | undefined>(
 export function PreferencesProvider({ children }: { children: ReactNode }) {
   const [preferences, setPreferences] = useState<Preferences>(() => {
     // Load from localStorage. Default to brown board and normal animations if nothing stored.
-    const saved = localStorage.getItem("chessPreferences")
+    const saved = getLocalStorage("chessPreferences")
     const defaultPreferences: Preferences = {
       boardColour: "BROWN",
       animationType: "NORMAL",
@@ -40,7 +44,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
 
   // Save to localStorage whenever preferences change.
   useEffect(() => {
-    localStorage.setItem("chessPreferences", JSON.stringify(preferences))
+    setLocalStorage("chessPreferences", JSON.stringify(preferences))
   }, [preferences])
 
   const updatePreferences = (newPrefs: Partial<Preferences>) => {

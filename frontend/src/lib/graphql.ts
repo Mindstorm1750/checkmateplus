@@ -1,10 +1,12 @@
+import { getLocalStorage } from "@/lib/local-storage.helpers.ts"
+
 const PLAYER_SERVICE_URL = import.meta.env.VITE_PLAYER_SERVICE_URL + "/graphql"
 
 export async function gql<T>(
   query: string,
   variables?: Record<string, unknown>
 ): Promise<T> {
-  const token = localStorage.getItem("jwt")
+  const token = getLocalStorage("jwt")
   const res = await fetch(PLAYER_SERVICE_URL, {
     method: "POST",
     headers: {

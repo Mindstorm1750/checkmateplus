@@ -25,6 +25,7 @@ import { useEffect, useRef, useState } from "react"
 import { useLocation } from "react-router"
 import SockJS from "sockjs-client/dist/sockjs"
 import { useJwt } from "@/lib/JwtProvider"
+import { getLocalStorage } from "@/lib/local-storage.helpers.ts"
 
 function Match() {
   /**
@@ -32,7 +33,7 @@ function Match() {
    * Might be a temporary solution OR copy this data to a more persistent form like localStorage.
    */
   const { state }: { state: MatchFoundEvent } = useLocation()
-  const { matchId, websocketUrl, playerId } = state // TODO make playerId persistent
+  const { matchId, websocketUrl, playerId } = state
   const [boardState, setBoardState] = useState<Board>(EMPTY_BOARD)
   /**
    * pieceOrigins is used in ChessBoard to animate pieces via framer motion's layoutId.
@@ -94,7 +95,6 @@ function Match() {
           }
         )
 
-        // TODO figure out if unneeded as it never seems to receive messages
         client.subscribe(
           `/user/queue/match/${matchId}/state`,
           (message: IMessage) => {
@@ -184,11 +184,10 @@ function Match() {
       //     boardColour: preferences.boardColour, // boardColour can be read from the now outdated preferences object because we didn't modify it
       //     animationType: randomAnimationType
       // }
-      // TODO use player's displayName (or playerId if types/classes have changed)
       const joinRequest: JoinMatchMessage = {
         playerId,
-        matchId: matchId,
-        playerName: `UserWhoJoinedAt${Date.now()}`,
+        matchId,
+        playerName: getLocalStorage("displayName") ?? "",
         playerPreferences: preferences,
       }
 
