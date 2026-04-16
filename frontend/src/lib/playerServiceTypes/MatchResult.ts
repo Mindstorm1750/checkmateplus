@@ -1,1 +1,1 @@
-export type MatchResult = 'WIN' | 'LOSS' | 'DRAW' | 'ABANDONED'
+export type MatchResult = "WIN" | "LOSS" | "DRAW" | "ABANDONED"

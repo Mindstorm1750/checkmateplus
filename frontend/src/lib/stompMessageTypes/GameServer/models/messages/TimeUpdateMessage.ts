@@ -1,5 +1,5 @@
 export type TimeUpdateMessage = {
-    matchId: String,
-    whitePlayerTime: number,
-    blackPlayerTime: number
+  matchId: String
+  whitePlayerTime: number
+  blackPlayerTime: number
 }

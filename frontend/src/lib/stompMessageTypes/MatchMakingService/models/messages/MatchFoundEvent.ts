@@ -6,8 +6,8 @@
  * @property opponentName The display name of the opponent player.
  */
 export type MatchFoundEvent = {
-    matchId: String,
-    websocketUrl: String,
-    opponentName: String,
-    playerId: String,
+  matchId: String
+  websocketUrl: String
+  opponentName: String
+  playerId: String
 }

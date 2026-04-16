@@ -4,12 +4,12 @@ import type { TimeControl } from "../stompMessageTypes/ChessLibrary/PlayerModels
 import type { MatchResult } from "./MatchResult"
 
 export type MatchSummary = {
-    matchId: string,
-    opponentId?: string,
-    result: MatchResult,
-    colour: Colour,
-    matchType: MatchType,
-    timeControl: TimeControl,
-    gameDurationMs?: number,
-    createdAtEpochMs: number
+  matchId: string
+  opponentId?: string
+  result: MatchResult
+  colour: Colour
+  matchType: MatchType
+  timeControl: TimeControl
+  gameDurationMs?: number
+  createdAtEpochMs: number
 }

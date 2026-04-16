@@ -1,91 +1,123 @@
 import { Button } from "@/components/ui/button"
 import Layout from "../components/Layout"
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog"
-import { useRef, useState, type ComponentProps, type Dispatch, type SetStateAction } from "react"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../components/ui/dialog"
+import {
+  useRef,
+  useState,
+  type ComponentProps,
+  type Dispatch,
+  type SetStateAction,
+} from "react"
 import { useNavigate } from "react-router"
 import { Client, type IMessage } from "@stomp/stompjs"
-import SockJS from 'sockjs-client/dist/sockjs';
+import SockJS from "sockjs-client/dist/sockjs"
 import type { JoinRequest } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/JoinRequest"
 import type { MatchFoundEvent } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/MatchFoundEvent"
 import { Spinner } from "@/components/ui/spinner"
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { type TimeControl, TimeControlToStringMap } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/TimeControl"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  type TimeControl,
+  TimeControlToStringMap,
+} from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/TimeControl"
 import { Info } from "lucide-react"
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card"
 import type { QueueStatus } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/QueueStatus"
 import { useJwt } from "@/lib/JwtProvider"
 
 function App() {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
   return (
     <Layout>
-      <div className="flex flex-col gap-4 items-center">
-        <PlayHumanButton className='min-w-3xs' />
-        <PlayComputerButton className='min-w-3xs' />
-        <Button className='min-w-3xs' onClick={() => navigate('/settings')}>Settings</Button>
+      <div className="flex flex-col items-center gap-4">
+        <PlayHumanButton className="min-w-3xs" />
+        <PlayComputerButton className="min-w-3xs" />
+        <Button className="min-w-3xs" onClick={() => navigate("/settings")}>
+          Settings
+        </Button>
       </div>
-    </Layout>)
+    </Layout>
+  )
 }
 
 const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
-  const [inQueue, setInQueue] = useState<boolean>(false);
-  const [timeControl, setTimeControl] = useState<TimeControl | "ANY">();
-  const titleText = "Play against humans";
-  const descriptionText = "Get matched with other players";
-  const navigate = useNavigate();
-  const stompClient = useRef<Client | null>(null);
-  const { jwt, isPending: jwtIsPending } = useJwt();
+  const [inQueue, setInQueue] = useState<boolean>(false)
+  const [timeControl, setTimeControl] = useState<TimeControl | "ANY">()
+  const titleText = "Play against humans"
+  const descriptionText = "Get matched with other players"
+  const navigate = useNavigate()
+  const stompClient = useRef<Client | null>(null)
+  const { jwt, isPending: jwtIsPending } = useJwt()
 
   const connect = () => {
-    const socket = new SockJS(import.meta.env.VITE_BASE_URL + 'matchmaking');
+    const socket = new SockJS(import.meta.env.VITE_BASE_URL + "matchmaking")
 
     const client = new Client({
       webSocketFactory: () => socket,
       connectHeaders: {
-        Authorization: `Bearer ${jwt}`
+        Authorization: `Bearer ${jwt}`,
       },
       debug: (str: string) => console.log(str),
       onConnect: () => {
         // Subscribe to your specific user queue for status updates
-        client.subscribe('/user/queue/status', (message: IMessage) => {
-          const body: QueueStatus = JSON.parse(message.body);
-          console.log('/user/queue/status', { body })
-        });
+        client.subscribe("/user/queue/status", (message: IMessage) => {
+          const body: QueueStatus = JSON.parse(message.body)
+          console.log("/user/queue/status", { body })
+        })
 
         // Subscribe to match found events
-        client.subscribe('/user/queue/match', (message: IMessage) => {
-          const match: MatchFoundEvent = JSON.parse(message.body);
-          setInQueue(false); // Match found, no longer in queue, redirect to match page
+        client.subscribe("/user/queue/match", (message: IMessage) => {
+          const match: MatchFoundEvent = JSON.parse(message.body)
+          setInQueue(false) // Match found, no longer in queue, redirect to match page
           navigate(`/match`, { state: match })
-        });
+        })
 
-        joinQueue(); // send join request immediately after connecting
+        joinQueue() // send join request immediately after connecting
       },
-      onStompError: (frame: { headers: { [x: string]: string; }; }) => {
-        console.log({ error: frame });
+      onStompError: (frame: { headers: { [x: string]: string } }) => {
+        console.log({ error: frame })
       },
-    });
+    })
 
-    client.activate();
-    stompClient.current = client;
-  };
+    client.activate()
+    stompClient.current = client
+  }
 
   const joinQueue = () => {
     if (stompClient.current?.connected) {
       // TODO use player's displayName (or playerId if types/classes have changed) in the JoinRequest
       const joinRequest: JoinRequest = {
         displayName: `UserWhoJoinedAt${Date.now()}`,
-        matchType: 'CASUAL_PVP',
-        timeControl: timeControl == "ANY" ? undefined : timeControl
-      };
+        matchType: "CASUAL_PVP",
+        timeControl: timeControl == "ANY" ? undefined : timeControl,
+      }
       stompClient.current.publish({
         destination: "/app/join",
-        body: JSON.stringify(joinRequest)
-      });
-      setInQueue(true);
+        body: JSON.stringify(joinRequest),
+      })
+      setInQueue(true)
     }
-  };
+  }
 
   return (
     <Dialog>
@@ -95,16 +127,34 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="font-bold">{titleText}</DialogTitle>
-          <DialogDescription className="text-sm">{descriptionText}</DialogDescription>
+          <DialogDescription className="text-sm">
+            {descriptionText}
+          </DialogDescription>
         </DialogHeader>
-        <SelectTimeControl value={timeControl} callBack={setTimeControl} includeAny />
+        <SelectTimeControl
+          value={timeControl}
+          callBack={setTimeControl}
+          includeAny
+        />
         <DialogFooter>
           <DialogClose asChild>
-            <Button onClick={() => { stompClient.current?.deactivate(); setInQueue(false) }} variant='outline'>Cancel</Button>
+            <Button
+              onClick={() => {
+                stompClient.current?.deactivate()
+                setInQueue(false)
+              }}
+              variant="outline"
+            >
+              Cancel
+            </Button>
           </DialogClose>
-          <Button onClick={connect} variant={inQueue ? 'secondary' : 'default'} disabled={inQueue || timeControl === undefined || jwtIsPending}>
-            {inQueue && <Spinner data-icon='inline-start' />}
-            {inQueue ? 'Queueing...' : 'Join queue'}
+          <Button
+            onClick={connect}
+            variant={inQueue ? "secondary" : "default"}
+            disabled={inQueue || timeControl === undefined || jwtIsPending}
+          >
+            {inQueue && <Spinner data-icon="inline-start" />}
+            {inQueue ? "Queueing..." : "Join queue"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -113,21 +163,21 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
 }
 
 const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
-  const titleText = "Play against a computer";
-  const [inQueue, setInQueue] = useState<boolean>(false);
+  const titleText = "Play against a computer"
+  const [inQueue, setInQueue] = useState<boolean>(false)
   // timeControl won't actually ever be "ANY" here because we don't set includeAny = true in the SelectTimeControl component
-  const [timeControl, setTimeControl] = useState<TimeControl | "ANY">();
-  const navigate = useNavigate();
-  const stompClient = useRef<Client | null>(null);
-  const { jwt, isPending: jwtIsPending } = useJwt();
+  const [timeControl, setTimeControl] = useState<TimeControl | "ANY">()
+  const navigate = useNavigate()
+  const stompClient = useRef<Client | null>(null)
+  const { jwt, isPending: jwtIsPending } = useJwt()
 
   const connect = () => {
-    const socket = new SockJS(import.meta.env.VITE_BASE_URL + 'matchmaking');
+    const socket = new SockJS(import.meta.env.VITE_BASE_URL + "matchmaking")
 
     const client = new Client({
       webSocketFactory: () => socket,
       connectHeaders: {
-        Authorization: `Bearer ${jwt}`
+        Authorization: `Bearer ${jwt}`,
       },
       debug: (str: string) => console.log(str),
       onConnect: () => {
@@ -137,21 +187,21 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
         // });
 
         // Subscribe to match found events
-        client.subscribe('/user/queue/match', (message: IMessage) => {
-          const match: MatchFoundEvent = JSON.parse(message.body);
-          setInQueue(false); // Match found, no longer in queue, redirect to match page
+        client.subscribe("/user/queue/match", (message: IMessage) => {
+          const match: MatchFoundEvent = JSON.parse(message.body)
+          setInQueue(false) // Match found, no longer in queue, redirect to match page
           navigate(`/match`, { state: match })
-        });
+        })
 
-        joinQueue(); // send join request immediately after connecting
+        joinQueue() // send join request immediately after connecting
       },
       // onStompError: (frame: { headers: { [x: string]: string; }; }) => {
       // },
-    });
+    })
 
-    client.activate();
-    stompClient.current = client;
-  };
+    client.activate()
+    stompClient.current = client
+  }
 
   const joinQueue = () => {
     if (stompClient.current?.connected) {
@@ -159,17 +209,20 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
       // un-comment for randomised botMoveTimeModelType
       const joinRequest: JoinRequest = {
         displayName: `UserWhoJoinedAt${Date.now()}`,
-        matchType: 'PVE',
-        botConfiguration: { botModelType: 'MINMAX', botMoveTimeModelType: 'REALISTIC' },
-        timeControl: timeControl == "ANY" ? undefined : timeControl
-      }; // TODO use player's displayName (or playerId if types/classes have changed)
+        matchType: "PVE",
+        botConfiguration: {
+          botModelType: "MINMAX",
+          botMoveTimeModelType: "REALISTIC",
+        },
+        timeControl: timeControl == "ANY" ? undefined : timeControl,
+      } // TODO use player's displayName (or playerId if types/classes have changed)
       stompClient.current.publish({
         destination: "/app/join",
-        body: JSON.stringify(joinRequest)
-      });
-      setInQueue(true);
+        body: JSON.stringify(joinRequest),
+      })
+      setInQueue(true)
     }
-  };
+  }
 
   return (
     <Dialog>
@@ -183,11 +236,23 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
         <SelectTimeControl value={timeControl} callBack={setTimeControl} />
         <DialogFooter>
           <DialogClose asChild>
-            <Button onClick={() => { stompClient.current?.deactivate(); setInQueue(false) }} variant='outline'>Cancel</Button>
+            <Button
+              onClick={() => {
+                stompClient.current?.deactivate()
+                setInQueue(false)
+              }}
+              variant="outline"
+            >
+              Cancel
+            </Button>
           </DialogClose>
-          <Button onClick={connect} variant={inQueue ? 'secondary' : 'default'} disabled={inQueue || timeControl === undefined || jwtIsPending}>
-            {inQueue && <Spinner data-icon='inline-start' />}
-            {inQueue ? 'Joining...' : 'Play'}
+          <Button
+            onClick={connect}
+            variant={inQueue ? "secondary" : "default"}
+            disabled={inQueue || timeControl === undefined || jwtIsPending}
+          >
+            {inQueue && <Spinner data-icon="inline-start" />}
+            {inQueue ? "Joining..." : "Play"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -195,42 +260,55 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
   )
 }
 
-export const SelectTimeControl = (
-  { callBack, includeAny = false, value }: {
-    callBack: Dispatch<SetStateAction<TimeControl | "ANY" | undefined>>,
-    includeAny?: Boolean,
-    value: TimeControl | "ANY" | undefined
-  }) => {
-  return (<div className='flex items-center gap-2'>
-    <Select value={value} onValueChange={(timeControl) => callBack(timeControl as TimeControl)}>
-      <SelectTrigger>
-        <SelectValue placeholder='Select a time control' />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectGroup>
-          {includeAny && <SelectItem key="ANY" value="ANY">Any</SelectItem>}
-          {
-            [...TimeControlToStringMap.entries()].map((entry) => {
-              const [value, label] = entry;
-              return <SelectItem key={value} value={value.toString()}>{label}</SelectItem>
-            })
-          }
-        </SelectGroup>
-      </SelectContent>
-    </Select>
-    <HoverCard>
-      <HoverCardTrigger>
-        <Info />
-      </HoverCardTrigger>
-      <HoverCardContent>
-        <div className="text-sm">
-          <p>Time controls are shown as X+Y:</p>
-          <p>X minutes per player, with Y seconds added after each move.</p>
-        </div>
-      </HoverCardContent>
-    </HoverCard>
-
-  </div>);
+export const SelectTimeControl = ({
+  callBack,
+  includeAny = false,
+  value,
+}: {
+  callBack: Dispatch<SetStateAction<TimeControl | "ANY" | undefined>>
+  includeAny?: Boolean
+  value: TimeControl | "ANY" | undefined
+}) => {
+  return (
+    <div className="flex items-center gap-2">
+      <Select
+        value={value}
+        onValueChange={(timeControl) => callBack(timeControl as TimeControl)}
+      >
+        <SelectTrigger>
+          <SelectValue placeholder="Select a time control" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            {includeAny && (
+              <SelectItem key="ANY" value="ANY">
+                Any
+              </SelectItem>
+            )}
+            {[...TimeControlToStringMap.entries()].map((entry) => {
+              const [value, label] = entry
+              return (
+                <SelectItem key={value} value={value.toString()}>
+                  {label}
+                </SelectItem>
+              )
+            })}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+      <HoverCard>
+        <HoverCardTrigger>
+          <Info />
+        </HoverCardTrigger>
+        <HoverCardContent>
+          <div className="text-sm">
+            <p>Time controls are shown as X+Y:</p>
+            <p>X minutes per player, with Y seconds added after each move.</p>
+          </div>
+        </HoverCardContent>
+      </HoverCard>
+    </div>
+  )
 }
 
 export default App
