@@ -70,7 +70,7 @@ function Match() {
   }, [matchId, jwtIsPending])
 
     const connect = () => {
-        const socket = new SockJS(`https://${websocketUrl}/match`);
+        const socket = new SockJS(`http://${websocketUrl}/match`); // TODO DON'T COMMIT THIS
         // websocketUrl should really be http://localhost:8090 or http://127.0.0.1:8090 and '/match' is to be added by frontend here
 
         const client = new Client({
@@ -92,6 +92,10 @@ function Match() {
                     }
                     if (body.eventType == 'TIME_EXPIRED') {
                         // if the game has ended due to time
+                        setIsGameOver(true);
+                        setGameOverMessage(`${body.message} MatchId: ${matchId}`);
+                    }
+                    if (body.eventType == 'PLAYER_RESIGNED') {
                         setIsGameOver(true);
                         setGameOverMessage(`${body.message} MatchId: ${matchId}`);
                     }
@@ -202,12 +206,25 @@ function Match() {
         promotion: move.promotion,
       }
 
-      stompClient.current.publish({
-        destination: `/app/match/${matchId}/move`,
-        body: JSON.stringify(moveRequest),
-      })
+            stompClient.current.publish({
+                destination: `/app/match/${matchId}/move`,
+                body: JSON.stringify(moveRequest)
+            });
+        }
     }
-  }
+
+    const handleResign = () => {
+        const resignMessage: ResignMessage = {
+            matchId,
+            playerId,
+        }
+        if (stompClient.current?.connected) {
+            stompClient.current.publish({
+                destination: `/app/match/${matchId}/resign`,
+                body: JSON.stringify(resignMessage)
+            })
+        }
+    }
 
   return (
     <Layout>
@@ -225,6 +242,7 @@ function Match() {
             whitePerspective={isPlayerWhite}
             pieceOrigins={pieceOrigins}
           />
+          {!isGameOver && <Button onClick={handleResign}>Resign</Button>}
         </div>
       </div>
       {isGameOver && <BackArrowLink />}

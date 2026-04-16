@@ -297,6 +297,7 @@ class MatchService(
     fun addMatchRecord(record: MatchRecord) {
         matchRecords.add(record)
         flushMatchRecords()
+        removeMatch(record.matchId)
     }
 
     fun flushMatchRecords() {

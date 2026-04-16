@@ -137,6 +137,7 @@ class MatchWebSocketController(
 
                         val botClock = if(botColour == WHITE) match.whitePlayerTime else match.blackPlayerTime
                         if (botClock <= 0) return@launch
+                        if (matchService.getMatch(matchId) === null) return@launch
 
                         val botMoveMessage = MoveMessage(
                             matchId,
@@ -543,6 +544,7 @@ class MatchWebSocketController(
         resignMessage: ResignMessage,
         principal: Principal
     ) {
+        val match = matchService.getMatch(matchId)
         val securePlayerId = (principal as JwtAuthenticationToken).token.subject
         if (resignMessage.playerId != securePlayerId) throw IllegalAccessException("Player mismatch")
         val winner = matchService.resign(matchId, resignMessage.playerId)
@@ -559,6 +561,25 @@ class MatchWebSocketController(
                 )
             )
         )
+
+        val outcome = if(match?.whitePlayer?.playerId == resignMessage.playerId) MatchOutcome.BLACK_WINS else MatchOutcome.WHITE_WINS
+
+        matchService.addMatchRecord(MatchRecord(
+            board = match?.board!!,
+            players = match.players,
+            matchId = match.matchId,
+            timeControl = match.timeControl,
+            matchType = match.matchType,
+            botConfiguration = match.botConfiguration,
+            matchOutcome = outcome,
+            whitePlayer = match.whitePlayer!!,
+            blackPlayer = match.blackPlayer!!,
+            remainingWhitePlayerTime = match.whitePlayerTime,
+            remainingBlackPlayerTime = match.blackPlayerTime,
+            matchStatus = MatchStatus.COMPLETED,
+            history = match.turnHistory,
+            matchCreationTime = match.createdAt
+        ))
     }
 
 }
