@@ -59,6 +59,8 @@ function Match() {
     const [isPlayerWhite, setIsPlayerWhite] = useState<boolean>(true);
     const [isGameOver, setIsGameOver] = useState<boolean>(false);
     const [gameOverMessage, setGameOverMessage] = useState<String>();
+    const [resignConfirmationDialog, setResignConfirmationDialog] = useState<boolean>(false);
+    const [drawOffered, setDrawOffered] = useState<boolean>(false);
     const { preferences } = usePreferences();
     const stompClient = useRef<Client | null>(null);
     const { jwt, isPending: jwtIsPending } = useJwt();
@@ -70,7 +72,7 @@ function Match() {
   }, [matchId, jwtIsPending])
 
     const connect = () => {
-        const socket = new SockJS(`http://${websocketUrl}/match`); // TODO DON'T COMMIT THIS
+        const socket = new SockJS(`https://${websocketUrl}/match`);
         // websocketUrl should really be http://localhost:8090 or http://127.0.0.1:8090 and '/match' is to be added by frontend here
 
         const client = new Client({
@@ -226,8 +228,13 @@ function Match() {
         }
     }
 
+    const handleOfferDraw = () => {
+
+    }
+
   return (
     <Layout>
+      <Dialog open={resignConfirmationDialog}>
       <div className="flex w-full justify-center">
         <div className="w-3/4">
           {isGameOver && gameOverMessage && <p>{gameOverMessage}</p>}
@@ -241,11 +248,29 @@ function Match() {
             moveCallback={handleMove}
             whitePerspective={isPlayerWhite}
             pieceOrigins={pieceOrigins}
-          />
-          {!isGameOver && <Button onClick={handleResign}>Resign</Button>}
+          >
+                            {!isGameOver && <div className="flex items-center gap-2">
+                                <Button onClick={() => setResignConfirmationDialog(true)} variant="outline">Resign</Button>
+                                <Button onClick={handleOfferDraw} variant="outline">{drawOffered ? "Draw offered" : "Offer draw"}</Button>
+                            </div>}
+                        </ChessBoard>
         </div>
       </div>
       {isGameOver && <BackArrowLink />}
+      <DialogContent showCloseButton={false}>
+                    <DialogHeader>
+                        <DialogDescription>
+                        <p>Resign this game?</p>
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button onClick={() => {handleResign(); setResignConfirmationDialog(false);}} variant="destructive">Resign</Button>
+                        <DialogClose asChild>
+                            <Button onClick={() => setResignConfirmationDialog(false)} variant="outline">Cancel</Button>
+                        </DialogClose>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
       <Dialog open={isGameOver && !surveySubmitted}>
         <DialogContent>
           <DialogHeader>

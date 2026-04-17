@@ -30,8 +30,9 @@ const ChessBoard = ({
                         isCheck,
                         clockState = {whitePlayerTime: 0, blackPlayerTime: 0},
                         pieceOrigins,
-                        lastMove
-                    }: ChessBoardProps) => {
+                        lastMove,
+                        children
+                    }: React.PropsWithChildren<ChessBoardProps>) => {
     const [squareClicked, setSquareClicked] = useState<Square | null>();
     const [askForPromotion, setAskForPromotion] = useState<boolean>(false);
     const [promotionSquare, setPromotionSquare] = useState<Square | null>();
@@ -171,9 +172,12 @@ const ChessBoard = ({
                         }
                     </div>
                 </div>
-                <Clock topClock={false}
-                       time={whitePerspective ? clockState.whitePlayerTime : clockState.blackPlayerTime}
-                       isActiveClock={isPlayersTurn} isGameOver={isGameOver}/>
+                <div className="flex items-center justify-between">
+                    <Clock topClock={false}
+                           time={whitePerspective ? clockState.whitePlayerTime : clockState.blackPlayerTime}
+                           isActiveClock={isPlayersTurn} isGameOver={isGameOver}/>
+                    {children}
+                </div>
             </div>
             <DialogContent showCloseButton={false}>
                 <DialogHeader>
