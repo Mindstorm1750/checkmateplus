@@ -38,6 +38,10 @@ import { Button } from "@/components/ui/button.tsx"
 import { Textarea } from "@/components/ui/textarea.tsx"
 import { Star } from "lucide-react"
 import { usePostGameSurvey } from "@/hooks/usePostGameSurvey.ts"
+import type {DrawOfferMessage} from "@/lib/stompMessageTypes/GameServer/models/messages/DrawOfferMessage.ts";
+import type {DrawOfferState} from "@/types/Match.type.ts";
+import type {DrawResponseMessage} from "@/lib/stompMessageTypes/GameServer/models/messages/DrawResponseMessage.ts";
+
 
 function Match() {
     /**
@@ -60,7 +64,8 @@ function Match() {
     const [isGameOver, setIsGameOver] = useState<boolean>(false);
     const [gameOverMessage, setGameOverMessage] = useState<String>();
     const [resignConfirmationDialog, setResignConfirmationDialog] = useState<boolean>(false);
-    const [drawOffered, setDrawOffered] = useState<boolean>(false);
+    const [drawConfirmationDialog, setDrawConfirmationDialog] = useState<boolean>(false);
+    const [drawOfferState, setDrawOfferState] = useState<DrawOfferState>('noOffer')
     const { preferences } = usePreferences();
     const stompClient = useRef<Client | null>(null);
     const { jwt, isPending: jwtIsPending } = useJwt();
@@ -100,6 +105,14 @@ function Match() {
                     if (body.eventType == 'PLAYER_RESIGNED') {
                         setIsGameOver(true);
                         setGameOverMessage(`${body.message} MatchId: ${matchId}`);
+                    }
+                    if (body.eventType == 'DRAW_ACCEPTED') {
+                        // both players agree to draw
+                        setIsGameOver(true);
+                        setGameOverMessage(`${body.message} MatchId: ${matchId}`);
+                    }
+                    if (body.eventType == 'DRAW_DECLINED') {
+                        setDrawOfferState('noOffer');
                     }
                 });
 
@@ -167,6 +180,14 @@ function Match() {
                     }
                 });
 
+                client.subscribe(`/topic/match/${matchId}/draw-offer`, (message: IMessage) => {
+                    const drawOfferMessage: DrawOfferMessage = JSON.parse(message.body);
+                    console.log("Got draw offer message from: " + drawOfferMessage.offeredBy);
+                    if(drawOfferMessage.offeredBy != playerId) {
+                        setDrawOfferState('receivedOffer');
+                    }
+                });
+
                 joinGame();
             }
         });
@@ -228,8 +249,33 @@ function Match() {
         }
     }
 
-    const handleOfferDraw = () => {
+    const offerDraw = () => {
+        if (stompClient.current?.connected) {
+            setDrawOfferState('waitingForResponse');
+            const drawOfferMessage: DrawOfferMessage = {
+                matchId,
+                offeredBy: playerId
+            }
+            stompClient.current.publish({
+                destination: `/app/match/${matchId}/draw/offer`,
+                body: JSON.stringify(drawOfferMessage)
+            })
+        }
+    }
 
+    const respondToDraw = (accepted: boolean) => {
+        if (stompClient.current?.connected) {
+            setDrawOfferState('noOffer');
+            const drawResponseMessage: DrawResponseMessage = {
+                matchId,
+                playerId,
+                accepted
+            }
+            stompClient.current.publish({
+                destination: `/app/match/${matchId}/draw/respond`,
+                body: JSON.stringify(drawResponseMessage)
+            })
+        }
     }
 
   return (
@@ -250,9 +296,14 @@ function Match() {
             pieceOrigins={pieceOrigins}
           >
                             {!isGameOver && <div className="flex items-center gap-2">
-                                <Button onClick={() => setResignConfirmationDialog(true)} variant="outline">Resign</Button>
-                                <Button onClick={handleOfferDraw} variant="outline">{drawOffered ? "Draw offered" : "Offer draw"}</Button>
-                            </div>}
+                            <Button onClick={() => setResignConfirmationDialog(true)} variant="outline">Resign</Button>
+                            <Button onClick={drawOfferState == 'noOffer' ? offerDraw : () => setDrawConfirmationDialog(true)}
+                                    variant={drawOfferState == 'receivedOffer' ? "default" : "outline"}
+                                    disabled={drawOfferState == 'waitingForResponse'}>
+                                {drawOfferState == 'noOffer' ? "Offer draw" :
+                                    (drawOfferState == 'waitingForResponse' ? "Draw offered" : "Accept draw?")}
+                            </Button>
+                        </div>}
                         </ChessBoard>
         </div>
       </div>
@@ -317,6 +368,21 @@ function Match() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <Dialog open={drawConfirmationDialog}>
+                <DialogContent showCloseButton={false}>
+                    <DialogHeader>
+                        <DialogDescription>
+                        <p>Draw offered by opponent</p>
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button onClick={() => { respondToDraw(true); setDrawConfirmationDialog(false);}}>Accept draw</Button>
+                        <DialogClose asChild>
+                            <Button onClick={() => { respondToDraw(false); setDrawConfirmationDialog(false);}}>Reject draw</Button>
+                        </DialogClose>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
     </Layout>
   )
 }
