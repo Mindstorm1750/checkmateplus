@@ -26,6 +26,7 @@ fun MatchRecord.toProto(): PlayerServiceProto.MatchRecord {
         .setRemainingBlackPlayerTime(remainingBlackPlayerTime)
         .setMatchStatus(matchStatus.toProto())
         .addAllHistory(history.map { it.toProto() })
+        .setMatchCreatedAtEpochMs(matchCreationTime.toEpochMilliseconds())
         .apply { botConfig?.let { bc -> setBotConfiguration(bc.toProto()) } }
         .build()
 }

@@ -30,7 +30,7 @@ fun PlayerServiceProto.MatchRecord.toEntity(
     remainingBlackPlayerTime = remainingBlackPlayerTime.toLong(),
     matchStatus = matchStatus.toDomain(),
     historyJson = Json.encodeToString(historyList.map { it.toDomain() }),
-    createdAtEpochMs = matchCreatedAt.toLong()
+    createdAtEpochMs = matchCreatedAtEpochMs
 )
 
 fun PlayerServiceProto.Board.toDomain(): Board = Board(
