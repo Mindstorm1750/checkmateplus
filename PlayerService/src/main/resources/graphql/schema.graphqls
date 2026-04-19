@@ -6,6 +6,7 @@ type Mutation {
     exchangeOAuthCode(code: String!): AuthResponse!
     refresh(refreshToken: String!): AuthResponse!
     logout(refreshToken: String!): Boolean!
+    postGameSurvey(matchId: String!, surveyScore: Int!, optionalComments: String): Survey!
 }
 
 type Query {
@@ -82,4 +83,10 @@ type PlayerProfile {
     username: String
     skillRating: Int
     totpEnabled: Boolean!
+}
+
+type Survey {
+    matchId: String!
+    surveyScore: Int!
+    optionalComments: String
 }
