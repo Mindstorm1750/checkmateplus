@@ -17,10 +17,10 @@ class BotPlayerEntity(
     skillRating: Int? = null,
     ratingDeviation: Double? = null,
     volatility: Double? = null,
-    val difficulty: Int,
+    var difficulty: Int,
     @Column(name = "bot_configuration")
     @JdbcTypeCode(SqlTypes.JSON)
-    val botConfigurationJson: String
+    var botConfigurationJson: String
 ) : PlayerEntity(playerId, displayName, joinedQueueAt, skillRating, ratingDeviation, volatility) {
     @get:Transient
     val botConfiguration: BotConfiguration

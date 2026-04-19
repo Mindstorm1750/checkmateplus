@@ -20,7 +20,7 @@ class RegisteredPlayerEntity(
     volatility: Double? = 0.06,
     @Column(name = "player_preferences", columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
-    val playerPreferencesJson: String? = null
+    var playerPreferencesJson: String? = null
 ) : PlayerEntity(playerId, displayName, joinedQueueAt, skillRating, ratingDeviation, volatility) {
     @get:Transient
     val playerPreferences: PlayerPreferences?

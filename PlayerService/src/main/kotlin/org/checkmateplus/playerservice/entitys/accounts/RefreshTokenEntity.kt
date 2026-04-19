@@ -9,8 +9,8 @@ import java.util.UUID
 @Entity
 @Table(name = "refresh_tokens")
 class RefreshTokenEntity(
-    @Id val token: String = UUID.randomUUID().toString(),
-    @Column(name = "account_id", nullable = false) val accountId: String,
-    @Column(name = "expires_at", nullable = false) val expiresAtEpochMs: Long,
+    @Id var token: String = UUID.randomUUID().toString(),
+    @Column(name = "account_id", nullable = false) var accountId: String,
+    @Column(name = "expires_at", nullable = false) var expiresAtEpochMs: Long,
     @Column(nullable = false) var revoked: Boolean = false
 )

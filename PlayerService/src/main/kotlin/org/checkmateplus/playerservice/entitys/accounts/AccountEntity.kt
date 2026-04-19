@@ -16,10 +16,10 @@ class AccountEntity(
 
     @Id
     @Column(name = "account_id", nullable = false, updatable = false)
-    val accountId: String = "account-${UUID.randomUUID()}",
+    var accountId: String = "account-${UUID.randomUUID()}",
 
     @Column(name = "username", unique = true, nullable = false)
-    val username: String,
+    var username: String,
 
     @Column(name = "totp_secret", nullable = true)
     var totpSecret: String? = null,
@@ -34,5 +34,5 @@ class AccountEntity(
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "player_id", nullable = false)
-    val player: PlayerEntity
+    var player: PlayerEntity
 )
