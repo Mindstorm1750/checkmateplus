@@ -54,7 +54,6 @@ class MatchmakingController(
     fun joinGame(@Payload request: JoinRequest, principal: Principal) {
         //  Use the ID from the principal
         val jwt = (principal as JwtAuthenticationToken).token
-        // rest of your code unchanged
         val securePlayerId = jwt.subject
         val displayName = jwt.getClaim<String>("displayName") ?: request.displayName
         val isGuest = jwt.getClaim<Boolean>("guest") ?: false
