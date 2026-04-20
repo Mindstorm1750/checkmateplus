@@ -22,7 +22,7 @@ import {
 } from "@/types/Chess.type"
 import { Client, type IMessage } from "@stomp/stompjs"
 import { useEffect, useRef, useState } from "react"
-import { useLocation } from "react-router"
+import { useLocation, useNavigate } from "react-router"
 import SockJS from "sockjs-client/dist/sockjs"
 import { useJwt } from "@/lib/JwtProvider"
 import { getLocalStorage } from "@/lib/local-storage.helpers.ts"
@@ -44,11 +44,21 @@ import type {DrawResponseMessage} from "@/lib/stompMessageTypes/GameServer/model
 
 
 function Match() {
+    const navigate = useNavigate();
     /**
      * using browser History state property to store the match information.
      * Might be a temporary solution OR copy this data to a more persistent form like localStorage.
      */
     const { state }: { state: MatchFoundEvent } = useLocation();
+    useEffect(() => {
+        if(!state) {
+            // redirect to main page if we've visited this page directly instead of going through matchmaking
+            navigate('/');
+        }
+    }, []);
+    if (!state) {
+        return null; // don't continue rendering if we haven't been redirected to this match page from matchmaking
+    }
     const { matchId, websocketUrl, playerId } = state; // TODO make playerId persistent
     const [boardState, setBoardState] = useState<Board>(EMPTY_BOARD);
     const [lastMove, setLastMove] = useState<Move>();
