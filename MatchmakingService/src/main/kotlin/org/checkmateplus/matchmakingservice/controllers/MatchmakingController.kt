@@ -1,5 +1,6 @@
 package org.checkmateplus.matchmakingservice.controllers
 
+import org.checkmateplus.chessLibrary.playerModels.MatchType
 import org.checkmateplus.chessLibrary.playerModels.Player
 import org.checkmateplus.matchmakingservice.models.messages.JoinRequest
 import org.checkmateplus.matchmakingservice.models.Match
@@ -70,6 +71,19 @@ class MatchmakingController(
             )
         }
         logger.info("${player.javaClass.name} $securePlayerId (${player.displayName}) joining queue")
+
+        if (isGuest && request.matchType == MatchType.COMPETITIVE_PVP) {
+            logger.warn("Guest $securePlayerId attempted to join competitive queue; rejecting")
+            messagingTemplate.convertAndSendToUser(
+                securePlayerId,
+                "/queue/status",
+                mapOf(
+                    "status" to "ERROR",
+                    "message" to "Guests cannot join the ranked queue. Sign in to play ranked."
+                )
+            )
+            return
+        }
 
         try {
             // Add to queue
