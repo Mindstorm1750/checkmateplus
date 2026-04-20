@@ -1,6 +1,6 @@
 import Layout from "@/components/Layout"
 import { BackArrowLink } from "@/components/ui/back-arrow-link"
-import ChessBoard, { type ChessBoardProps } from "@/components/ui/ChessBoard"
+import ChessBoard, { type ChessBoardProps, type Usernames } from "@/components/ui/ChessBoard"
 import {
   algebraicToSquare,
   fenToBoard,
@@ -69,6 +69,7 @@ function Match() {
     const { preferences } = usePreferences();
     const stompClient = useRef<Client | null>(null);
     const { jwt, isPending: jwtIsPending } = useJwt();
+    const [usernames, setUsernames] = useState<Usernames>();
 
   useEffect(() => {
     if (!jwtIsPending && jwt) {
@@ -95,21 +96,21 @@ function Match() {
                     if (body.eventType == 'MATCH_ENDED') {
                         // if the game has ended in checkmate, stalemate, or is a draw
                         setIsGameOver(true);
-                        setGameOverMessage(`${body.message} MatchId: ${matchId}`);
+                        setGameOverMessage(body.message);
                     }
                     if (body.eventType == 'TIME_EXPIRED') {
                         // if the game has ended due to time
                         setIsGameOver(true);
-                        setGameOverMessage(`${body.message} MatchId: ${matchId}`);
+                        setGameOverMessage(body.message);
                     }
                     if (body.eventType == 'PLAYER_RESIGNED') {
                         setIsGameOver(true);
-                        setGameOverMessage(`${body.message} MatchId: ${matchId}`);
+                        setGameOverMessage(body.message);
                     }
                     if (body.eventType == 'DRAW_ACCEPTED') {
                         // both players agree to draw
                         setIsGameOver(true);
-                        setGameOverMessage(`${body.message} MatchId: ${matchId}`);
+                        setGameOverMessage(body.message);
                     }
                     if (body.eventType == 'DRAW_DECLINED') {
                         setDrawOfferState('noOffer');
@@ -125,8 +126,13 @@ function Match() {
                 // TODO figure out if unneeded as it never seems to receive messages
                 client.subscribe(`/user/queue/match/${matchId}/state`, (message: IMessage) => {
                     const match: MatchStateMessage = JSON.parse(message.body);
-                    console.log("Got initial match state message fen: " + match.fen);
-                    setBoardState(fenToBoard(match.fen));
+                    const whitePlayerName = match.whitePlayer?.displayName;
+                    const blackPlayerName = match.blackPlayer?.displayName;
+                    console.log(`Got initial match state message. Players are: ${whitePlayerName} and ${blackPlayerName}`);
+                    setBoardState(fenToBoard(match.fen)); // should be the starting position
+                    if(whitePlayerName && blackPlayerName) {
+                        setUsernames({whitePlayerName, blackPlayerName});
+                    }
                     setIsPlayerWhite(match.whitePlayer?.playerId === playerId);
                 });
 
@@ -283,7 +289,7 @@ function Match() {
       <Dialog open={resignConfirmationDialog}>
       <div className="flex w-full justify-center">
         <div className="w-3/4">
-          {isGameOver && gameOverMessage && <p>{gameOverMessage}</p>}
+          {isGameOver && gameOverMessage && <p className='mb-3 outline-solid outline-2 rounded-md p-3'>{gameOverMessage}</p>}
           <ChessBoard
             isPlayersTurn={isPlayersTurn}
             isGameOver={isGameOver}
@@ -294,6 +300,7 @@ function Match() {
             moveCallback={handleMove}
             whitePerspective={isPlayerWhite}
             pieceOrigins={pieceOrigins}
+            usernames={usernames}
           >
                             {!isGameOver && <div className="flex items-center gap-2">
                             <Button onClick={() => setResignConfirmationDialog(true)} variant="outline">Resign</Button>

@@ -15,11 +15,14 @@ export type ChessBoardProps = {
     whitePerspective?: boolean,
     isPlayersTurn: boolean, // used for stopping the player from making moves when it isn't their turn
     isGameOver: boolean, // used for clocks and also stopping player from making moves
-    isCheck: boolean,
+    isCheck: boolean, // used to highlight a King in check with a red glow
     clockState?: Pick<MatchStateMessage, "whitePlayerTime" | "blackPlayerTime">,
     pieceOrigins: Map<Square, Square>
-    lastMove?: Move,
+    lastMove?: Move, // used to highlight the most recent move played
+    usernames?: Usernames,
 }
+
+export type Usernames = { whitePlayerName: string; blackPlayerName: string };
 
 const ChessBoard = ({
                         moveCallback,
@@ -31,6 +34,7 @@ const ChessBoard = ({
                         clockState = {whitePlayerTime: 0, blackPlayerTime: 0},
                         pieceOrigins,
                         lastMove,
+                        usernames,
                         children
                     }: React.PropsWithChildren<ChessBoardProps>) => {
     const [squareClicked, setSquareClicked] = useState<Square | null>();
@@ -84,8 +88,11 @@ const ChessBoard = ({
     return (
         <Dialog open={askForPromotion}>
             <div className='flex flex-col w-full'>
-                <Clock topClock={true} time={whitePerspective ? clockState.blackPlayerTime : clockState.whitePlayerTime}
-                       isActiveClock={!isPlayersTurn} isGameOver={isGameOver}/>
+                <div className='flex flex-row items-center'>
+                    <Clock topClock={true} time={whitePerspective ? clockState.blackPlayerTime : clockState.whitePlayerTime}
+                           isActiveClock={!isPlayersTurn} isGameOver={isGameOver}/>
+                    {usernames && <div className='w-1/4 flex justify-center'><p>{whitePerspective ? usernames.blackPlayerName : usernames.whitePlayerName}</p></div>}
+                </div>
                 <div className='relative w-full aspect-square'>
                     {/* Just the squares */}
                     <div className='grid grid-cols-8 grid-rows-8 w-full aspect-square absolute inset-0'>
@@ -176,7 +183,8 @@ const ChessBoard = ({
                     <Clock topClock={false}
                            time={whitePerspective ? clockState.whitePlayerTime : clockState.blackPlayerTime}
                            isActiveClock={isPlayersTurn} isGameOver={isGameOver}/>
-                    {children}
+                    {usernames && <div className='flex w-1/4 justify-center'><p>{whitePerspective ? usernames.whitePlayerName : usernames.blackPlayerName}</p></div>}
+                    <div className='ml-auto'>{children}</div>
                 </div>
             </div>
             <DialogContent showCloseButton={false}>
@@ -203,6 +211,7 @@ const ChessBoard = ({
                                             }
                                         }>
                                         <img
+                                            alt={pieceType}
                                             src={pieceToSvg({
                                                 pieceType,
                                                 colour: boardState.squares[squareClicked!!]?.colour ?? 'WHITE'
@@ -235,11 +244,10 @@ const Clock = ({
   const minutes = formatter(Math.floor(time / 60).toString())
   const seconds = formatter((time % 60).toString())
 
-  return (
-    <div
-      className={`${topClock ? "rounded-t-lg" : "rounded-b-lg"} ${isActiveClock && !isGameOver && "bg-green-900"} ${isGameOver && time <= 0 && "bg-red-900"} border-outline flex w-[25%] items-center justify-center border-2 p-2 text-center text-3xl`}
-    >{`${minutes}:${seconds}`}</div>
-  )
+    return (
+        <div
+            className={`${topClock ? 'rounded-t-lg' : 'rounded-b-lg'} ${isActiveClock && !isGameOver && 'bg-green-900'} ${isGameOver && time <= 0 && 'bg-red-900'} flex justify-center items-center text-3xl border-2 text-center p-2 w-1/4`}>{`${minutes}:${seconds}`}</div>
+    )
 }
 
 export default ChessBoard
