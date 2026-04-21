@@ -91,7 +91,7 @@ build-cached-rootless:
         --import-cache type=registry,ref=$CACHE_IMAGE \
         --output type=image,name=$CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHA,push=true
 
-native-docker-image:
+.native-docker-image:
   image: gradle:9.3.1-jdk25-graal
   stage: docker-image
   needs:
@@ -126,7 +126,7 @@ variables:
   CS_REGISTRY_USER: $CI_REGISTRY_USER
   CS_REGISTRY_PASSWORD: $CI_REGISTRY_PASSWORD
 
-container_scanning_gameserver:
+.container_scanning_gameserver:
   extends: container_scanning
   stage: security-test
   needs:
@@ -134,7 +134,7 @@ container_scanning_gameserver:
   variables:
     CS_IMAGE: $CI_REGISTRY_IMAGE/gameserver:$CI_COMMIT_SHA
 
-container_scanning_gameservermanager:
+.container_scanning_gameservermanager:
   extends: container_scanning
   stage: security-test
   needs:
@@ -142,7 +142,7 @@ container_scanning_gameservermanager:
   variables:
     CS_IMAGE: $CI_REGISTRY_IMAGE/gameservermanager:$CI_COMMIT_SHA
 
-container_scanning_matchmaking:
+.container_scanning_matchmaking:
   extends: container_scanning
   stage: security-test
   needs:
