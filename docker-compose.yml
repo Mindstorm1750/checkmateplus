@@ -36,7 +36,7 @@ services:
     restart: unless-stopped
 
   playerservice:
-    image: git.cs.kent.ac.uk:5050/jhl28/checkmate/playerservice:2.1.0
+    image: git.cs.kent.ac.uk:5050/jhl28/checkmate/playerservice:2.1.2
 
     container_name: playerservice
     ports:
