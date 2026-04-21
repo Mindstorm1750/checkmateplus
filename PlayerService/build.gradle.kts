@@ -8,7 +8,7 @@ plugins {
     id("org.springframework.boot") version "4.0.5"
     id("io.spring.dependency-management") version "1.1.7"
     id("com.netflix.dgs.codegen") version "8.3.0"
-    id("org.hibernate.orm") version "7.2.11.Final"
+    id("org.hibernate.orm") version "7.3.2.Final"
     id("org.graalvm.buildtools.native") version "0.11.4"
     id("com.google.protobuf") version "0.9.6"
     kotlin("plugin.jpa") version "2.3.20"
@@ -89,16 +89,6 @@ tasks.generateJava {
     packageName = "org.checkmateplus.playerservice.codegen"
     generateClient = true
 }
-
-hibernate {
-    enhancement {
-        enableAssociationManagement = true
-        enableDirtyTracking.set(true)
-        enableLazyInitialization.set(true)
-        enableExtendedEnhancement.set(false)
-    }
-}
-
 
 protobuf {
     protoc {
