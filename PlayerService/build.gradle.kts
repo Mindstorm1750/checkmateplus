@@ -135,7 +135,7 @@ tasks.bootBuildImage {
         "BP_NATIVE_IMAGE_BUILD_ARGUMENTS" to """
             -march=x86-64-v3
             --gc=G1 
-            -Ob
+            -O3
             """.trimIndent(),
         "BP_JVM_VERSION" to "25",
         // G1GC for less stop the world pauses, higher throughput
