@@ -72,11 +72,6 @@ dependencies {
     implementation("com.google.zxing:core:3.5.3")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
 }
-hibernate {
-    enhancement {
-        enableLazyInitialization = true
-    }
-}
 dependencyManagement {
     imports {
         mavenBom("org.springframework.grpc:spring-grpc-dependencies:${property("springGrpcVersion")}")

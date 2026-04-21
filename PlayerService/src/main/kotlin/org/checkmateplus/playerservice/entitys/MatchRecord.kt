@@ -45,11 +45,11 @@ class MatchRecordEntity(
     @Column(name = "match_outcome", nullable = false)
     var matchOutcome: MatchOutcome,
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "white_player_id", nullable = false)
     var whitePlayer: PlayerEntity? = null,
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "black_player_id", nullable = false)
     var blackPlayer: PlayerEntity,
 
