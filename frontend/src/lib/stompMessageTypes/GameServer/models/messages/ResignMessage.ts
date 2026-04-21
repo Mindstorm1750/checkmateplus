@@ -1,4 +1,4 @@
 export type ResignMessage = {
-    matchId: String,
-    playerId: String
+  matchId: String
+  playerId: String
 }

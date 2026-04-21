@@ -141,7 +141,7 @@ class AuthenticationService(
             throw IllegalArgumentException("Refresh token expired")
         }
 
-        val account = accountRepository.findById(existing.accountId).orElseThrow {
+        val account = accountRepository.findById(existing.account.accountId).orElseThrow {
             IllegalStateException("Account not found for refresh token")
         }
 
@@ -165,7 +165,7 @@ class AuthenticationService(
             ?: throw IllegalStateException("No account found for player ${player.playerId}")
 
         val refreshToken = RefreshTokenEntity(
-            accountId = account.accountId,
+            account = account,
             expiresAtEpochMs = jwtService.generateRefreshExpiry()
         )
         refreshTokenRepository.save(refreshToken)

@@ -1,4 +1,4 @@
 export type DrawOfferMessage = {
-    matchId: String,
-    offeredBy: String
+  matchId: String
+  offeredBy: String
 }

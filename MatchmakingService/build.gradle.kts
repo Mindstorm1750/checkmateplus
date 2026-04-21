@@ -2,13 +2,13 @@ import com.google.protobuf.gradle.id
 import java.util.Locale
 
 plugins {
-    kotlin("jvm") version "2.3.10"
-    kotlin("plugin.spring") version "2.3.10"
-    kotlin("plugin.serialization") version "2.3.10"
-    id("org.springframework.boot") version "4.0.2"
+    kotlin("jvm") version "2.3.20"
+    kotlin("plugin.spring") version "2.3.20"
+    kotlin("plugin.serialization") version "2.3.20"
+    id("org.springframework.boot") version "4.0.5"
     id("io.spring.dependency-management") version "1.1.7"
-    id("org.graalvm.buildtools.native") version "0.11.4"
-    id("com.google.protobuf") version "0.9.5"
+    id("org.graalvm.buildtools.native") version "1.0.0"
+    id("com.google.protobuf") version "0.9.6"
 }
 version = "latest"
 description = "MatchmakingService"
@@ -24,12 +24,12 @@ repositories {
     mavenCentral()
 }
 
-extra["springCloudVersion"] = "2025.1.0"
+extra["springCloudVersion"] = "2025.1.1"
 val springGrpcVersion by extra("1.0.2")
 
 dependencies {
     implementation(project(":ChessLibrary"))
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
@@ -72,11 +72,11 @@ kotlin {
 }
 protobuf {
     protoc {
-        artifact = "com.google.protobuf:protoc"
+        artifact = "com.google.protobuf:protoc:4.33.2"
     }
     plugins {
         id("grpc") {
-            artifact = "io.grpc:protoc-gen-grpc-java"
+            artifact = "io.grpc:protoc-gen-grpc-java:1.77.1"
         }
     }
     generateProtoTasks {

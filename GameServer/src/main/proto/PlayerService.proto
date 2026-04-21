@@ -146,5 +146,5 @@ message MatchRecord {
   MatchStatus match_status = 11;
   repeated Turn history = 12;
   optional BotConfiguration bot_configuration = 13;
-  int32 matchCreatedAt = 14;
+  int64 match_created_at_epoch_ms = 14;
 }

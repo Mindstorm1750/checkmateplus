@@ -20,6 +20,7 @@ import org.checkmateplus.chessLibrary.playerModels.history.MatchOutcome
 import org.checkmateplus.chessLibrary.playerModels.history.MatchRecord
 import org.checkmateplus.gameserver.models.MatchState
 import org.checkmateplus.gameserver.models.messages.*
+import org.checkmateplus.gameserver.service.GameServerService
 import org.checkmateplus.gameserver.service.MatchService
 import org.slf4j.LoggerFactory
 import org.springframework.aot.hint.annotation.RegisterReflectionForBinding
@@ -30,6 +31,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.stereotype.Controller
 import java.security.Principal
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * WebSocket controller for handling real-time chess match interactions.
@@ -60,7 +62,8 @@ import kotlin.concurrent.atomics.ExperimentalAtomicApi
 @Controller
 class MatchWebSocketController(
     private val messagingTemplate: SimpMessagingTemplate,
-    private val matchService: MatchService
+    private val matchService: MatchService,
+    private val gameServerService: GameServerService
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
     //TODO: Need to add disconnect/reconnect support incase of connection drop
@@ -126,7 +129,7 @@ class MatchWebSocketController(
                                 matchService.calculateMove(match.board!!, match.botConfiguration.botModelType)
                             }
                             val delayDeferred = async {
-                                delay(calculateMoveTimeDelayMs(match.botConfiguration.botMoveTimeModelType, moveTimeModelFeatures))
+                                delay(calculateMoveTimeDelayMs(match.botConfiguration.botMoveTimeModelType, moveTimeModelFeatures).milliseconds)
                             }
                             awaitAll(moveDeferred, delayDeferred)
                             moveDeferred.await()
@@ -185,6 +188,19 @@ class MatchWebSocketController(
         }
     }
 
+    @OptIn(kotlin.time.ExperimentalTime::class)
+    private fun notifyMatchCompleted(match: MatchState, winnerId: String, reason: String) {
+        val durationSeconds = (kotlin.time.Clock.System.now() - match.createdAt).inWholeSeconds.toInt()
+        gameServerService.reportMatchCompleted(
+            matchId = match.matchId,
+            winnerId = winnerId,
+            reason = reason,
+            totalMoves = match.turnHistory.size,
+            durationSeconds = durationSeconds
+        )
+        matchService.removeMatch(match.matchId)
+    }
+
     /**
      * Handles game end conditions such as checkmate, stalemate, or other draws.
      *
@@ -228,6 +244,7 @@ class MatchWebSocketController(
                     history = match.turnHistory,
                     matchCreationTime = match.createdAt
                 ))
+                notifyMatchCompleted(match, winner.playerId, "checkmate")
                 return true
             }
 
@@ -259,6 +276,7 @@ class MatchWebSocketController(
                     history = match.turnHistory,
                     matchCreationTime = match.createdAt
                 ))
+                notifyMatchCompleted(match, winnerId = "", reason = "stalemate")
                 return true
             }
 
@@ -290,6 +308,7 @@ class MatchWebSocketController(
                     history = match.turnHistory,
                     matchCreationTime = match.createdAt
                 ))
+                notifyMatchCompleted(match, winnerId = "", reason = "draw")
                 return true
             }
         }
@@ -408,6 +427,8 @@ class MatchWebSocketController(
                     history = match.turnHistory,
                     matchCreationTime = match.createdAt
                 ))
+                val winnerPlayer = if (losingColor == "WHITE") match.blackPlayer else match.whitePlayer
+                notifyMatchCompleted(match, winnerPlayer?.playerId ?: "", "timeout")
             }
         )
 

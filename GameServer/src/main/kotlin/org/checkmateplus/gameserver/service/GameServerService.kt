@@ -240,6 +240,36 @@ class GameServerService(
     }
 
     /**
+     * Notifies the Match Manager that a match has concluded. Manager is responsible
+     * for freeing the server's capacity slot and cleaning up shared match state in Redis.
+     */
+    fun reportMatchCompleted(
+        matchId: String,
+        winnerId: String,
+        reason: String,
+        totalMoves: Int,
+        durationSeconds: Int
+    ) {
+        try {
+            val request = GameServerProto.MatchCompletedReport.newBuilder()
+                .setServerId(serverId)
+                .setMatchId(matchId)
+                .setWinnerId(winnerId)
+                .setReason(reason)
+                .setTotalMoves(totalMoves)
+                .setDurationSeconds(durationSeconds)
+                .build()
+
+            val response = stub.reportMatchCompleted(request)
+            if (!response.acknowledged) {
+                logger.warn("Manager did not acknowledge completion of match $matchId")
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to report match completion for $matchId", e)
+        }
+    }
+
+    /**
      * Periodically sends a heartbeat to the Match Manager with server statistics.
      */
     @Scheduled(fixedDelay = 30000) // Every 30 seconds

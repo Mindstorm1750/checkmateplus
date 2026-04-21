@@ -16,10 +16,10 @@ import kotlin.time.Instant
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "player_type")
 abstract class PlayerEntity(
-    @Id val playerId: String,
-    val displayName: String,
+    @Id var playerId: String,
+    var displayName: String,
     @Column(name = "joined_queue_at")
-    val joinedQueueAtEpochMs: Long,
+    var joinedQueueAtEpochMs: Long,
     var skillRating: Int?,
     var ratingDeviation: Double?,
     var volatility: Double?

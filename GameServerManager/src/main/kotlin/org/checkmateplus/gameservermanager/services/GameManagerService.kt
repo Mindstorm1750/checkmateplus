@@ -9,6 +9,7 @@ import org.checkmateplus.gameserver.proto.GameServerProto
 import org.checkmateplus.gameserver.proto.MatchManagerGrpc
 import org.checkmateplus.gameservermanager.models.GameServerInstance
 import org.slf4j.LoggerFactory
+import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.grpc.server.service.GrpcService
 import org.springframework.stereotype.Service
 import java.util.concurrent.ConcurrentHashMap
@@ -21,11 +22,17 @@ import java.util.concurrent.ConcurrentHashMap
  */
 @Service
 @GrpcService
-class GameManagerService : MatchManagerGrpc.MatchManagerImplBase() {
+class GameManagerService(
+    private val redisTemplate: RedisTemplate<String, String>
+) : MatchManagerGrpc.MatchManagerImplBase() {
     private var registeredInstances: ConcurrentHashMap<String, GameServerInstance> = ConcurrentHashMap()
     private val logger = LoggerFactory.getLogger(javaClass)
     private val serverChannels = ConcurrentHashMap<String, ManagedChannel>()
     private val serverStubs = ConcurrentHashMap<String, GameServerGrpc.GameServerBlockingStub>()
+
+    companion object {
+        private const val ACTIVE_MATCHES_HASH = "matchmaking:active_matches"
+    }
 
 
     /**
@@ -183,6 +190,7 @@ class GameManagerService : MatchManagerGrpc.MatchManagerImplBase() {
             val allocateResponse = stub.allocateMatch(allocateRequest)
 
             if (allocateResponse.success) {
+                server.value.activeMatches++
 
                 logger.info("Match ${request.matchId} allocated to ${server.value.serverId}")
                 logger.info("  Server now at ${server.value.activeMatches}/${server.value.maxMatches} )")
@@ -220,6 +228,52 @@ class GameManagerService : MatchManagerGrpc.MatchManagerImplBase() {
                     .setSuccess(false)
                     .setMessage("Allocation failed: ${e.message}")
                     .build()
+            )
+            responseObserver.onCompleted()
+        }
+    }
+
+    /**
+     * Handles a match completion report from a game server.
+     *
+     * Frees the server's capacity slot and removes the match from the shared
+     * `matchmaking:active_matches` Redis hash owned by MatchmakingService.
+     *
+     * @param request The match completion report.
+     * @param responseObserver Observer for acknowledging the report.
+     */
+    override fun reportMatchCompleted(
+        request: GameServerProto.MatchCompletedReport,
+        responseObserver: StreamObserver<GameServerProto.MatchCompletedResponse>
+    ) {
+        try {
+            logger.info(
+                "Match ${request.matchId} completed on ${request.serverId} " +
+                        "(reason=${request.reason}, winner=${request.winnerId}, " +
+                        "moves=${request.totalMoves}, duration=${request.durationSeconds}s)"
+            )
+
+            registeredInstances[request.serverId]?.let { server ->
+                if (server.activeMatches > 0) server.activeMatches--
+                logger.info(
+                    "Server ${request.serverId} now at ${server.activeMatches}/${server.maxMatches}"
+                )
+            } ?: logger.warn("Completion report from unregistered server ${request.serverId}")
+
+            val removed = redisTemplate.opsForHash<String, String>()
+                .delete(ACTIVE_MATCHES_HASH, request.matchId)
+            if (removed == 0L) {
+                logger.warn("Match ${request.matchId} not present in $ACTIVE_MATCHES_HASH")
+            }
+
+            responseObserver.onNext(
+                GameServerProto.MatchCompletedResponse.newBuilder().setAcknowledged(true).build()
+            )
+            responseObserver.onCompleted()
+        } catch (e: Exception) {
+            logger.error("Failed to process match completion for ${request.matchId}", e)
+            responseObserver.onNext(
+                GameServerProto.MatchCompletedResponse.newBuilder().setAcknowledged(false).build()
             )
             responseObserver.onCompleted()
         }

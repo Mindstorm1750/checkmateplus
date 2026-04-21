@@ -1,6 +1,6 @@
-import { useInfiniteQuery } from '@tanstack/react-query'
-import { gql } from '@/lib/graphql'
-import type { MatchHistoryPage } from '@/lib/playerServiceTypes/MatchHistoryPage'
+import { useInfiniteQuery } from "@tanstack/react-query"
+import { gql } from "@/lib/graphql"
+import type { MatchHistoryPage } from "@/lib/playerServiceTypes/MatchHistoryPage"
 
 const MATCH_HISTORY_QUERY = `
     query MatchHistory($playerId: String!, $afterCursor: String, $size: Int) {
@@ -22,16 +22,16 @@ const MATCH_HISTORY_QUERY = `
   `
 
 export function useMatchHistory(playerId: string | null, pageSize = 20) {
-    return useInfiniteQuery({
-        queryKey: ['matchHistory', playerId],
-        queryFn: ({ pageParam }) =>
-            gql<{ matchHistory: MatchHistoryPage }>(MATCH_HISTORY_QUERY, {
-                playerId,
-                afterCursor: pageParam ?? null,
-                size: pageSize,
-            }).then(d => d.matchHistory),
-        initialPageParam: null as string | null,
-        getNextPageParam: page => page.hasMore ? page.nextCursor : undefined,
-        enabled: !!playerId,
-    })
+  return useInfiniteQuery({
+    queryKey: ["matchHistory", playerId],
+    queryFn: ({ pageParam }) =>
+      gql<{ matchHistory: MatchHistoryPage }>(MATCH_HISTORY_QUERY, {
+        playerId,
+        afterCursor: pageParam ?? null,
+        size: pageSize,
+      }).then((d) => d.matchHistory),
+    initialPageParam: null as string | null,
+    getNextPageParam: (page) => (page.hasMore ? page.nextCursor : undefined),
+    enabled: !!playerId,
+  })
 }

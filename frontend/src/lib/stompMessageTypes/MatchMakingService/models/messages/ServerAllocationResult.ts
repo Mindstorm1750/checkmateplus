@@ -9,10 +9,10 @@
  * @property message Additional information or error message.
  */
 export type ServerAllocationResult = {
-    success: Boolean,
-    serverId: String,
-    matchId: String,
-    websocketUrl: String,
-    estimatedWaitSeconds: number,
-    message: String
+  success: Boolean
+  serverId: String
+  matchId: String
+  websocketUrl: String
+  estimatedWaitSeconds: number
+  message: String
 }
