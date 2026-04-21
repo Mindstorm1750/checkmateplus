@@ -36,8 +36,11 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
                                               account_id VARCHAR(255) NOT NULL,
                                               expires_at BIGINT       NOT NULL,
                                               revoked    BOOLEAN      NOT NULL DEFAULT FALSE,
-                                              CONSTRAINT pk_refresh_tokens PRIMARY KEY (token)
+                                              CONSTRAINT pk_refresh_tokens        PRIMARY KEY (token),
+                                              CONSTRAINT fk_refresh_tokens_account FOREIGN KEY (account_id) REFERENCES accounts (account_id)
 );
+
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_account ON refresh_tokens (account_id);
 
 -- match_records
 -- Note: createdAtEpochMs uses a camelCase @Column name; PostgreSQL folds it to createdatepochms.
@@ -62,6 +65,18 @@ CREATE TABLE IF NOT EXISTS match_records (
 
 CREATE INDEX IF NOT EXISTS idx_match_records_white ON match_records (white_player_id);
 CREATE INDEX IF NOT EXISTS idx_match_records_black ON match_records (black_player_id);
+
+-- surveys (post-match feedback linked to match_records)
+CREATE TABLE IF NOT EXISTS surveys (
+                                       survey_id         VARCHAR(255) NOT NULL,
+                                       match_id          VARCHAR(255) NOT NULL,
+                                       survey_score      INTEGER      NOT NULL,
+                                       optional_comments TEXT,
+                                       CONSTRAINT pk_surveys       PRIMARY KEY (survey_id),
+                                       CONSTRAINT fk_surveys_match FOREIGN KEY (match_id) REFERENCES match_records (match_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_surveys_match ON surveys (match_id);
 
 -- Players
           INSERT INTO players (player_id, player_type, display_name, joined_queue_at, skill_rating, rating_deviation, volatility, player_preferences, difficulty, bot_configuration)
