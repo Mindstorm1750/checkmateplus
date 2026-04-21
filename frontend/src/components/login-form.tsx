@@ -18,7 +18,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { gqlNoJwt } from "@/lib/graphql"
 import type { TotpLoginResponse } from "@/lib/playerServiceTypes/AuthResponses"
-import { setLocalStorage } from "@/lib/local-storage.helpers.ts"
+import { useJwt } from "@/lib/JwtProvider"
 import GoogleIcon from "@/assets/icons/google.svg?react"
 
 const LOGIN_WITH_TOTP = `
@@ -36,6 +36,7 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<"div">) {
   const navigate = useNavigate()
+  const { setAuth, signOut } = useJwt()
   const [username, setUsername] = useState("")
   const [code, setCode] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -51,15 +52,11 @@ export function LoginForm({
         username,
         code,
       })
-      const { jwt, playerId, displayName } = data.loginWithTotp
-      setLocalStorage("jwt", jwt)
-      setLocalStorage("playerId", playerId)
-      setLocalStorage("displayName", displayName)
-      setLocalStorage("isGuest", "false")
+      setAuth(data.loginWithTotp)
       navigate("/")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed")
-      setLocalStorage("isGuest", "true")
+      signOut()
     } finally {
       setLoading(false)
     }

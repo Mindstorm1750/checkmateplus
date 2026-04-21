@@ -11,19 +11,29 @@ import { gqlNoJwt } from "./graphql"
 import {
   getLocalStorage,
   setLocalStorage,
-  isGuest,
 } from "@/lib/local-storage.helpers.ts"
 
 const JwtContext = createContext<JwtContextType | undefined>(undefined)
 
+type AuthedIdentity = {
+  jwt: string
+  playerId: string
+  displayName: string
+}
+
 type JwtContextType = {
   jwt: string | null
+  isGuest: boolean
   isPending: boolean
+  setAuth: (identity: AuthedIdentity) => void
+  signOut: () => void
 }
 
 export function JwtProvider({ children }: { children: ReactNode }) {
   const [jwt, setJwt] = useState<string | null>(() => getLocalStorage("jwt"))
-  const [isUserAGuest] = useState<boolean>(() => isGuest())
+  const [isGuest, setIsGuest] = useState<boolean>(
+    JSON.parse(getLocalStorage("isGuest") ?? "true") as boolean
+  )
 
   const queryResult = useQuery({
     queryKey: ["loginAsGuest"],
@@ -37,7 +47,7 @@ export function JwtProvider({ children }: { children: ReactNode }) {
                             }
                         }
                         `),
-    enabled: isUserAGuest,
+    enabled: isGuest,
   })
 
   useEffect(() => {
@@ -54,9 +64,30 @@ export function JwtProvider({ children }: { children: ReactNode }) {
     }
   }, [queryResult.isSuccess])
 
+  const setAuth = ({ jwt: newJwt, playerId, displayName }: AuthedIdentity) => {
+    setLocalStorage("jwt", newJwt)
+    setLocalStorage("playerId", playerId)
+    setLocalStorage("displayName", displayName)
+    setLocalStorage("isGuest", "false")
+    setJwt(newJwt)
+    setIsGuest(false)
+  }
+
+  const signOut = () => {
+    setLocalStorage("isGuest", "true")
+    setJwt(null)
+    setIsGuest(true)
+  }
+
   return (
     <JwtContext.Provider
-      value={{ jwt, isPending: !jwt && queryResult.isPending }}
+      value={{
+        jwt,
+        isGuest,
+        isPending: !jwt && queryResult.isPending,
+        setAuth,
+        signOut,
+      }}
     >
       {children}
     </JwtContext.Provider>

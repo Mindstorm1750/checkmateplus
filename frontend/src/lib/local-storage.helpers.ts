@@ -19,11 +19,3 @@ export const setLocalStorage = (key: LocalStorageKeys, value: string): void => {
 export const getLocalStorage = (key: LocalStorageKeys): string | null => {
   return localStorage.getItem(key)
 }
-
-export const isGuest = (): boolean => {
-  return JSON.parse(getLocalStorage("isGuest") ?? "true") as boolean
-}
-
-export const signOut = () => {
-  setLocalStorage("isGuest", "true")
-}

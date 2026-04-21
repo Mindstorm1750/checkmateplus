@@ -10,7 +10,8 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import { useMatchHistory } from "@/hooks/useMatchHistory"
 import { usePlayerStats } from "@/hooks/usePlayerStats"
-import { getLocalStorage, isGuest } from "@/lib/local-storage.helpers"
+import { getLocalStorage } from "@/lib/local-storage.helpers"
+import { useJwt } from "@/lib/JwtProvider"
 import { TimeControlToStringMap } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/TimeControl"
 import type { MatchResult } from "@/lib/playerServiceTypes/MatchResult"
 import { useNavigate } from "react-router"
@@ -39,6 +40,7 @@ const resultColour: Record<MatchResult, string> = {
 
 export default function Profile() {
   const navigate = useNavigate()
+  const { isGuest } = useJwt()
   const playerId = getLocalStorage("playerId")
   const displayName = getLocalStorage("displayName")
 
@@ -59,7 +61,7 @@ export default function Profile() {
 
   const matches = historyPages?.pages.flatMap((p) => p.matches) ?? []
 
-  if (isGuest()) {
+  if (isGuest) {
     return (
       <Layout>
         <Card>

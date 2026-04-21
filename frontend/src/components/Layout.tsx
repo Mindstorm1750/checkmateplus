@@ -1,15 +1,13 @@
 import type { ReactNode } from "react"
 import { Link, useNavigate } from "react-router"
 import { Button } from "@/components/ui/button.tsx"
-import {
-  getLocalStorage,
-  isGuest,
-  signOut,
-} from "@/lib/local-storage.helpers.ts"
+import { getLocalStorage } from "@/lib/local-storage.helpers.ts"
+import { useJwt } from "@/lib/JwtProvider"
 import { Trophy, User } from "lucide-react"
 
 export default function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
+  const { isGuest, signOut } = useJwt()
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
@@ -21,7 +19,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           <Trophy />
           Leaderboard
         </Button>
-        {isGuest() ? (
+        {isGuest ? (
           <div className="flex items-center gap-3">
             <Button>
               <Link to="/login">Login</Link>

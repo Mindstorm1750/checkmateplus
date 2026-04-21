@@ -18,7 +18,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { gqlNoJwt } from "@/lib/graphql"
 import type { ConfirmTotpResponse } from "@/lib/playerServiceTypes/AuthResponses"
-import { setLocalStorage } from "@/lib/local-storage.helpers"
+import { useJwt } from "@/lib/JwtProvider"
 import Layout from "@/components/Layout"
 
 const CONFIRM_TOTP = `
@@ -35,6 +35,7 @@ const CONFIRM_TOTP = `
 export default function ConfirmTotp() {
   const location = useLocation()
   const navigate = useNavigate()
+  const { setAuth } = useJwt()
   const { qrCodeUri, secret } = location.state
 
   const [code, setCode] = useState("")
@@ -64,11 +65,7 @@ export default function ConfirmTotp() {
     try {
       const data = await gqlNoJwt<ConfirmTotpResponse>(CONFIRM_TOTP, { code })
       const { jwt, playerId, displayName } = data.confirmTotp
-      console.log({ data })
-      setLocalStorage("jwt", jwt)
-      setLocalStorage("playerId", playerId)
-      setLocalStorage("displayName", displayName)
-      setLocalStorage("isGuest", "false")
+      setAuth({ jwt, playerId, displayName })
       navigate("/")
     } catch (err) {
       console.log(err)

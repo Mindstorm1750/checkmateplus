@@ -45,7 +45,7 @@ import type { QueueStatus } from "@/lib/stompMessageTypes/MatchMakingService/mod
 import { useJwt } from "@/lib/JwtProvider"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import type { MatchType } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/MatchType.ts"
-import { getLocalStorage, isGuest } from "@/lib/local-storage.helpers.ts"
+import { getLocalStorage } from "@/lib/local-storage.helpers.ts"
 
 function App() {
   const navigate = useNavigate()
@@ -71,7 +71,7 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
   const descriptionText = "Get matched with other players"
   const navigate = useNavigate()
   const stompClient = useRef<Client | null>(null)
-  const { jwt, isPending: jwtIsPending } = useJwt()
+  const { jwt, isGuest, isPending: jwtIsPending } = useJwt()
 
   const connect = () => {
     const socket = new SockJS(import.meta.env.VITE_BASE_URL + "matchmaking")
@@ -110,7 +110,7 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
     if (stompClient.current?.connected) {
       const joinRequest: JoinRequest = {
         displayName: getLocalStorage("displayName") ?? "",
-        matchType: isGuest() ? "CASUAL_PVP" : (matchType ?? "CASUAL_PVP"),
+        matchType: isGuest ? "CASUAL_PVP" : (matchType ?? "CASUAL_PVP"),
         timeControl: timeControl == "ANY" ? undefined : timeControl,
       }
       stompClient.current.publish({
@@ -133,7 +133,7 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
             {descriptionText}
           </DialogDescription>
         </DialogHeader>
-        {!isGuest() && (
+        {!isGuest && (
           <ToggleGroup
             type="single"
             variant="outline"

@@ -9,7 +9,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { gqlNoJwt } from "@/lib/graphql.ts"
 import type { RegisterResponse } from "@/lib/playerServiceTypes/AuthResponses.ts"
-import { setLocalStorage } from "@/lib/local-storage.helpers.ts"
+import { useJwt } from "@/lib/JwtProvider"
 import { Link, useNavigate } from "react-router"
 import { useState } from "react"
 import { Card, CardContent } from "./ui/card"
@@ -29,6 +29,7 @@ export function SignupForm({
   ...props
 }: React.ComponentProps<"div">) {
   const navigate = useNavigate()
+  const { signOut } = useJwt()
   const [username, setUsername] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -45,7 +46,7 @@ export function SignupForm({
       navigate("/confirmTOTP", { state: data.register })
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed")
-      setLocalStorage("isGuest", "true")
+      signOut()
     } finally {
       setLoading(false)
     }
