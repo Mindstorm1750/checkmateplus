@@ -115,7 +115,7 @@ playerservice:
   enabled: true
   image:
     repository: git.cs.kent.ac.uk:5050/jhl28/checkmate/playerservice
-    tag: 2.1.2
+    tag: 2.1.3
   replicaCount: 1
   service:
     httpPort: 8095

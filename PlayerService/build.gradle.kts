@@ -72,7 +72,11 @@ dependencies {
     implementation("com.google.zxing:core:3.5.3")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
 }
-
+hibernate {
+    enhancement {
+        enableLazyInitialization = true
+    }
+}
 dependencyManagement {
     imports {
         mavenBom("org.springframework.grpc:spring-grpc-dependencies:${property("springGrpcVersion")}")
@@ -146,7 +150,7 @@ tasks.bootBuildImage {
         "BP_NATIVE_IMAGE_BUILD_ARGUMENTS" to """
             -march=x86-64-v3
             --gc=G1 
-            -O3
+            -Ob
             """.trimIndent(),
         "BP_JVM_VERSION" to "25",
         // G1GC for less stop the world pauses, higher throughput
