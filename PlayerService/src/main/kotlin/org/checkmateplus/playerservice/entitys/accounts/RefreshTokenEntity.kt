@@ -7,7 +7,7 @@ import java.util.*
 @Table(name = "refresh_tokens")
 class RefreshTokenEntity(
     @Id var token: String = UUID.randomUUID().toString(),
-    @OneToOne(fetch = FetchType.LAZY) @JoinColumn(name = "account_id", nullable = false) var account: AccountEntity,
+    @OneToOne(fetch = FetchType.EAGER, optional = false) @JoinColumn(name = "account_id", nullable = false) var account: AccountEntity,
     @Column(name = "expires_at", nullable = false) var expiresAtEpochMs: Long,
     @Column(nullable = false) var revoked: Boolean = false
 )

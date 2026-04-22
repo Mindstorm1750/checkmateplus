@@ -17,7 +17,7 @@ class SurveyEntity(
     @Column(name = "survey_id", nullable = false, updatable = false)
     var surveyId: String = UUID.randomUUID().toString(),
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "match_id", nullable = false)
     var matchRecord: MatchRecordEntity,
 

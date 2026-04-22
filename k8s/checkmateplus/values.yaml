@@ -1,4 +1,4 @@
-# Default values for checkmateplus.
+ # Default values for checkmateplus.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
@@ -13,7 +13,7 @@ frontend:
   replicas: 1
   image:
     repository: git.cs.kent.ac.uk:5050/jhl28/checkmate/frontend
-    tag: RC-2.0.5
+    tag: 2.1.0
   port: 80
   resources:
     requests:
@@ -31,7 +31,7 @@ gameserver:
   enabled: true
   image:
     repository: git.cs.kent.ac.uk:5050/jhl28/checkmate/gameserver
-    tag: RC-2.0.1
+    tag: 2.1.0
   replicaCount: 1
   service:
     httpPort: 8090
@@ -63,7 +63,7 @@ gameservermanager:
   enabled: true
   image:
     repository: git.cs.kent.ac.uk:5050/jhl28/checkmate/gameservermanager
-    tag: RC-2.0.0
+    tag: 2.1.0
   replicaCount: 1
   service:
     httpPort: 8081
@@ -87,7 +87,7 @@ matchmakingservice:
   enabled: true
   image:
     repository: git.cs.kent.ac.uk:5050/jhl28/checkmate/matchmakingservice
-    tag: RC-2.0.0
+    tag: 2.1.0
   replicaCount: 1
   service:
     httpPort: 8080
@@ -115,7 +115,7 @@ playerservice:
   enabled: true
   image:
     repository: git.cs.kent.ac.uk:5050/jhl28/checkmate/playerservice
-    tag: RC-2.0.3
+    tag: 2.1.6
   replicaCount: 1
   service:
     httpPort: 8095

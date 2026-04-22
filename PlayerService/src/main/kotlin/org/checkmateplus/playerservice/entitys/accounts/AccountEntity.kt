@@ -32,7 +32,7 @@ class AccountEntity(
     @Column(name = "time_registered", nullable = false)
     var timeRegisteredAt: Long? = null,
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "player_id", nullable = false)
     var player: PlayerEntity
 )

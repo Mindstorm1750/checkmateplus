@@ -1,6 +1,6 @@
 services:
   matchmakingservice:
-    image: git.cs.kent.ac.uk:5050/jhl28/checkmate/matchmakingservice:latest
+    image: git.cs.kent.ac.uk:5050/jhl28/checkmate/matchmakingservice:2.1.0
     container_name: matchmakingservice
     environment:
       - jwtSecret=+/J48zc2Hq1vtHZNU+9HGXZ6vP3ZDaX4UtgNWqR7eSY=
@@ -14,7 +14,7 @@ services:
       - gameservermanager
 
   gameserver:
-    image: git.cs.kent.ac.uk:5050/jhl28/checkmate/gameserver:latest
+    image: git.cs.kent.ac.uk:5050/jhl28/checkmate/gameserver:2.1.0
     container_name: gameserver
     ports:
       - "8090:8090"
@@ -29,14 +29,14 @@ services:
       - playerservice
 
   gameservermanager:
-    image: git.cs.kent.ac.uk:5050/jhl28/checkmate/gameservermanager:latest
+    image: git.cs.kent.ac.uk:5050/jhl28/checkmate/gameservermanager:2.1.0
     container_name: gameservermanager
     networks:
       - game-network
     restart: unless-stopped
 
   playerservice:
-    image: git.cs.kent.ac.uk:5050/jhl28/checkmate/playerservice:0.0.1-snapshot
+    image: git.cs.kent.ac.uk:5050/jhl28/checkmate/playerservice:2.1.2
 
     container_name: playerservice
     ports:
@@ -52,9 +52,6 @@ services:
     networks:
       - game-network
     restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
 
   postgres:
     image: postgres:18-alpine
