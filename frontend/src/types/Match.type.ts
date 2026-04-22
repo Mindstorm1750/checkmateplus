@@ -1,1 +1,1 @@
-export type DrawOfferState = 'noOffer' | 'waitingForResponse' | 'receivedOffer';
+export type DrawOfferState = "noOffer" | "waitingForResponse" | "receivedOffer"

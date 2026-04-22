@@ -21,22 +21,16 @@ export default function Layout({ children }: { children: ReactNode }) {
         </Button>
         {isGuest ? (
           <div className="flex items-center gap-3">
-            <Button>
-              <Link to="/login">Login</Link>
-            </Button>
-            <Button>
-              <Link to="/register">Register</Link>
-            </Button>
+            <Button onClick={() => navigate("/login")}>Login</Button>
+            <Button onClick={() => navigate("/register")}>Register</Button>
           </div>
         ) : (
           <div className="flex items-center gap-3">
-            <Button className="p-3">
-              <Link to="/profile">
-                <div className="flex items-center justify-between gap-2">
-                  <User />
-                  {getLocalStorage("displayName")}
-                </div>
-              </Link>
+            <Button className="p-3" onClick={() => navigate("/profile")}>
+              <div className="flex items-center justify-between gap-2">
+                <User />
+                {getLocalStorage("displayName")}
+              </div>
             </Button>
             <Button
               onClick={() => {
