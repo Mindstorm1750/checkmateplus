@@ -27,12 +27,12 @@ import SockJS from "sockjs-client/dist/sockjs"
 import { useJwt } from "@/lib/JwtProvider"
 import { getLocalStorage } from "@/lib/local-storage.helpers.ts"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog, DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from "@/components/ui/dialog.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { Textarea } from "@/components/ui/textarea.tsx"
@@ -41,6 +41,7 @@ import { usePostGameSurvey } from "@/hooks/usePostGameSurvey.ts"
 import type {DrawOfferMessage} from "@/lib/stompMessageTypes/GameServer/models/messages/DrawOfferMessage.ts";
 import type {DrawOfferState} from "@/types/Match.type.ts";
 import type {DrawResponseMessage} from "@/lib/stompMessageTypes/GameServer/models/messages/DrawResponseMessage.ts";
+import type {ResignMessage} from "@/lib/stompMessageTypes/GameServer/models/messages/ResignMessage.ts";
 
 
 function Match() {
@@ -80,8 +81,26 @@ function Match() {
     const stompClient = useRef<Client | null>(null);
     const { jwt, isPending: jwtIsPending } = useJwt();
     const [usernames, setUsernames] = useState<Usernames>();
+    const [surveyScore, setSurveyScore] = useState<number>(0)
+    const [surveyComment, setSurveyComment] = useState<string>("")
+    // "surveySubmitted" isn't a perfect name as we also set this to true if user skips the survey.
+    // We use this to open and close the survey dialog.
+    const [surveySubmitted, setSurveySubmitted] = useState<boolean>(false)
+    const { mutate: submitSurvey, isPending: surveyIsPending } =
+        usePostGameSurvey()
 
-  useEffect(() => {
+    const handleSurveySubmit = () => {
+        submitSurvey(
+            { surveyScore, optionalComments: surveyComment || undefined, matchId },
+            {
+                onSuccess: () => setSurveySubmitted(true),
+                onError: (error) => console.error("Survey submission failed:", error),
+            }
+        )
+    }
+
+
+    useEffect(() => {
     if (!jwtIsPending && jwt) {
       connect()
     }
