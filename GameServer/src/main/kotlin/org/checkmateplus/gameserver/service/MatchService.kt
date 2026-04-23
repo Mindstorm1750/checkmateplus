@@ -217,18 +217,20 @@ class MatchService(
         startTimer(matchId, onTimeUpdate, onTimeExpired)
     }
 
-    fun resign(matchId: String, playerId: String): String {
+    /**
+     * Returns the winning player
+     */
+    fun resign(matchId: String, playerId: String): Player {
         val match = matches[matchId] ?: throw IllegalArgumentException("Match not found")
         stopTimer(matchId)
 
         val resigningPlayer = match.players.find { it.playerId == playerId }
         return if (resigningPlayer == match.players[0]) {
-            match.players[1].displayName
+            match.players[1]
 
         } else {
-            match.players[0].displayName
+            match.players[0]
         }
-
     }
 
     fun acceptDraw(matchId: String): Boolean {

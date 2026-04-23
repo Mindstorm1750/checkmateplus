@@ -5,9 +5,12 @@ import org.checkmateplus.chessLibrary.chessEngine.Colour
 import org.checkmateplus.chessLibrary.chessEngine.FenToBoard
 import org.checkmateplus.chessLibrary.chessEngine.STARTING_FEN
 import org.checkmateplus.chessLibrary.botEngine.BotConfiguration
+import org.checkmateplus.chessLibrary.playerModels.MatchStatus
 import org.checkmateplus.chessLibrary.playerModels.MatchType
 import org.checkmateplus.chessLibrary.playerModels.Player
 import org.checkmateplus.chessLibrary.playerModels.TimeControl
+import org.checkmateplus.chessLibrary.playerModels.history.MatchOutcome
+import org.checkmateplus.chessLibrary.playerModels.history.MatchRecord
 import org.checkmateplus.chessLibrary.playerModels.history.Turn
 import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
@@ -40,8 +43,6 @@ class MatchState(
     var matchStarted: AtomicBoolean
     var turnHistory: MutableList<Turn> = mutableListOf()
 
-
-
     init {
         whitePlayer = players[0]
         blackPlayer = players[1] //assign the players to vars just to clarify which side is which!
@@ -49,4 +50,24 @@ class MatchState(
         connectedPlayers = hashSetOf()
         matchStarted = AtomicBoolean(false)
     }
+
+    fun toMatchRecord(
+        matchOutcome: MatchOutcome,
+        matchStatus: MatchStatus = MatchStatus.COMPLETED
+    ): MatchRecord = MatchRecord(
+        board = board!!,
+        players = players,
+        matchId = matchId,
+        timeControl = timeControl,
+        matchType = matchType,
+        botConfiguration = botConfiguration,
+        matchOutcome = matchOutcome,
+        whitePlayer = whitePlayer!!,
+        blackPlayer = blackPlayer!!,
+        remainingWhitePlayerTime = whitePlayerTime,
+        remainingBlackPlayerTime = blackPlayerTime,
+        matchStatus = matchStatus,
+        history = turnHistory,
+        matchCreationTime = createdAt
+    )
 }
