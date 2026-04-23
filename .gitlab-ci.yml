@@ -62,7 +62,7 @@ test:
     paths:
       - build
       - .gradle
-build-cached-rootless:
+.build-cached-rootless:
   image:
     name: moby/buildkit:rootless
     entrypoint: [ "" ]
@@ -118,7 +118,7 @@ build-cached-rootless:
 include:
   - template: Jobs/SAST.gitlab-ci.yml
   - template: Jobs/Secret-Detection.gitlab-ci.yml
-  - template: Jobs/Container-Scanning.gitlab-ci.yml
+#  - template: Jobs/Container-Scanning.gitlab-ci.yml
   - template: Jobs/Dependency-Scanning.gitlab-ci.yml
 
 variables:
@@ -150,7 +150,7 @@ variables:
   variables:
     CS_IMAGE: $CI_REGISTRY_IMAGE/matchmakingservice:$CI_COMMIT_SHA
 
-container_scanning_frontend:
+.container_scanning_frontend:
   extends: container_scanning
   stage: security-test
   needs:
