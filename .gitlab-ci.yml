@@ -126,37 +126,37 @@ variables:
   CS_REGISTRY_USER: $CI_REGISTRY_USER
   CS_REGISTRY_PASSWORD: $CI_REGISTRY_PASSWORD
 
-.container_scanning_gameserver:
-  extends: container_scanning
-  stage: security-test
-  needs:
-    - job: native-docker-image
-  variables:
-    CS_IMAGE: $CI_REGISTRY_IMAGE/gameserver:$CI_COMMIT_SHA
+#.container_scanning_gameserver:
+#  extends: container_scanning
+ # stage: security-test
+#  needs:
+#    - job: native-docker-image
+#  variables:
+#    CS_IMAGE: $CI_REGISTRY_IMAGE/gameserver:$CI_COMMIT_SHA
 
-.container_scanning_gameservermanager:
-  extends: container_scanning
-  stage: security-test
-  needs:
-    - job: native-docker-image
-  variables:
-    CS_IMAGE: $CI_REGISTRY_IMAGE/gameservermanager:$CI_COMMIT_SHA
+#.container_scanning_gameservermanager:
+ # extends: container_scanning
+ # stage: security-test
+ # needs:
+  #  - job: native-docker-image
+ # variables:
+  #  CS_IMAGE: $CI_REGISTRY_IMAGE/gameservermanager:$CI_COMMIT_SHA
 
-.container_scanning_matchmaking:
-  extends: container_scanning
-  stage: security-test
-  needs:
-    - job: native-docker-image
-  variables:
-    CS_IMAGE: $CI_REGISTRY_IMAGE/matchmakingservice:$CI_COMMIT_SHA
+#.container_scanning_matchmaking:
+#  extends: container_scanning
+ # stage: security-test
+ # needs:
+ #   - job: native-docker-image
+ # variables:
+#    CS_IMAGE: $CI_REGISTRY_IMAGE/matchmakingservice:$CI_COMMIT_SHA
 
-.container_scanning_frontend:
-  extends: container_scanning
-  stage: security-test
-  needs:
-    - job: build-cached-rootless
-  variables:
-    CS_IMAGE: $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHA
+#.container_scanning_frontend:
+ # extends: container_scanning
+ # stage: security-test
+ # needs:
+ #   - job: build-cached-rootless
+ # variables:
+ #   CS_IMAGE: $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHA
 
 sast:
   stage: security-test
