@@ -53,10 +53,10 @@ class MatchRecordEntity(
     @JoinColumn(name = "black_player_id", nullable = false)
     var blackPlayer: PlayerEntity,
 
-    @Column(name = "remaining_white_time_ms", nullable = false)
+    @Column(name = "remaining_white_time", nullable = false)
     var remainingWhitePlayerTime: Long,
 
-    @Column(name = "remaining_black_time_ms", nullable = false)
+    @Column(name = "remaining_black_time", nullable = false)
     var remainingBlackPlayerTime: Long,
 
     @Enumerated(EnumType.STRING)
