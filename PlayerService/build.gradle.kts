@@ -47,6 +47,7 @@ dependencies {
     implementation("org.springframework.grpc:spring-grpc-spring-boot-starter")
     implementation("org.springframework.boot:spring-boot-starter-security-oauth2-client")
     implementation("org.springframework.boot:spring-boot-starter-security-oauth2-resource-server")
+    implementation("org.springframework.boot:spring-boot-starter-flyway")
     compileOnly("org.projectlombok:lombok")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     runtimeOnly("org.postgresql:postgresql")
@@ -71,6 +72,7 @@ dependencies {
     }
     implementation("com.google.zxing:core:3.5.3")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+    implementation("org.flywaydb:flyway-database-postgresql")
 }
 dependencyManagement {
     imports {
