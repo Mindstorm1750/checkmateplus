@@ -288,3 +288,29 @@ David recommends everybody have good knowledge of every area of the project beca
 
 Future meetings will be held next term. No more meetings this term.
 
+# 24-4-2026 meeting
+
+## Get it finished
+
+Advice from Dave:
+
+As an example, if you have 4 features in mind, actually just do 2 and have 2 left for "future development".
+
+Just get it finished.
+
+## The report
+
+The report is about what we've done, so it comes last.
+
+## Future developments
+
+Shows that you thought about things. Not having many things for future development shows poor consideration.
+
+## The survey privacy issue
+
+Can forget about the post-game survey and instead just ask for feedback conversationally at the chess club meeting.
+
+## Timeline
+
+2 weeks to finalise things, then get a playtest with the chess club.
+
