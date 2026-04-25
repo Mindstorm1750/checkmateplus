@@ -314,9 +314,9 @@ class MatchmakingService(
                 calculateMmrRange(candidate.player)
             )
             candidate.player.playerId != currentEntry.player.playerId &&
-                candidate.matchType == currentEntry.matchType &&
-                isTimeControlCompatible(currentEntry.timeControl, candidate.timeControl) &&
-                abs(playerMmr - candidateMmr) <= effectiveRange
+                    candidate.matchType == currentEntry.matchType &&
+                    isTimeControlCompatible(currentEntry.timeControl, candidate.timeControl) &&
+                    abs(playerMmr - candidateMmr) <= effectiveRange
         } ?: return null
 
         hashOps.delete(PLAYER_QUEUE_MAP, currentEntry.player.playerId)
@@ -400,10 +400,14 @@ class MatchmakingService(
             }
 
             val request =
-                GameServerProto.ServerRequest.newBuilder().setMatchId(matchId).setWhitePlayerId(whitePlayer.playerId)
-                    .setWhitePlayerName(whitePlayer.displayName).setBlackPlayerId(blackPlayer.playerId)
-                    .setBlackPlayerName(blackPlayer.displayName).setInitialTimeMinutes(timeControl.minutes)
-                    .setIncrementSeconds(timeControl.increment).setMatchType(matchType.toString())
+                GameServerProto.ServerRequest.newBuilder().setMatchId(matchId)
+                    .setWhitePlayerId(whitePlayer.playerId)
+                    .setWhitePlayerName(whitePlayer.displayName)
+                    .setBlackPlayerId(blackPlayer.playerId)
+                    .setBlackPlayerName(blackPlayer.displayName)
+                    .setInitialTimeMinutes(timeControl.minutes)
+                    .setIncrementSeconds(timeControl.increment)
+                    .setMatchType(matchType.toString())
                     .apply {
                         botConfiguration?.let {
                             setBotConfiguration(
@@ -412,6 +416,16 @@ class MatchmakingService(
                                     .setBotMoveTimeModelType(GameServerProto.BotMoveTimeModelType.valueOf(it.botMoveTimeModelType.name))
                                     .build()
                             )
+                        }
+                    }
+                    .apply {
+                        whitePlayer.skillRating?.let {
+                            setWhiteSkillRating(whitePlayer.skillRating!!)
+                        }
+                    }
+                    .apply {
+                        blackPlayer.skillRating?.let {
+                            setBlackSkillRating(blackPlayer.skillRating!!)
                         }
                     }.build()
 

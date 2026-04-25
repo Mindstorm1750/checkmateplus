@@ -172,6 +172,8 @@ class GameManagerService(
                 .setIncrementSeconds(request.incrementSeconds)
                 .setBotConfiguration(request.botConfiguration)
                 .setMatchType(request.matchType)
+                .setWhiteSkillRating(request.whiteSkillRating)
+                .setBlackSkillRating(request.blackSkillRating)
                 .build()
 
             val stub = serverStubs[server.value.serverId]

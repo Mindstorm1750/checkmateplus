@@ -161,22 +161,26 @@ class GameServerService(
                 blackPlayer = if (botSide == Colour.WHITE) human else bot
             } else {
                 whitePlayer = if (request.whitePlayerRegistered) {
-                    Player.Anonymous(
-                        displayName = request.whitePlayerName, playerId = request.whitePlayerId
+                    Player.Registered(
+                        playerId = request.whitePlayerId,
+                        displayName = request.whitePlayerName,
+                        skillRating = request.whiteSkillRating,
                     )
                 } else {
-                    Player.Anonymous(  //this needs to be "registered" when accounts are implemented!!!!
+                    Player.Anonymous(
                         displayName = request.whitePlayerName, playerId = request.whitePlayerId
                     )
                 }
 
                 blackPlayer = if (request.blackPlayerRegistered) {
-                    Player.Anonymous(
-                        displayName = request.blackPlayerName, playerId = request.blackPlayerId
+                    Player.Registered(
+                        playerId = request.blackPlayerId,
+                        displayName = request.blackPlayerName,
+                        skillRating = request.blackSkillRating
                     )
                 } else {
                     Player.Anonymous(
-                        displayName = request.blackPlayerName, //this needs to be "registered" when accounts are implemented!!!!
+                        displayName = request.blackPlayerName,
                         playerId = request.blackPlayerId
                     )
                 }

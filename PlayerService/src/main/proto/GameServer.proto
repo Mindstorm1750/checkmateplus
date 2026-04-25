@@ -40,14 +40,14 @@ message ServerRequest {
   string match_id = 1;
   string white_player_id = 2;
   string white_player_name = 3;
-  // int32 white_player_rating = 4;
-  string black_player_id = 5;
-  string black_player_name = 6;
-  // int32 black_player_rating = 7;
-  int32 initial_time_minutes = 8;
-  int32 increment_seconds = 9;
-  string matchType = 10;
-  optional BotConfiguration bot_configuration = 11;
+  string black_player_id = 4;
+  string black_player_name = 5;
+  int32 initial_time_minutes = 6;
+  int32 increment_seconds = 7;
+  string matchType = 8;
+  optional BotConfiguration bot_configuration = 9;
+  optional int32 white_skill_rating = 10;
+  optional int32 black_skill_rating = 11;
 }
 
 message ServerResponse {
@@ -76,6 +76,8 @@ message AllocateMatchRequest {
   int32 increment_seconds = 9;
   string matchType = 10;
   optional BotConfiguration bot_configuration = 11;
+  optional int32 white_skill_rating = 12;
+  optional int32 black_skill_rating = 13;
 }
 ///Server shutting down remove from pool
 message UnRegisterServerRequest {

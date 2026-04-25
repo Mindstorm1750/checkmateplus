@@ -1,8 +1,7 @@
 import Layout from "@/components/Layout"
 import { BackArrowLink } from "@/components/ui/back-arrow-link"
 import ChessBoard, {
-  type ChessBoardProps,
-  type Usernames,
+    type ChessBoardProps, type Players,
 } from "@/components/ui/ChessBoard"
 import {
   algebraicToSquare,
@@ -87,7 +86,7 @@ function Match() {
   const { preferences } = usePreferences()
   const stompClient = useRef<Client | null>(null)
   const { jwt, isPending: jwtIsPending } = useJwt()
-  const [usernames, setUsernames] = useState<Usernames>()
+  const [players, setPlayers] = useState<Players>()
   const [surveyScore, setSurveyScore] = useState<number>(0)
   const [surveyComment, setSurveyComment] = useState<string>("")
   // "surveySubmitted" isn't a perfect name as we also set this to true if user skips the survey.
@@ -113,7 +112,7 @@ function Match() {
   }, [matchId, jwtIsPending])
 
   const connect = () => {
-    const socket = new SockJS(`https://${websocketUrl}/match`)
+    const socket = new SockJS(`http://${websocketUrl}/match`) // TODO DON'T COMMIT THIS
     // websocketUrl should really be http://localhost:8090 or http://127.0.0.1:8090 and '/match' is to be added by frontend here
 
     const client = new Client({
@@ -163,19 +162,15 @@ function Match() {
           }
         )
 
-        // TODO figure out if unneeded as it never seems to receive messages
         client.subscribe(
           `/user/queue/match/${matchId}/state`,
           (message: IMessage) => {
             const match: MatchStateMessage = JSON.parse(message.body)
-            const whitePlayerName = match.whitePlayer?.displayName
-            const blackPlayerName = match.blackPlayer?.displayName
-            console.log(
-              `Got initial match state message. Players are: ${whitePlayerName} and ${blackPlayerName}`
-            )
+            console.log(`Got initial match state message`)
+              console.log({match})
             setBoardState(fenToBoard(match.fen)) // should be the starting position
-            if (whitePlayerName && blackPlayerName) {
-              setUsernames({ whitePlayerName, blackPlayerName })
+            if (match.whitePlayer && match.blackPlayer) {
+              setPlayers({ whitePlayer: match.whitePlayer, blackPlayer: match.blackPlayer })
             }
             setIsPlayerWhite(match.whitePlayer?.playerId === playerId)
           }
@@ -375,7 +370,7 @@ function Match() {
               moveCallback={handleMove}
               whitePerspective={isPlayerWhite}
               pieceOrigins={pieceOrigins}
-              usernames={usernames}
+              players={players}
             >
               {!isGameOver && (
                 <div className="flex items-center gap-2">
@@ -436,7 +431,7 @@ function Match() {
         </DialogContent>
       </Dialog>
       <Dialog open={isGameOver && !surveySubmitted}>
-        <DialogContent>
+        <DialogContent showCloseButton={false}>
           <DialogHeader>
             <DialogTitle>{gameOverMessage}</DialogTitle>
             <DialogDescription></DialogDescription>

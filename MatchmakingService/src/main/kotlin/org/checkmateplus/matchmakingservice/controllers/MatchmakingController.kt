@@ -65,8 +65,9 @@ class MatchmakingController(
             )
         } else {
             Player.Registered(
+                playerId = securePlayerId,
                 displayName = displayName,
-                playerId = securePlayerId
+                // skillRating = TODO GET SKILLRATING FROM DATABASE
             )
         }
         logger.info("${player.javaClass.name} $securePlayerId (${player.displayName}) joining queue")
