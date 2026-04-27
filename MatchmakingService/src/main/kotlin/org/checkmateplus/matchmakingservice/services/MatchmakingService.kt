@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
-import kotlin.time.Instant
 
 /**
  * Service responsible for player matchmaking and match state management.
@@ -36,7 +35,8 @@ class MatchmakingService(
     private val redisTemplate: RedisTemplate<String, String>,
     @Value("\${gameservermanager.host}") private val managerHost: String,
     @Value("\${gameservermanager.port}") private val managerPort: Int,
-    private val json: Json
+    private val json: Json,
+    private val matchTrackingService: MatchTrackingService,
 ) {
 
     companion object {
@@ -263,6 +263,9 @@ class MatchmakingService(
         // Store match in Redis
         redisTemplate.opsForHash<String, String>().put(ACTIVE_MATCHES, match.matchId, serializeMatch(match))
 
+        // Notify GSM observability hub of the new PENDING match
+        matchTrackingService.reportPending(match.matchId, players[0], players[1], botConfiguration)
+
         return match
     }
 
@@ -447,6 +450,7 @@ class MatchmakingService(
                 )
             } else {
                 logger.error("Server allocation failed: ${response.message}")
+                matchTrackingService.reportCancelled(matchId, whitePlayer, blackPlayer, "alloc_failed", botConfiguration)
                 return ServerAllocationResult(
                     success = false, message = response.message
                 )
@@ -454,6 +458,7 @@ class MatchmakingService(
 
         } catch (e: Exception) {
             logger.error("Failed to request server", e)
+            matchTrackingService.reportCancelled(matchId, whitePlayer, blackPlayer, "alloc_error", botConfiguration)
             return ServerAllocationResult(
                 success = false, message = "Failed to communicate with manager: ${e.message}"
             )

@@ -23,7 +23,8 @@ import java.util.concurrent.ConcurrentHashMap
 @Service
 @GrpcService
 class GameManagerService(
-    private val redisTemplate: RedisTemplate<String, String>
+    private val redisTemplate: RedisTemplate<String, String>,
+    private val matchTrackingService: MatchTrackingService,
 ) : MatchManagerGrpc.MatchManagerImplBase() {
     private var registeredInstances: ConcurrentHashMap<String, GameServerInstance> = ConcurrentHashMap()
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -276,6 +277,29 @@ class GameManagerService(
             logger.error("Failed to process match completion for ${request.matchId}", e)
             responseObserver.onNext(
                 GameServerProto.MatchCompletedResponse.newBuilder().setAcknowledged(false).build()
+            )
+            responseObserver.onCompleted()
+        }
+    }
+
+    /**
+     * Records a per-match status / FEN / clock snapshot pushed from MatchmakingService
+     * (PENDING/CANCELLED) or GameServer (ASSIGNED/ACTIVE/COMPLETED/ABANDONED).
+     */
+    override fun reportMatchUpdate(
+        request: GameServerProto.MatchUpdate,
+        responseObserver: StreamObserver<GameServerProto.MatchUpdateResponse>
+    ) {
+        try {
+            matchTrackingService.recordUpdate(request)
+            responseObserver.onNext(
+                GameServerProto.MatchUpdateResponse.newBuilder().setAcknowledged(true).build()
+            )
+            responseObserver.onCompleted()
+        } catch (e: Exception) {
+            logger.error("Failed to record match update for ${request.matchId}", e)
+            responseObserver.onNext(
+                GameServerProto.MatchUpdateResponse.newBuilder().setAcknowledged(false).build()
             )
             responseObserver.onCompleted()
         }

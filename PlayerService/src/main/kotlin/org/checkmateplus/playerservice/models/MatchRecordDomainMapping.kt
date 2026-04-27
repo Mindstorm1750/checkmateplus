@@ -165,13 +165,13 @@ fun PlayerServiceProto.MatchOutcome.toDomain(): MatchOutcome = when (this) {
     else -> throw IllegalArgumentException("Unknown MatchOutcome: $this")
 }
 
-fun PlayerServiceProto.MatchStatus.toDomain(): MatchStatus = when (this) {
-    PlayerServiceProto.MatchStatus.MATCH_STATUS_PENDING   -> MatchStatus.PENDING
-    PlayerServiceProto.MatchStatus.MATCH_STATUS_ASSIGNED  -> MatchStatus.ASSIGNED
-    PlayerServiceProto.MatchStatus.MATCH_STATUS_ACTIVE    -> MatchStatus.ACTIVE
-    PlayerServiceProto.MatchStatus.MATCH_STATUS_COMPLETED -> MatchStatus.COMPLETED
-    PlayerServiceProto.MatchStatus.MATCH_STATUS_CANCELLED -> MatchStatus.CANCELLED
-    PlayerServiceProto.MatchStatus.MATCH_STATUS_ABANDONED -> MatchStatus.ABANDONED
+fun GameServerProto.MatchStatus.toDomain(): MatchStatus = when (this) {
+    GameServerProto.MatchStatus.MATCH_STATUS_PENDING   -> MatchStatus.PENDING
+    GameServerProto.MatchStatus.MATCH_STATUS_ASSIGNED  -> MatchStatus.ASSIGNED
+    GameServerProto.MatchStatus.MATCH_STATUS_ACTIVE    -> MatchStatus.ACTIVE
+    GameServerProto.MatchStatus.MATCH_STATUS_COMPLETED -> MatchStatus.COMPLETED
+    GameServerProto.MatchStatus.MATCH_STATUS_CANCELLED -> MatchStatus.CANCELLED
+    GameServerProto.MatchStatus.MATCH_STATUS_ABANDONED -> MatchStatus.ABANDONED
     else -> throw IllegalArgumentException("Unknown MatchStatus: $this")
 }
 

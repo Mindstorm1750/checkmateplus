@@ -21,6 +21,7 @@ import org.checkmateplus.chessLibrary.playerModels.history.MatchRecord
 import org.checkmateplus.gameserver.models.MatchState
 import org.checkmateplus.gameserver.models.messages.*
 import org.checkmateplus.gameserver.service.GameServerService
+import org.checkmateplus.gameserver.service.MatchReporterService
 import org.checkmateplus.gameserver.service.MatchService
 import org.slf4j.LoggerFactory
 import org.springframework.aot.hint.annotation.RegisterReflectionForBinding
@@ -63,7 +64,8 @@ import kotlin.time.Duration.Companion.milliseconds
 class MatchWebSocketController(
     private val messagingTemplate: SimpMessagingTemplate,
     private val matchService: MatchService,
-    private val gameServerService: GameServerService
+    private val gameServerService: GameServerService,
+    private val matchReporterService: MatchReporterService,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
     //TODO: Need to add disconnect/reconnect support incase of connection drop
@@ -199,6 +201,7 @@ class MatchWebSocketController(
             totalMoves = match.turnHistory.size,
             durationSeconds = durationSeconds
         )
+        matchReporterService.reportCompleted(match, winnerId, reason)
         matchService.removeMatch(match.matchId)
     }
 

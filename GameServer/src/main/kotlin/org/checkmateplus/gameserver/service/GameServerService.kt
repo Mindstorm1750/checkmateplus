@@ -33,6 +33,7 @@ import kotlin.time.ExperimentalTime
 @GrpcService
 class GameServerService(
     private val matchService: MatchService,
+    private val matchReporterService: MatchReporterService,
     @Value("\${gameservermanager.host}") private val managerHost: String,
     @Value("\${gameservermanager.port}") private val managerPort: Int,
     @Value("\${gameserver.advertise.host}") private val advertiseHost: String,
@@ -194,7 +195,7 @@ class GameServerService(
                 ?: throw IllegalArgumentException("Invalid time control: ${request.initialTimeSeconds / 60}+${request.incrementSeconds}")
 
             // Create match
-            matchService.createMatch(
+            val matchState = matchService.createMatch(
                 matchId = request.matchId,
                 players = listOf(whitePlayer, blackPlayer),
                 timeControl = timeControl,
@@ -202,6 +203,7 @@ class GameServerService(
                 botConfiguration = botConfiguration
             )
             logger.info("Created match: ${request.matchId} with players $whitePlayer & $blackPlayer of type ${request.matchType}")
+            matchReporterService.reportAssigned(matchState)
             val response =
                 GameServerProto.AllocateMatchResponse.newBuilder().setSuccess(true).setMessage("Match created").build()
 

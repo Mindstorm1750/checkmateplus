@@ -14,6 +14,8 @@ service MatchManager {
   rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
   rpc ReportMatchCompleted(MatchCompletedReport) returns (MatchCompletedResponse);
   rpc UnregisterServer(UnRegisterServerRequest) returns (UnRegisterServerResponse);
+  rpc ReportMatchUpdate(MatchUpdate) returns (MatchUpdateResponse);
+  rpc ListLiveMatches(ListLiveMatchesRequest) returns (ListLiveMatchesResponse);
 }
 //Service for matchmaker to the manager
 service ServerAllocator {
@@ -138,4 +140,79 @@ message MatchCompletedReport {
 
 message MatchCompletedResponse {
   bool acknowledged = 1;
+}
+enum MatchStatus {
+  MATCH_STATUS_PENDING = 0;
+  MATCH_STATUS_ASSIGNED = 1;
+  MATCH_STATUS_ACTIVE = 2;
+  MATCH_STATUS_COMPLETED = 3;
+  MATCH_STATUS_CANCELLED = 4;
+  MATCH_STATUS_ABANDONED = 5;
+}
+
+message MatchUpdate {
+  string match_id = 1;
+  string server_id = 2;            // empty for PENDING/CANCELLED before allocation
+  MatchStatus status = 3;
+
+  // populated from ASSIGNED onward
+  string white_player_id = 10;
+  string white_player_name = 11;
+  int32  white_player_rating = 12;
+  string black_player_id = 13;
+  string black_player_name = 14;
+  int32  black_player_rating = 15;
+
+  // populated from ACTIVE onward, refreshed every move
+  string last_fen = 20;
+  int32  white_time_seconds = 21;
+  int32  black_time_seconds = 22;
+  string active_color = 23;        // "WHITE" | "BLACK"
+  int32  move_number = 24;
+
+  // populated for COMPLETED/CANCELLED/ABANDONED
+  string winner_id = 30;           // empty for draw
+  string reason = 31;              // checkmate|resignation|timeout|draw|abandoned|alloc_failed|queue_cancel
+
+  // player identity type — mirrors ServerRequest fields so the
+  // GSM can reconstruct the correct Player subclass (Registered/Bot/Anonymous)
+  bool white_player_registered = 16;
+  bool black_player_registered = 17;
+  optional BotConfiguration bot_configuration = 18; // present iff a bot is in the match
+}
+
+message MatchUpdateResponse {
+  bool acknowledged = 1;
+}
+
+// Read-side RPC: returns a snapshot of every match currently tracked in the
+// GameServerManager observability hub (PENDING/ASSIGNED/ACTIVE plus
+// recently-terminal entries still inside their TTL window).
+message ListLiveMatchesRequest {}
+
+message ListLiveMatchesResponse {
+  repeated LiveMatch matches = 1;
+}
+
+message LiveMatch {
+  string match_id = 1;
+  string server_id = 2;
+  MatchStatus status = 3;
+  string white_player_id = 4;
+  string white_player_name = 5;
+  int32 white_player_rating = 6;
+  bool white_player_registered = 7;
+  string black_player_id = 8;
+  string black_player_name = 9;
+  int32 black_player_rating = 10;
+  bool black_player_registered = 11;
+  optional BotConfiguration bot_configuration = 12;
+  string last_fen = 13;
+  int32 white_time_seconds = 14;
+  int32 black_time_seconds = 15;
+  string active_color = 16;
+  int32 move_number = 17;
+  string winner_id = 18;
+  string reason = 19;
+  int64 updated_at = 20;
 }

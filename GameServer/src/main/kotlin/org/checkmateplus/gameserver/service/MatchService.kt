@@ -29,7 +29,8 @@ import java.util.concurrent.ConcurrentLinkedQueue
  */
 @Service
 class MatchService(
-    private val accountsService: AccountsService
+    private val accountsService: AccountsService,
+    private val matchReporterService: MatchReporterService,
 ) {
     private val matches = ConcurrentHashMap<String, MatchState>()
     private val timers = ConcurrentHashMap<String, Timer>()
@@ -102,6 +103,12 @@ class MatchService(
             timeTaken = timeTaken
         )
         match.turnHistory.add(turn)
+        // Push status snapshot to GSM. First move = ACTIVE transition, subsequent = MOVE refresh.
+        if (match.turnHistory.size == 1) {
+            matchReporterService.reportActive(match)
+        } else {
+            matchReporterService.reportMove(match)
+        }
         // Create move notification
         val moveNotification = MoveNotification(
             matchId = matchId,

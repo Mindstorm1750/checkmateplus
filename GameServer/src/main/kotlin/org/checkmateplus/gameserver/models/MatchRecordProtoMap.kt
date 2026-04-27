@@ -158,13 +158,13 @@ fun MatchOutcome.toProto(): PlayerServiceProto.MatchOutcome = when (this) {
     MatchOutcome.ABANDONED -> PlayerServiceProto.MatchOutcome.MATCH_OUTCOME_ABANDONED
 }
 
-fun MatchStatus.toProto(): PlayerServiceProto.MatchStatus = when (this) {
-    MatchStatus.PENDING -> PlayerServiceProto.MatchStatus.MATCH_STATUS_PENDING
-    MatchStatus.ASSIGNED -> PlayerServiceProto.MatchStatus.MATCH_STATUS_ASSIGNED
-    MatchStatus.ACTIVE -> PlayerServiceProto.MatchStatus.MATCH_STATUS_ACTIVE
-    MatchStatus.COMPLETED -> PlayerServiceProto.MatchStatus.MATCH_STATUS_COMPLETED
-    MatchStatus.CANCELLED -> PlayerServiceProto.MatchStatus.MATCH_STATUS_CANCELLED
-    MatchStatus.ABANDONED -> PlayerServiceProto.MatchStatus.MATCH_STATUS_ABANDONED
+fun MatchStatus.toProto(): GameServerProto.MatchStatus = when (this) {
+    MatchStatus.PENDING -> GameServerProto.MatchStatus.MATCH_STATUS_PENDING
+    MatchStatus.ASSIGNED -> GameServerProto.MatchStatus.MATCH_STATUS_ASSIGNED
+    MatchStatus.ACTIVE -> GameServerProto.MatchStatus.MATCH_STATUS_ACTIVE
+    MatchStatus.COMPLETED -> GameServerProto.MatchStatus.MATCH_STATUS_COMPLETED
+    MatchStatus.CANCELLED -> GameServerProto.MatchStatus.MATCH_STATUS_CANCELLED
+    MatchStatus.ABANDONED -> GameServerProto.MatchStatus.MATCH_STATUS_ABANDONED
 }
 
 fun MatchType.toProto(): PlayerServiceProto.MatchType = when (this) {
