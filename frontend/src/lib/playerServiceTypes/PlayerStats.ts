@@ -20,3 +20,5 @@ export type PlayerStats = {
   favouriteTimeControl?: TimeControl
   memberSinceEpochMs: number
 }
+
+export type PlayerRating = Pick<PlayerStats, "skillRating" | "playerId">

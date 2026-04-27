@@ -1,7 +1,8 @@
 import Layout from "@/components/Layout"
 import { BackArrowLink } from "@/components/ui/back-arrow-link"
 import ChessBoard, {
-    type ChessBoardProps, type Players,
+  type ChessBoardProps,
+  type PlayerLabelsType,
 } from "@/components/ui/ChessBoard"
 import {
   algebraicToSquare,
@@ -11,7 +12,10 @@ import {
 import { usePreferences } from "@/lib/PreferencesProvider"
 import type { JoinMatchMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/JoinMatchMessage"
 import type { MatchEventMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchEventMessage"
-import type { MatchStateMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchStateMessage"
+import type {
+  MatchStateMessage,
+  Player,
+} from "@/lib/stompMessageTypes/GameServer/models/messages/MatchStateMessage"
 import type { MoveMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MoveMessage"
 import type { TimeUpdateMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/TimeUpdateMessage"
 import type { MatchFoundEvent } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/MatchFoundEvent"
@@ -45,6 +49,7 @@ import type { DrawOfferMessage } from "@/lib/stompMessageTypes/GameServer/models
 import type { DrawOfferState } from "@/types/Match.type.ts"
 import type { DrawResponseMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/DrawResponseMessage.ts"
 import type { ResignMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/ResignMessage.ts"
+import { usePlayerRating } from "@/hooks/usePlayerStats.ts"
 
 function Match() {
   const navigate = useNavigate()
@@ -62,7 +67,7 @@ function Match() {
   if (!state) {
     return null // don't continue rendering if we haven't been redirected to this match page from matchmaking
   }
-  const { matchId, websocketUrl, playerId } = state // TODO make playerId persistent
+  const { matchId, websocketUrl, playerId, matchType } = state
   const [boardState, setBoardState] = useState<Board>(EMPTY_BOARD)
   const [lastMove, setLastMove] = useState<Move>()
   const [isCheck, setIsCheck] = useState<boolean>(false)
@@ -86,7 +91,17 @@ function Match() {
   const { preferences } = usePreferences()
   const stompClient = useRef<Client | null>(null)
   const { jwt, isPending: jwtIsPending } = useJwt()
-  const [players, setPlayers] = useState<Players>()
+  const [players, setPlayers] = useState<{
+    whitePlayer: Player
+    blackPlayer: Player
+  }>()
+  const { data: whitePlayerRatingData } = usePlayerRating(
+    players?.whitePlayer.playerId ?? null
+  )
+  const { data: blackPlayerRatingData } = usePlayerRating(
+    players?.blackPlayer.playerId ?? null
+  )
+
   const [surveyScore, setSurveyScore] = useState<number>(0)
   const [surveyComment, setSurveyComment] = useState<string>("")
   // "surveySubmitted" isn't a perfect name as we also set this to true if user skips the survey.
@@ -94,6 +109,21 @@ function Match() {
   const [surveySubmitted, setSurveySubmitted] = useState<boolean>(false)
   const { mutate: submitSurvey, isPending: surveyIsPending } =
     usePostGameSurvey()
+
+  const playerLabels: PlayerLabelsType | undefined = players
+    ? {
+        whitePlayerLabel:
+          players.whitePlayer.displayName +
+          (matchType === "COMPETITIVE_PVP" && whitePlayerRatingData
+            ? ` (${whitePlayerRatingData.skillRating})`
+            : ""),
+        blackPlayerLabel:
+          players.blackPlayer.displayName +
+          (matchType === "COMPETITIVE_PVP" && blackPlayerRatingData
+            ? ` (${blackPlayerRatingData.skillRating})`
+            : ""),
+      }
+    : undefined
 
   const handleSurveySubmit = () => {
     submitSurvey(
@@ -112,7 +142,7 @@ function Match() {
   }, [matchId, jwtIsPending])
 
   const connect = () => {
-    const socket = new SockJS(`http://${websocketUrl}/match`) // TODO DON'T COMMIT THIS
+    const socket = new SockJS(`http://${websocketUrl}/match`)
     // websocketUrl should really be http://localhost:8090 or http://127.0.0.1:8090 and '/match' is to be added by frontend here
 
     const client = new Client({
@@ -167,10 +197,12 @@ function Match() {
           (message: IMessage) => {
             const match: MatchStateMessage = JSON.parse(message.body)
             console.log(`Got initial match state message`)
-              console.log({match})
             setBoardState(fenToBoard(match.fen)) // should be the starting position
             if (match.whitePlayer && match.blackPlayer) {
-              setPlayers({ whitePlayer: match.whitePlayer, blackPlayer: match.blackPlayer })
+              setPlayers({
+                whitePlayer: match.whitePlayer,
+                blackPlayer: match.blackPlayer,
+              })
             }
             setIsPlayerWhite(match.whitePlayer?.playerId === playerId)
           }
@@ -370,7 +402,7 @@ function Match() {
               moveCallback={handleMove}
               whitePerspective={isPlayerWhite}
               pieceOrigins={pieceOrigins}
-              players={players}
+              playerLabels={playerLabels}
             >
               {!isGameOver && (
                 <div className="flex items-center gap-2">

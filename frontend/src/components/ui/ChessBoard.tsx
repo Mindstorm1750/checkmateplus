@@ -19,10 +19,13 @@ export type ChessBoardProps = {
   clockState?: Pick<MatchStateMessage, "whitePlayerTime" | "blackPlayerTime">
   pieceOrigins: Map<Square, Square>
   lastMove?: Move // used to highlight the most recent move played
-  players?: Players
+  playerLabels?: PlayerLabelsType
 }
 
-export type Players = Required<Pick<MatchStateMessage, "whitePlayer" | "blackPlayer">>
+export type PlayerLabelsType = {
+  whitePlayerLabel: string
+  blackPlayerLabel: string
+}
 
 const ChessBoard = ({
   moveCallback,
@@ -34,7 +37,7 @@ const ChessBoard = ({
   clockState = { whitePlayerTime: 0, blackPlayerTime: 0 },
   pieceOrigins,
   lastMove,
-  players,
+  playerLabels,
   children,
 }: React.PropsWithChildren<ChessBoardProps>) => {
   const [squareClicked, setSquareClicked] = useState<Square | null>()
@@ -55,16 +58,6 @@ const ChessBoard = ({
   const moves = legalMoves(boardState)
 
   const isInteractable = isPlayersTurn && !isGameOver
-
-    const whitePlayerNameAndRating = players?.whitePlayer.skillRating ?
-        `${players.whitePlayer.displayName} (${players.whitePlayer.skillRating})` :
-        players?.whitePlayer.displayName
-
-    const blackPlayerNameAndRating = players?.blackPlayer.skillRating ?
-        `${players.blackPlayer.displayName} (${players.blackPlayer.skillRating})` :
-        players?.blackPlayer.displayName
-
-    console.log({players}); // TODO REMOVE
 
   const handleClick = (square: Square) => {
     if (!isInteractable) {
@@ -116,12 +109,12 @@ const ChessBoard = ({
             isActiveClock={!isPlayersTurn}
             isGameOver={isGameOver}
           />
-          {players && (
+          {playerLabels && (
             <div className="flex w-1/4 justify-center">
               <p>
-                  {whitePerspective
-                  ? blackPlayerNameAndRating
-                  : whitePlayerNameAndRating}
+                {whitePerspective
+                  ? playerLabels.blackPlayerLabel
+                  : playerLabels.whitePlayerLabel}
               </p>
             </div>
           )}
@@ -242,12 +235,12 @@ const ChessBoard = ({
             isActiveClock={isPlayersTurn}
             isGameOver={isGameOver}
           />
-          {players && (
+          {playerLabels && (
             <div className="flex w-1/4 justify-center">
               <p>
                 {whitePerspective
-                  ? whitePlayerNameAndRating
-                  : blackPlayerNameAndRating}
+                  ? playerLabels.whitePlayerLabel
+                  : playerLabels.blackPlayerLabel}
               </p>
             </div>
           )}

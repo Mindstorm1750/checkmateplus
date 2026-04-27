@@ -1,5 +1,7 @@
 package org.checkmateplus.matchmakingservice.models.messages
 
+import org.checkmateplus.chessLibrary.playerModels.MatchType
+
 /**
  * Event sent to players when a match has been successfully formed and a server allocated.
  *
@@ -12,4 +14,5 @@ data class MatchFoundEvent(
     val websocketUrl: String,
     val opponentName: String,
     val playerId: String,
+    val matchType: MatchType,
 )
