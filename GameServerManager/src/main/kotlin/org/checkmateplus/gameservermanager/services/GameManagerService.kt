@@ -4,6 +4,7 @@ package org.checkmateplus.gameservermanager.services
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import io.grpc.stub.StreamObserver
+import org.checkmateplus.chessLibrary.playerModels.Player
 import org.checkmateplus.gameserver.proto.GameServerGrpc
 import org.checkmateplus.gameserver.proto.GameServerProto
 import org.checkmateplus.gameserver.proto.MatchManagerGrpc
@@ -303,6 +304,63 @@ class GameManagerService(
             )
             responseObserver.onCompleted()
         }
+    }
+
+    /**
+     * Returns a snapshot of every match currently tracked in the GSM.
+     * Includes PENDING/ASSIGNED/ACTIVE plus recently-ended entries within their TTL window.
+     */
+    override fun listLiveMatches(
+        request: GameServerProto.ListLiveMatchesRequest,
+        responseObserver: StreamObserver<GameServerProto.ListLiveMatchesResponse>
+    ) {
+        try {
+            val tracked = matchTrackingService.listLiveMatches()
+            val response = GameServerProto.ListLiveMatchesResponse.newBuilder()
+                .apply { tracked.forEach { addMatches(toLiveMatch(it)) } }
+                .build()
+            responseObserver.onNext(response)
+            responseObserver.onCompleted()
+        } catch (e: Exception) {
+            logger.error("Failed to list live matches", e)
+            responseObserver.onError(e)
+        }
+    }
+
+    private fun toLiveMatch(match: org.checkmateplus.gameservermanager.models.TrackedMatch): GameServerProto.LiveMatch {
+        val builder = GameServerProto.LiveMatch.newBuilder()
+            .setMatchId(match.matchId)
+            .setServerId(match.serverId ?: "")
+            .setStatus(GameServerProto.MatchStatus.valueOf("MATCH_STATUS_${match.status}"))
+            .setLastFen(match.lastFen ?: "")
+            .setWhiteTimeSeconds(match.whiteTimeSeconds ?: 0)
+            .setBlackTimeSeconds(match.blackTimeSeconds ?: 0)
+            .setActiveColor(match.activeColor ?: "")
+            .setMoveNumber(match.moveNumber ?: 0)
+            .setWinnerId(match.winnerId ?: "")
+            .setReason(match.reason ?: "")
+            .setUpdatedAt(match.updatedAt)
+        match.whitePlayer?.let {
+            builder.whitePlayerId = it.playerId
+            builder.whitePlayerName = it.displayName
+            builder.whitePlayerRating = it.skillRating ?: 0
+            builder.whitePlayerRegistered = it is Player.Registered
+        }
+        match.blackPlayer?.let {
+            builder.blackPlayerId = it.playerId
+            builder.blackPlayerName = it.displayName
+            builder.blackPlayerRating = it.skillRating ?: 0
+            builder.blackPlayerRegistered = it is Player.Registered
+        }
+        val bot = match.whitePlayer as? Player.Bot
+            ?: match.blackPlayer as? Player.Bot
+        bot?.let {
+            builder.botConfiguration = GameServerProto.BotConfiguration.newBuilder()
+                .setBotModelType(GameServerProto.BotModelType.valueOf(it.botConfiguration.botModelType.name))
+                .setBotMoveTimeModelType(GameServerProto.BotMoveTimeModelType.valueOf(it.botConfiguration.botMoveTimeModelType.name))
+                .build()
+        }
+        return builder.build()
     }
 
     /**

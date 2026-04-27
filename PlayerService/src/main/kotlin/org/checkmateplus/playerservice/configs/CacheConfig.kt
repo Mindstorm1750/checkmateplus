@@ -27,6 +27,7 @@ class CacheConfig {
         return RedisCacheManager.builder(redisConnectionFactory)
             .withCacheConfiguration("playerStats", base.entryTtl(Duration.ofMinutes(5)))
             .withCacheConfiguration("leaderboard", base.entryTtl(Duration.ofSeconds(60)))
+            .withCacheConfiguration("spectate_match", base.entryTtl(Duration.ofSeconds(10)))
             .build()
     }
 }
