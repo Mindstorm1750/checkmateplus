@@ -52,7 +52,7 @@ function App() {
 
   return (
     <Layout>
-      <div className="flex flex-col items-center gap-4">
+      <div className="flex flex-col items-center gap-4 pt-32 md:pt-16 lg:pt-0">
         <PlayHumanButton className="min-w-3xs" />
         <PlayComputerButton className="min-w-3xs" />
         <Button className="min-w-3xs" onClick={() => navigate("/leaderboard")}>

@@ -15,6 +15,7 @@ import { useJwt } from "@/lib/JwtProvider"
 import { TimeControlToStringMap } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/TimeControl"
 import type { MatchResult } from "@/lib/playerServiceTypes/MatchResult"
 import { useNavigate } from "react-router"
+import { BackArrowLink } from "@/components/ui/back-arrow-link.tsx"
 
 function formatDuration(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000)
@@ -192,6 +193,7 @@ export default function Profile() {
           </CardContent>
         </Card>
       </div>
+      <BackArrowLink />
     </Layout>
   )
 }

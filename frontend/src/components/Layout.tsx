@@ -11,11 +11,11 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold lg:text-3xl">
+      <div className="flex items-center justify-between gap-2">
+        <h1 className="text-xl font-bold md:text-2xl lg:text-3xl">
           <Link to="/">Checkmate+</Link>
         </h1>
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           {isGuest ? (
             <>
               <Button onClick={() => navigate("/login")}>Login</Button>
@@ -23,10 +23,17 @@ export default function Layout({ children }: { children: ReactNode }) {
             </>
           ) : (
             <>
-              <Button className="p-3" onClick={() => navigate("/profile")}>
-                <div className="flex items-center justify-between gap-2">
-                  <User />
-                  {getLocalStorage("displayName")}
+              <Button
+                className="min-w-10 shrink p-3"
+                onClick={() => navigate("/profile")}
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <User className="shrink-0" />
+                    <span className="truncate">
+                      {getLocalStorage("displayName")}
+                    </span>
+                  </div>
                 </div>
               </Button>
               <Button

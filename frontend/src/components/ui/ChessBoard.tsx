@@ -110,11 +110,11 @@ const ChessBoard = ({
             isGameOver={isGameOver}
           />
           {playerLabels && (
-              <p>
-                {whitePerspective
-                  ? playerLabels.blackPlayerLabel
-                  : playerLabels.whitePlayerLabel}
-              </p>
+            <p>
+              {whitePerspective
+                ? playerLabels.blackPlayerLabel
+                : playerLabels.whitePlayerLabel}
+            </p>
           )}
         </div>
         <div className="relative aspect-square w-full">
@@ -242,7 +242,9 @@ const ChessBoard = ({
               </p>
             )}
           </div>
-            <div className='flex'><div className='ml-auto'>{children}</div></div>
+          <div className="flex">
+            <div className="ml-auto">{children}</div>
+          </div>
         </div>
       </div>
       <DialogContent showCloseButton={false}>
