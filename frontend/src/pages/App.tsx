@@ -65,6 +65,8 @@ function App() {
 
 const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
   const [inQueue, setInQueue] = useState<boolean>(false)
+  const [queueSeconds, setQueueSeconds] = useState<number>(0)
+  const queueTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [timeControl, setTimeControl] = useState<TimeControl | "ANY">()
   const [matchType, setMatchType] = useState<MatchType>("COMPETITIVE_PVP")
   const titleText = "Play against humans"
@@ -72,6 +74,30 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
   const navigate = useNavigate()
   const stompClient = useRef<Client | null>(null)
   const { jwt, isGuest, isPending: jwtIsPending } = useJwt()
+
+  const formatQueueTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60)
+    const s = seconds % 60
+    return `${m}:${s.toString().padStart(2, "0")}`
+  }
+
+  const startQueueTimer = () => {
+    if (queueTimerRef.current) {
+      clearInterval(queueTimerRef.current)
+    }
+    setQueueSeconds(0)
+    queueTimerRef.current = setInterval(() => {
+      setQueueSeconds((prev) => prev + 1)
+    }, 1000)
+  }
+
+  const stopQueueTimer = () => {
+    if (queueTimerRef.current) {
+      clearInterval(queueTimerRef.current)
+      queueTimerRef.current = null
+    }
+    setQueueSeconds(0)
+  }
 
   const connect = () => {
     const socket = new SockJS(import.meta.env.VITE_BASE_URL + "matchmaking")
@@ -92,6 +118,7 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
         client.subscribe("/user/queue/match", (message: IMessage) => {
           const match: MatchFoundEvent = JSON.parse(message.body)
           setInQueue(false) // Match found, no longer in queue, redirect to match page
+          stopQueueTimer()
           navigate(`/match`, { state: match })
         })
 
@@ -118,6 +145,7 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
         body: JSON.stringify(joinRequest),
       })
       setInQueue(true)
+      startQueueTimer()
     }
   }
 
@@ -126,7 +154,7 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
       <DialogTrigger asChild>
         <Button {...props}>{titleText}</Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent showCloseButton={false}>
         <DialogHeader>
           <DialogTitle className="font-bold">{titleText}</DialogTitle>
           <DialogDescription className="text-sm">
@@ -168,7 +196,9 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
             disabled={inQueue || timeControl === undefined || jwtIsPending}
           >
             {inQueue && <Spinner data-icon="inline-start" />}
-            {inQueue ? "Queueing..." : "Join queue"}
+            {inQueue
+              ? `Queueing... (${formatQueueTime(queueSeconds)})`
+              : "Join queue"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -243,7 +273,7 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
       <DialogTrigger asChild>
         <Button {...props}>{titleText}</Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent showCloseButton={false}>
         <DialogHeader>
           <DialogTitle className="font-bold">{titleText}</DialogTitle>
         </DialogHeader>
