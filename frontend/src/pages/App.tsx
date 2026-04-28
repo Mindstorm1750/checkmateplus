@@ -35,7 +35,7 @@ import {
   type TimeControl,
   TimeControlToStringMap,
 } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/TimeControl"
-import { Info } from "lucide-react"
+import { Info, Trophy } from "lucide-react"
 import {
   HoverCard,
   HoverCardContent,
@@ -55,8 +55,9 @@ function App() {
       <div className="flex flex-col items-center gap-4">
         <PlayHumanButton className="min-w-3xs" />
         <PlayComputerButton className="min-w-3xs" />
-        <Button className="min-w-3xs" onClick={() => navigate("/settings")}>
-          Settings
+        <Button className="min-w-3xs" onClick={() => navigate("/leaderboard")}>
+          <Trophy />
+          Leaderboard
         </Button>
       </div>
     </Layout>
