@@ -39,12 +39,8 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog.tsx"
 import { Button } from "@/components/ui/button.tsx"
-import { Textarea } from "@/components/ui/textarea.tsx"
-import { Star } from "lucide-react"
-import { usePostGameSurvey } from "@/hooks/usePostGameSurvey.ts"
 import type { DrawOfferMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/DrawOfferMessage.ts"
 import type { DrawOfferState } from "@/types/Match.type.ts"
 import type { DrawResponseMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/DrawResponseMessage.ts"
@@ -102,14 +98,6 @@ function Match() {
     players?.blackPlayer.playerId ?? null
   )
 
-  const [surveyScore, setSurveyScore] = useState<number>(0)
-  const [surveyComment, setSurveyComment] = useState<string>("")
-  // "surveySubmitted" isn't a perfect name as we also set this to true if user skips the survey.
-  // We use this to open and close the survey dialog.
-  const [surveySubmitted, setSurveySubmitted] = useState<boolean>(false)
-  const { mutate: submitSurvey, isPending: surveyIsPending } =
-    usePostGameSurvey()
-
   const playerLabels: PlayerLabelsType | undefined = players
     ? {
         whitePlayerLabel:
@@ -125,16 +113,6 @@ function Match() {
       }
     : undefined
 
-  const handleSurveySubmit = () => {
-    submitSurvey(
-      { surveyScore, optionalComments: surveyComment || undefined, matchId },
-      {
-        onSuccess: () => setSurveySubmitted(true),
-        onError: (error) => console.error("Survey submission failed:", error),
-      }
-    )
-  }
-
   useEffect(() => {
     if (!jwtIsPending && jwt) {
       connect()
@@ -142,7 +120,7 @@ function Match() {
   }, [matchId, jwtIsPending])
 
   const connect = () => {
-    const socket = new SockJS(`http://${websocketUrl}/match`)
+    const socket = new SockJS(`https://${websocketUrl}/match`)
     // websocketUrl should really be http://localhost:8090 or http://127.0.0.1:8090 and '/match' is to be added by frontend here
 
     const client = new Client({
@@ -386,7 +364,7 @@ function Match() {
     <Layout>
       <Dialog open={resignConfirmationDialog}>
         <div className="flex w-full justify-center">
-          <div className="w-3/4">
+          <div className="w-full md:w-3/4">
             {isGameOver && gameOverMessage && (
               <p className="mb-3 rounded-md p-3 outline-2 outline-solid">
                 {gameOverMessage}
@@ -459,52 +437,6 @@ function Match() {
                 Cancel
               </Button>
             </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      <Dialog open={isGameOver && !surveySubmitted}>
-        <DialogContent showCloseButton={false}>
-          <DialogHeader>
-            <DialogTitle>{gameOverMessage}</DialogTitle>
-            <DialogDescription></DialogDescription>
-          </DialogHeader>
-          <p>On a scale of 1 to 5, how much did you enjoy your chess game?</p>
-          <div className="flex justify-center gap-1 pb-2">
-            {[1, 2, 3, 4, 5].map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => setSurveyScore(n)}
-                className="focus:outline-none"
-                aria-label={`Rate ${n} out of 5`}
-              >
-                <Star
-                  className={`h-8 w-8 transition-colors ${
-                    n <= surveyScore
-                      ? "fill-yellow-400 text-yellow-400"
-                      : "text-muted-foreground"
-                  }`}
-                />
-              </button>
-            ))}
-          </div>
-          <Textarea
-            placeholder="Any comments? (optional)"
-            value={surveyComment}
-            onChange={(e) => setSurveyComment(e.target.value)}
-            className="resize-none"
-            rows={3}
-          />
-          <DialogFooter>
-            <Button
-              onClick={handleSurveySubmit}
-              disabled={surveyScore === 0 || surveyIsPending}
-            >
-              {surveyIsPending ? "Submitting..." : "Submit"}
-            </Button>
-            <Button variant="ghost" onClick={() => setSurveySubmitted(true)}>
-              Skip
-            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

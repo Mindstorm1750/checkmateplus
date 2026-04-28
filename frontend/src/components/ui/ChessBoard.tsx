@@ -98,7 +98,7 @@ const ChessBoard = ({
   return (
     <Dialog open={askForPromotion}>
       <div className="flex w-full flex-col">
-        <div className="flex flex-row items-center">
+        <div className="flex flex-row items-center gap-3">
           <Clock
             topClock={true}
             time={
@@ -110,13 +110,11 @@ const ChessBoard = ({
             isGameOver={isGameOver}
           />
           {playerLabels && (
-            <div className="flex w-1/4 justify-center">
               <p>
                 {whitePerspective
                   ? playerLabels.blackPlayerLabel
                   : playerLabels.whitePlayerLabel}
               </p>
-            </div>
           )}
         </div>
         <div className="relative aspect-square w-full">
@@ -224,27 +222,27 @@ const ChessBoard = ({
             })}
           </div>
         </div>
-        <div className="flex items-center justify-between">
-          <Clock
-            topClock={false}
-            time={
-              whitePerspective
-                ? clockState.whitePlayerTime
-                : clockState.blackPlayerTime
-            }
-            isActiveClock={isPlayersTurn}
-            isGameOver={isGameOver}
-          />
-          {playerLabels && (
-            <div className="flex w-1/4 justify-center">
+        <div className="flex-col">
+          <div className="flex items-center gap-3">
+            <Clock
+              topClock={false}
+              time={
+                whitePerspective
+                  ? clockState.whitePlayerTime
+                  : clockState.blackPlayerTime
+              }
+              isActiveClock={isPlayersTurn}
+              isGameOver={isGameOver}
+            />
+            {playerLabels && (
               <p>
                 {whitePerspective
                   ? playerLabels.whitePlayerLabel
                   : playerLabels.blackPlayerLabel}
               </p>
-            </div>
-          )}
-          <div className="ml-auto">{children}</div>
+            )}
+          </div>
+            <div className='flex'><div className='ml-auto'>{children}</div></div>
         </div>
       </div>
       <DialogContent showCloseButton={false}>
@@ -308,7 +306,7 @@ const Clock = ({
 
   return (
     <div
-      className={`${topClock ? "rounded-t-lg" : "rounded-b-lg"} ${isActiveClock && !isGameOver && "bg-green-900"} ${isGameOver && time <= 0 && "bg-red-900"} flex w-1/4 items-center justify-center border-2 p-2 text-center text-3xl`}
+      className={`${topClock ? "rounded-t-lg" : "rounded-b-lg"} ${isActiveClock && !isGameOver && "bg-green-900"} ${isGameOver && time <= 0 && "bg-red-900"} flex w-1/4 items-center justify-center border-2 p-2 text-center text-2xl lg:text-3xl`}
     >{`${minutes}:${seconds}`}</div>
   )
 }
