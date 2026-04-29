@@ -4,9 +4,21 @@ import { Button } from "@/components/ui/button.tsx"
 import { getLocalStorage } from "@/lib/local-storage.helpers.ts"
 import { useJwt } from "@/lib/JwtProvider"
 import { Settings, User } from "lucide-react"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog.tsx"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
+import { type Preferences, usePreferences } from "@/lib/PreferencesProvider.tsx"
 
 export default function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
+  const { preferences, updatePreferences } = usePreferences()
   const { isGuest, signOut } = useJwt()
 
   return (
@@ -47,9 +59,55 @@ export default function Layout({ children }: { children: ReactNode }) {
               </Button>
             </>
           )}
-          <Button variant="outline" onClick={() => navigate("/settings")}>
-            <Settings className="size-5" />
-          </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Settings className="size-5" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Settings</DialogTitle>
+                <div className="flex flex-col gap-2">
+                  <p>Board colour theme:</p>
+                  <ToggleGroup
+                    type="single"
+                    variant="outline"
+                    value={preferences.boardColour}
+                    onValueChange={(e) =>
+                      updatePreferences({
+                        boardColour: e as Preferences["boardColour"],
+                      })
+                    }
+                  >
+                    <ToggleGroupItem value="BROWN">Brown</ToggleGroupItem>
+                    <ToggleGroupItem value="BLUE">Blue</ToggleGroupItem>
+                    <ToggleGroupItem value="GREEN">Green</ToggleGroupItem>
+                  </ToggleGroup>
+
+                  <p>Piece animations:</p>
+                  <ToggleGroup
+                    type="single"
+                    variant="outline"
+                    value={preferences.animationType}
+                    onValueChange={(e) =>
+                      updatePreferences({
+                        animationType: e as Preferences["animationType"],
+                      })
+                    }
+                  >
+                    <ToggleGroupItem value="NORMAL">Normal</ToggleGroupItem>
+                    <ToggleGroupItem value="FUN">Fun</ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
+              </DialogHeader>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button type="button">Close</Button>
+                </DialogClose>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
