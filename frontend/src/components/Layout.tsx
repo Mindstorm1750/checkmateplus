@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog.tsx"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import { type Preferences, usePreferences } from "@/lib/PreferencesProvider.tsx"
+import { BoardPreview } from "@/components/ui/board-preview.tsx"
 
 export default function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
@@ -68,8 +69,8 @@ export default function Layout({ children }: { children: ReactNode }) {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Settings</DialogTitle>
-                <div className="flex flex-col gap-2">
-                  <p>Board colour theme:</p>
+                <div className="flex flex-col items-start gap-2">
+                  <p className="pt-2">Board colour theme:</p>
                   <ToggleGroup
                     type="single"
                     variant="outline"
@@ -80,12 +81,21 @@ export default function Layout({ children }: { children: ReactNode }) {
                       })
                     }
                   >
-                    <ToggleGroupItem value="BROWN">Brown</ToggleGroupItem>
-                    <ToggleGroupItem value="BLUE">Blue</ToggleGroupItem>
-                    <ToggleGroupItem value="GREEN">Green</ToggleGroupItem>
+                    <ToggleGroupItem value="BROWN">
+                      <span>Brown</span>
+                      <BoardPreview theme="BROWN" />
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="BLUE">
+                      <span>Blue</span>
+                      <BoardPreview theme="BLUE" />
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="GREEN">
+                      <span>Green</span>
+                      <BoardPreview theme="GREEN" />
+                    </ToggleGroupItem>
                   </ToggleGroup>
 
-                  <p>Piece animations:</p>
+                  <p className="pt-2">Piece animations:</p>
                   <ToggleGroup
                     type="single"
                     variant="outline"

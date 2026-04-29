@@ -393,14 +393,10 @@ function Match() {
                   )}
                   {drawOfferState == "receivedOffer" && (
                     <>
-                      <Button
-                        onClick={() => respondToDraw(true)}
-                      >
+                      <Button onClick={() => respondToDraw(true)}>
                         Accept draw
                       </Button>
-                      <Button
-                        onClick={() => respondToDraw(false)}
-                      >
+                      <Button onClick={() => respondToDraw(false)}>
                         Reject draw
                       </Button>
                     </>
