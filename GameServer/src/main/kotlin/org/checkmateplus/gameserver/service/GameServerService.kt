@@ -189,10 +189,11 @@ class GameServerService(
 
 
             // Create time control
-            val timeControl: TimeControl = TimeControl.fromMinutesAndIncrement(
-                minutes = request.initialTimeSeconds / 60, increment = request.incrementSeconds
-            )
-                ?: throw IllegalArgumentException("Invalid time control: ${request.initialTimeSeconds / 60}+${request.incrementSeconds}")
+            if (!request.hasTimeControl()) {
+                throw IllegalArgumentException("AllocateMatchRequest missing time_control for match ${request.matchId}")
+            }
+            val timeControl: TimeControl =
+                TimeControl.valueOf(request.timeControl.name.removePrefix("TIME_CONTROL_"))
 
             // Create match
             val matchState = matchService.createMatch(

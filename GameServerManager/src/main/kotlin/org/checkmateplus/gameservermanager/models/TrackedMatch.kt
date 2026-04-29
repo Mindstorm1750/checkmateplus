@@ -2,6 +2,7 @@ package org.checkmateplus.gameservermanager.models
 
 import kotlinx.serialization.Serializable
 import org.checkmateplus.chessLibrary.playerModels.Player
+import org.checkmateplus.chessLibrary.playerModels.TimeControl
 
 @Serializable
 data class TrackedMatch(
@@ -18,4 +19,6 @@ data class TrackedMatch(
     val winnerId: String?,
     val reason: String?,
     val updatedAt: Long,
+    val matchType: String? = null,
+    val timeControl: TimeControl? = null,
 )

@@ -167,18 +167,18 @@ fun MatchStatus.toProto(): GameServerProto.MatchStatus = when (this) {
     MatchStatus.ABANDONED -> GameServerProto.MatchStatus.MATCH_STATUS_ABANDONED
 }
 
-fun MatchType.toProto(): PlayerServiceProto.MatchType = when (this) {
-    MatchType.CASUAL_PVP -> PlayerServiceProto.MatchType.MATCH_TYPE_CASUAL_PVP
-    MatchType.PVE -> PlayerServiceProto.MatchType.MATCH_TYPE_PVE
-    MatchType.COMPETITIVE_PVP -> PlayerServiceProto.MatchType.MATCH_TYPE_COMPETITIVE_PVP
+fun MatchType.toProto(): GameServerProto.MatchType = when (this) {
+    MatchType.CASUAL_PVP -> GameServerProto.MatchType.MATCH_TYPE_CASUAL_PVP
+    MatchType.PVE -> GameServerProto.MatchType.MATCH_TYPE_PVE
+    MatchType.COMPETITIVE_PVP -> GameServerProto.MatchType.MATCH_TYPE_COMPETITIVE_PVP
 }
 
-fun TimeControl.toProto(): PlayerServiceProto.TimeControl = when (this) {
-    TimeControl.BULLET_1_0 -> PlayerServiceProto.TimeControl.TIME_CONTROL_BULLET_1_0
-    TimeControl.BULLET_2_1 -> PlayerServiceProto.TimeControl.TIME_CONTROL_BULLET_2_1
-    TimeControl.BLITZ_3_0 -> PlayerServiceProto.TimeControl.TIME_CONTROL_BLITZ_3_0
-    TimeControl.BLITZ_5_0 -> PlayerServiceProto.TimeControl.TIME_CONTROL_BLITZ_5_0
-    TimeControl.RAPID_10_0 -> PlayerServiceProto.TimeControl.TIME_CONTROL_RAPID_10_0
-    TimeControl.RAPID_15_10 -> PlayerServiceProto.TimeControl.TIME_CONTROL_RAPID_15_10
-    TimeControl.CLASSICAL_30_0 -> PlayerServiceProto.TimeControl.TIME_CONTROL_CLASSICAL_30_0
+fun TimeControl.toProto(): GameServerProto.TimeControl = when (this) {
+    TimeControl.BULLET_1_0 -> GameServerProto.TimeControl.TIME_CONTROL_BULLET_1_0
+    TimeControl.BULLET_2_1 -> GameServerProto.TimeControl.TIME_CONTROL_BULLET_2_1
+    TimeControl.BLITZ_3_0 -> GameServerProto.TimeControl.TIME_CONTROL_BLITZ_3_0
+    TimeControl.BLITZ_5_0 -> GameServerProto.TimeControl.TIME_CONTROL_BLITZ_5_0
+    TimeControl.RAPID_10_0 -> GameServerProto.TimeControl.TIME_CONTROL_RAPID_10_0
+    TimeControl.RAPID_15_10 -> GameServerProto.TimeControl.TIME_CONTROL_RAPID_15_10
+    TimeControl.CLASSICAL_30_0 -> GameServerProto.TimeControl.TIME_CONTROL_CLASSICAL_30_0
 }

@@ -1,5 +1,6 @@
 package org.checkmateplus.playerservice.services
 
+import org.checkmateplus.chessLibrary.playerModels.TimeControl
 import org.checkmateplus.gameserver.proto.GameServerProto
 import org.checkmateplus.playerservice.models.SpectateBotConfiguration
 import org.checkmateplus.playerservice.models.SpectateMatch
@@ -95,6 +96,10 @@ class SpectateService(
             reason = match.reason.ifEmpty { null },
             updatedAt = match.updatedAt,
             botConfiguration = botConfig,
+            matchType = if (match.hasMatchType()) match.matchType.name.removePrefix("MATCH_TYPE_") else null,
+            timeControl = if (match.hasTimeControl()) {
+                TimeControl.valueOf(match.timeControl.name.removePrefix("TIME_CONTROL_"))
+            } else null,
         )
     }
 

@@ -403,13 +403,10 @@ class MatchmakingService(
             }
 
             val request =
-                GameServerProto.ServerRequest.newBuilder().setMatchId(matchId)
-                    .setWhitePlayerId(whitePlayer.playerId)
-                    .setWhitePlayerName(whitePlayer.displayName)
-                    .setBlackPlayerId(blackPlayer.playerId)
+                GameServerProto.ServerRequest.newBuilder().setMatchId(matchId).setWhitePlayerId(whitePlayer.playerId)
+                    .setWhitePlayerName(whitePlayer.displayName).setBlackPlayerId(blackPlayer.playerId)
                     .setBlackPlayerName(blackPlayer.displayName)
-                    .setInitialTimeMinutes(timeControl.minutes)
-                    .setIncrementSeconds(timeControl.increment)
+                    .setTimeControl(GameServerProto.TimeControl.valueOf("TIME_CONTROL_${timeControl.name}"))
                     .setMatchType(matchType.toString())
                     .apply {
                         botConfiguration?.let {

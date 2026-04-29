@@ -77,6 +77,8 @@ class MatchReporterService(
             .setMoveNumber(match.turnHistory.size)
             .setWinnerId(winnerId)
             .setReason(reason)
+            .setMatchType(GameServerProto.MatchType.valueOf("MATCH_TYPE_${match.matchType.name}"))
+            .setTimeControl(GameServerProto.TimeControl.valueOf("TIME_CONTROL_${match.timeControl.name}"))
 
         match.whitePlayer?.let {
             builder.whitePlayerId = it.playerId

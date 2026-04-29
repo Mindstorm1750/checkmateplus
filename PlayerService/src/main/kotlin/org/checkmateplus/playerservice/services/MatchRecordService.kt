@@ -7,6 +7,7 @@ import org.checkmateplus.playerservice.entitys.players.PlayerEntity
 import org.checkmateplus.playerservice.entitys.players.RegisteredPlayerEntity
 import org.checkmateplus.playerservice.models.toDomain
 import org.checkmateplus.playerservice.models.toEntity
+import org.checkmateplus.gameserver.proto.GameServerProto
 import org.checkmateplus.playerservice.proto.PlayerServiceProto
 import org.checkmateplus.playerservice.repository.MatchRecordRepository
 import org.checkmateplus.playerservice.repository.PlayerRepository
@@ -35,7 +36,7 @@ class MatchRecordService(
         matchRecordRepository.save(entity)
         logger.info("Stored match record: ${record.matchId}")
 
-        val isCompetitive = record.matchType == PlayerServiceProto.MatchType.MATCH_TYPE_COMPETITIVE_PVP
+        val isCompetitive = record.matchType == GameServerProto.MatchType.MATCH_TYPE_COMPETITIVE_PVP
         val isDefinitive = record.matchOutcome != PlayerServiceProto.MatchOutcome.MATCH_OUTCOME_ABANDONED
         if (isCompetitive && isDefinitive) {
             updateRatings(whitePlayer, blackPlayer, record.matchOutcome)

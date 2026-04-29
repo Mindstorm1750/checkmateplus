@@ -170,8 +170,7 @@ class GameManagerService(
                 .setWhitePlayerName(request.whitePlayerName)
                 .setBlackPlayerId(request.blackPlayerId)
                 .setBlackPlayerName(request.blackPlayerName)
-                .setInitialTimeSeconds(request.initialTimeMinutes * 60)
-                .setIncrementSeconds(request.incrementSeconds)
+                .apply { if (request.hasTimeControl()) setTimeControl(request.timeControl) }
                 .setBotConfiguration(request.botConfiguration)
                 .setMatchType(request.matchType)
                 .setWhiteSkillRating(request.whiteSkillRating)
@@ -340,6 +339,8 @@ class GameManagerService(
             .setWinnerId(match.winnerId ?: "")
             .setReason(match.reason ?: "")
             .setUpdatedAt(match.updatedAt)
+            .apply { match.timeControl?.let { setTimeControl(GameServerProto.TimeControl.valueOf("TIME_CONTROL_${it.name}")) } }
+            .apply { match.matchType?.let { setMatchType(GameServerProto.MatchType.valueOf("MATCH_TYPE_$it")) } }
         match.whitePlayer?.let {
             builder.whitePlayerId = it.playerId
             builder.whitePlayerName = it.displayName

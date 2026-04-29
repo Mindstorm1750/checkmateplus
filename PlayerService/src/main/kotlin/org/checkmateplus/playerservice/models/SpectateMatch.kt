@@ -1,5 +1,7 @@
 package org.checkmateplus.playerservice.models
 
+import org.checkmateplus.chessLibrary.playerModels.TimeControl
+
 data class SpectateMatch(
     val matchId: String,
     val status: String,
@@ -15,5 +17,7 @@ data class SpectateMatch(
     val reason: String?,
     val updatedAt: Long,
     val botConfiguration: SpectateBotConfiguration?,
+    val matchType: String?,
+    val timeControl: TimeControl?,
 )
 

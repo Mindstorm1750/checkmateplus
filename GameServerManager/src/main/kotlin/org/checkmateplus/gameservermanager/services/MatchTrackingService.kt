@@ -5,6 +5,7 @@ import org.checkmateplus.chessLibrary.botEngine.BotConfiguration
 import org.checkmateplus.chessLibrary.botEngine.BotModelType
 import org.checkmateplus.chessLibrary.botEngine.BotMoveTimeModelType
 import org.checkmateplus.chessLibrary.playerModels.Player
+import org.checkmateplus.chessLibrary.playerModels.TimeControl
 import org.checkmateplus.gameserver.proto.GameServerProto
 import org.checkmateplus.gameservermanager.models.TrackedMatch
 import org.slf4j.LoggerFactory
@@ -91,6 +92,10 @@ class MatchTrackingService(
             winnerId = matchUpdate.winnerId.ifEmpty { null },
             reason = matchUpdate.reason.ifEmpty { null },
             updatedAt = System.currentTimeMillis(),
+            matchType = if (matchUpdate.hasMatchType()) matchUpdate.matchType.name.removePrefix("MATCH_TYPE_") else null,
+            timeControl = if (matchUpdate.hasTimeControl()) {
+                TimeControl.valueOf(matchUpdate.timeControl.name.removePrefix("TIME_CONTROL_"))
+            } else null,
         )
     }
 

@@ -175,20 +175,20 @@ fun GameServerProto.MatchStatus.toDomain(): MatchStatus = when (this) {
     else -> throw IllegalArgumentException("Unknown MatchStatus: $this")
 }
 
-fun PlayerServiceProto.MatchType.toDomain(): MatchType = when (this) {
-    PlayerServiceProto.MatchType.MATCH_TYPE_CASUAL_PVP      -> MatchType.CASUAL_PVP
-    PlayerServiceProto.MatchType.MATCH_TYPE_PVE             -> MatchType.PVE
-    PlayerServiceProto.MatchType.MATCH_TYPE_COMPETITIVE_PVP -> MatchType.COMPETITIVE_PVP
+fun GameServerProto.MatchType.toDomain(): MatchType = when (this) {
+    GameServerProto.MatchType.MATCH_TYPE_CASUAL_PVP      -> MatchType.CASUAL_PVP
+    GameServerProto.MatchType.MATCH_TYPE_PVE             -> MatchType.PVE
+    GameServerProto.MatchType.MATCH_TYPE_COMPETITIVE_PVP -> MatchType.COMPETITIVE_PVP
     else -> throw IllegalArgumentException("Unknown MatchType: $this")
 }
 
-fun PlayerServiceProto.TimeControl.toDomain(): TimeControl = when (this) {
-    PlayerServiceProto.TimeControl.TIME_CONTROL_BULLET_1_0    -> TimeControl.BULLET_1_0
-    PlayerServiceProto.TimeControl.TIME_CONTROL_BULLET_2_1    -> TimeControl.BULLET_2_1
-    PlayerServiceProto.TimeControl.TIME_CONTROL_BLITZ_3_0     -> TimeControl.BLITZ_3_0
-    PlayerServiceProto.TimeControl.TIME_CONTROL_BLITZ_5_0     -> TimeControl.BLITZ_5_0
-    PlayerServiceProto.TimeControl.TIME_CONTROL_RAPID_10_0    -> TimeControl.RAPID_10_0
-    PlayerServiceProto.TimeControl.TIME_CONTROL_RAPID_15_10   -> TimeControl.RAPID_15_10
-    PlayerServiceProto.TimeControl.TIME_CONTROL_CLASSICAL_30_0 -> TimeControl.CLASSICAL_30_0
+fun GameServerProto.TimeControl.toDomain(): TimeControl = when (this) {
+    GameServerProto.TimeControl.TIME_CONTROL_BULLET_1_0    -> TimeControl.BULLET_1_0
+    GameServerProto.TimeControl.TIME_CONTROL_BULLET_2_1    -> TimeControl.BULLET_2_1
+    GameServerProto.TimeControl.TIME_CONTROL_BLITZ_3_0     -> TimeControl.BLITZ_3_0
+    GameServerProto.TimeControl.TIME_CONTROL_BLITZ_5_0     -> TimeControl.BLITZ_5_0
+    GameServerProto.TimeControl.TIME_CONTROL_RAPID_10_0    -> TimeControl.RAPID_10_0
+    GameServerProto.TimeControl.TIME_CONTROL_RAPID_15_10   -> TimeControl.RAPID_15_10
+    GameServerProto.TimeControl.TIME_CONTROL_CLASSICAL_30_0 -> TimeControl.CLASSICAL_30_0
     else -> throw IllegalArgumentException("Unknown TimeControl: $this")
 }
