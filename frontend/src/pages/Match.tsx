@@ -80,8 +80,6 @@ function Match() {
   const [gameOverMessage, setGameOverMessage] = useState<String>()
   const [resignConfirmationDialog, setResignConfirmationDialog] =
     useState<boolean>(false)
-  const [drawConfirmationDialog, setDrawConfirmationDialog] =
-    useState<boolean>(false)
   const [drawOfferState, setDrawOfferState] =
     useState<DrawOfferState>("noOffer")
   const { preferences } = usePreferences()
@@ -121,7 +119,6 @@ function Match() {
 
   const connect = () => {
     const socket = new SockJS(`https://${websocketUrl}/match`)
-    // websocketUrl should really be http://localhost:8090 or http://127.0.0.1:8090 and '/match' is to be added by frontend here
 
     const client = new Client({
       webSocketFactory: () => socket,
@@ -280,12 +277,6 @@ function Match() {
 
   const joinGame = () => {
     if (stompClient.current?.connected) {
-      // const randomAnimationType: Preferences['animationType'] = Math.random() > 0.5 ? 'FUN' : 'NORMAL';
-      // updatePreferences({ animationType: randomAnimationType });
-      // const preferencesForMatch: PlayerPreferences = {
-      //     boardColour: preferences.boardColour, // boardColour can be read from the now outdated preferences object because we didn't modify it
-      //     animationType: randomAnimationType
-      // }
       const joinRequest: JoinMatchMessage = {
         playerId,
         matchId,
@@ -390,23 +381,30 @@ function Match() {
                   >
                     Resign
                   </Button>
-                  <Button
-                    onClick={
-                      drawOfferState == "noOffer"
-                        ? offerDraw
-                        : () => setDrawConfirmationDialog(true)
-                    }
-                    variant={
-                      drawOfferState == "receivedOffer" ? "default" : "outline"
-                    }
-                    disabled={drawOfferState == "waitingForResponse"}
-                  >
-                    {drawOfferState == "noOffer"
-                      ? "Offer draw"
-                      : drawOfferState == "waitingForResponse"
-                        ? "Draw offered"
-                        : "Accept draw?"}
-                  </Button>
+                  {drawOfferState == "noOffer" && (
+                    <Button onClick={offerDraw} variant="outline">
+                      Offer draw
+                    </Button>
+                  )}
+                  {drawOfferState == "waitingForResponse" && (
+                    <Button disabled variant="outline">
+                      Draw offered
+                    </Button>
+                  )}
+                  {drawOfferState == "receivedOffer" && (
+                    <>
+                      <Button
+                        onClick={() => respondToDraw(true)}
+                      >
+                        Accept draw
+                      </Button>
+                      <Button
+                        onClick={() => respondToDraw(false)}
+                      >
+                        Reject draw
+                      </Button>
+                    </>
+                  )}
                 </div>
               )}
             </ChessBoard>
@@ -435,35 +433,6 @@ function Match() {
                 variant="outline"
               >
                 Cancel
-              </Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      <Dialog open={drawConfirmationDialog}>
-        <DialogContent showCloseButton={false}>
-          <DialogHeader>
-            <DialogDescription>
-              <p>Draw offered by opponent</p>
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              onClick={() => {
-                respondToDraw(true)
-                setDrawConfirmationDialog(false)
-              }}
-            >
-              Accept draw
-            </Button>
-            <DialogClose asChild>
-              <Button
-                onClick={() => {
-                  respondToDraw(false)
-                  setDrawConfirmationDialog(false)
-                }}
-              >
-                Reject draw
               </Button>
             </DialogClose>
           </DialogFooter>
