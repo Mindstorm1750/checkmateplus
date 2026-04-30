@@ -65,6 +65,8 @@ message ServerRequest {
   optional BotConfiguration bot_configuration = 8;
   optional int32 white_skill_rating = 9;
   optional int32 black_skill_rating = 10;
+  bool white_player_registered = 11;
+  bool black_player_registered = 12;
 }
 
 message ServerResponse {

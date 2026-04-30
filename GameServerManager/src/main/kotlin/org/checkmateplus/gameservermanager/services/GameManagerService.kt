@@ -168,8 +168,10 @@ class GameManagerService(
                 .setMatchId(request.matchId)
                 .setWhitePlayerId(request.whitePlayerId)
                 .setWhitePlayerName(request.whitePlayerName)
+                .setWhitePlayerRegistered(request.whitePlayerRegistered)
                 .setBlackPlayerId(request.blackPlayerId)
                 .setBlackPlayerName(request.blackPlayerName)
+                .setBlackPlayerRegistered(request.blackPlayerRegistered)
                 .apply { if (request.hasTimeControl()) setTimeControl(request.timeControl) }
                 .setBotConfiguration(request.botConfiguration)
                 .setMatchType(request.matchType)

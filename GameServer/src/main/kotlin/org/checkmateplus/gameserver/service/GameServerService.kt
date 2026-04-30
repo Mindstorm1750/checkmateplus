@@ -154,9 +154,15 @@ class GameServerService(
             } else null
             if (botConfiguration != null) {
                 val bot = Player.Bot(botConfiguration = botConfiguration)
-                val human = Player.Anonymous(
-                    displayName = request.whitePlayerName, playerId = request.whitePlayerId
-                )
+                val human = if (request.whitePlayerRegistered || request.blackPlayerRegistered) {
+                    Player.Registered(
+                        displayName = request.whitePlayerName, playerId = request.whitePlayerId, skillRating = request.whiteSkillRating,
+                    )
+                } else {
+                    Player.Anonymous(
+                        displayName = request.whitePlayerName, playerId = request.whitePlayerId
+                    )
+                }
                 val botSide = if (Random.nextBoolean()) Colour.WHITE else Colour.BLACK
                 whitePlayer = if (botSide == Colour.WHITE) bot else human
                 blackPlayer = if (botSide == Colour.WHITE) human else bot

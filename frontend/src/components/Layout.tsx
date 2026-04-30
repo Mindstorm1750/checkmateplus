@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router"
 import { Button } from "@/components/ui/button.tsx"
 import { getLocalStorage } from "@/lib/local-storage.helpers.ts"
 import { useJwt } from "@/lib/JwtProvider"
+import { Eye, Trophy, User } from "lucide-react"
 import { Settings, User } from "lucide-react"
 import {
   Dialog,
@@ -28,6 +29,10 @@ export default function Layout({ children }: { children: ReactNode }) {
         <h1 className="text-xl font-bold md:text-2xl lg:text-3xl">
           <Link to="/">Checkmate+</Link>
         </h1>
+          <Button variant="outline" onClick={() => navigate("/spectate")}>
+              <Eye />
+              Spectate
+          </Button>
         <div className="flex min-w-0 items-center gap-2">
           {isGuest ? (
             <>

@@ -406,6 +406,8 @@ class MatchmakingService(
                 GameServerProto.ServerRequest.newBuilder().setMatchId(matchId).setWhitePlayerId(whitePlayer.playerId)
                     .setWhitePlayerName(whitePlayer.displayName).setBlackPlayerId(blackPlayer.playerId)
                     .setBlackPlayerName(blackPlayer.displayName)
+                    .setWhitePlayerRegistered(whitePlayer is Player.Registered)
+                    .setBlackPlayerRegistered(blackPlayer is Player.Registered)
                     .setTimeControl(GameServerProto.TimeControl.valueOf("TIME_CONTROL_${timeControl.name}"))
                     .setMatchType(matchType.toString())
                     .apply {

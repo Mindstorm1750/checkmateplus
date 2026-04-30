@@ -10,6 +10,7 @@ import Match from "./pages/Match.tsx"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import Leaderboard from "./pages/Leaderboard.tsx"
+import Spectate from "./pages/Spectate.tsx"
 import { JwtProvider } from "./lib/JwtProvider.tsx"
 import Login from "@/pages/Login.tsx"
 import Register from "@/pages/Register.tsx"
@@ -34,6 +35,7 @@ createRoot(document.getElementById("root")!).render(
                 <Route path="/play/:colour" element={<Play />} />
                 <Route path="/match" element={<Match />} />
                 <Route path="/leaderboard" element={<Leaderboard />} />
+                <Route path="/spectate" element={<Spectate />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/confirmTOTP" element={<ConfirmTotp />} />
