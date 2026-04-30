@@ -1,6 +1,14 @@
 import { isMoveInMoves, legalMoves, pieceToSvg } from "@/lib/chess.helpers"
-import type { Board, Move, Square } from "@/types/Chess.type"
-import { useState } from "react"
+import {
+  type Board,
+  EMPTY_PIECE_COUNTS,
+  type Move,
+  type PieceCountsType,
+  type PieceType,
+  type Square,
+  STARTING_PIECE_COUNTS,
+} from "@/types/Chess.type"
+import { useMemo, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { usePreferences } from "@/lib/PreferencesProvider"
 import { BOARD_THEMES } from "@/lib/board.theme"
@@ -73,6 +81,97 @@ const ChessBoard = ({
     ? boardState.sideToMove === bottomPlayerColour
     : isPlayersTurn
 
+  const pieceCounts: PieceCountsType = useMemo(
+    () =>
+      boardState.squares.reduce((counts, square) => {
+        const pieceType = square?.pieceType
+        const pieceColour = square?.colour
+        if (pieceType && pieceColour && pieceType !== "KING") {
+          counts[pieceColour][pieceType] += 1
+        }
+        return counts
+      }, structuredClone(EMPTY_PIECE_COUNTS)),
+    [boardState]
+  )
+
+  const piecesCaptured = useMemo(
+    () =>
+      (
+        Object.entries(STARTING_PIECE_COUNTS) as [
+          Exclude<PieceType, "KING">,
+          number,
+        ][]
+      ).reduce((counts, entry) => {
+        const [pieceType, startingCount] = entry
+        counts.WHITE[pieceType] = startingCount - pieceCounts.BLACK[pieceType] // Pieces that WHITE have captured are whatever black pieces are missing from starting count
+        counts.BLACK[pieceType] = startingCount - pieceCounts.WHITE[pieceType] // vice versa
+        return counts
+      }, structuredClone(EMPTY_PIECE_COUNTS)),
+    [boardState]
+  )
+
+  const piecesWhiteCaptured = useMemo(
+    () =>
+      (
+        Object.entries(piecesCaptured["WHITE"]) as [
+          Exclude<PieceType, "KING">,
+          number,
+        ][]
+      ).map((entry) => {
+        const [pieceType, count] = entry
+        return (
+          count > 0 && (
+            <div className="flex items-center gap-0" key={`black ${pieceType}`}>
+              <span className="text-sm text-black">{count}</span>
+              <img
+                src={pieceToSvg({ pieceType, colour: "BLACK" })} // The pieces that the White player captures are Black in colour
+                id={`${count}x black ${pieceType}`}
+                alt={`${count}x black ${pieceType}s captured`}
+                className="size-5 -translate-y-0.5"
+              />
+            </div>
+          )
+        )
+      }),
+    [boardState]
+  )
+
+  const piecesBlackCaptured = useMemo(
+    () =>
+      (
+        Object.entries(piecesCaptured["BLACK"]) as [
+          Exclude<PieceType, "KING">,
+          number,
+        ][]
+      ).map((entry) => {
+        const [pieceType, count] = entry
+        return (
+          count > 0 && (
+            <div className="flex items-center gap-0" key={`white ${pieceType}`}>
+              <span className="text-sm text-black">{count}</span>
+              <img
+                src={pieceToSvg({ pieceType, colour: "WHITE" })} // The pieces that the Black player captures are White in colour
+                id={`${count}x white ${pieceType}`}
+                alt={`${count}x white ${pieceType}s captured`}
+                className="size-5 -translate-y-0.5"
+              />
+            </div>
+          )
+        )
+      }),
+    [boardState]
+  )
+
+  // Used to conditionally render the material count element. Basically, not to render an empty white square div if nothing has been captured
+  const hasWhiteCaptured = useMemo(
+    () => Object.values(piecesCaptured["WHITE"]).some((count) => count > 0),
+    [boardState]
+  )
+  const hasBlackCaptured = useMemo(
+    () => Object.values(piecesCaptured["BLACK"]).some((count) => count > 0),
+    [boardState]
+  )
+
   const handleClick = (square: Square) => {
     if (!isInteractable) {
       return // it's not the player's turn
@@ -129,6 +228,11 @@ const ChessBoard = ({
                 ? playerLabels.blackPlayerLabel
                 : playerLabels.whitePlayerLabel}
             </p>
+          )}
+          {(whitePerspective ? hasBlackCaptured : hasWhiteCaptured) && (
+            <div className="ml-auto flex gap-2 rounded bg-zinc-200 p-2">
+              {whitePerspective ? piecesBlackCaptured : piecesWhiteCaptured}
+            </div>
           )}
         </div>
         <div className="relative aspect-square w-full">
@@ -281,6 +385,11 @@ const ChessBoard = ({
                   ? playerLabels.whitePlayerLabel
                   : playerLabels.blackPlayerLabel}
               </p>
+            )}
+            {(whitePerspective ? hasWhiteCaptured : hasBlackCaptured) && (
+              <div className="ml-auto flex gap-2 rounded bg-zinc-200 p-2">
+                {whitePerspective ? piecesWhiteCaptured : piecesBlackCaptured}
+              </div>
             )}
           </div>
           <div className="flex">

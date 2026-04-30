@@ -25,10 +25,8 @@ createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <JwtProvider>
         <PreferencesProvider>
-          {" "}
           {/** For chessboard related preferences (square colours, animations) */}
           <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-            {" "}
             {/** Website theme */}
             <BrowserRouter>
               <Routes>

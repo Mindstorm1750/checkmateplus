@@ -20,12 +20,13 @@ import type { MoveMessage } from "@/lib/stompMessageTypes/GameServer/models/mess
 import type { TimeUpdateMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/TimeUpdateMessage"
 import type { MatchFoundEvent } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/MatchFoundEvent"
 import {
-    EMPTY_BOARD,
-    EMPTY_PIECE_ORIGINS,
-    type Board,
-    type Move,
-    type Square,
-    type PieceType, type VoiceMove,
+  EMPTY_BOARD,
+  EMPTY_PIECE_ORIGINS,
+  type Board,
+  type Move,
+  type Square,
+  type PieceType,
+  type VoiceMove,
 } from "@/types/Chess.type"
 import { Client, type IMessage } from "@stomp/stompjs"
 import { useEffect, useRef, useState } from "react"
@@ -370,7 +371,7 @@ function Match() {
     handleMove({
       from,
       to,
-      promotion: voiceMove.promotion as PieceType ?? undefined,
+      promotion: (voiceMove.promotion as PieceType) ?? undefined,
     })
   }
 
