@@ -73,6 +73,7 @@ class SpectateService(
             matchId = match.matchId,
             status = match.status.name.removePrefix("MATCH_STATUS_"),
             serverId = match.serverId.ifEmpty { null },
+            websocketUrl = match.websocketUrl.ifEmpty { null },
             whitePlayer = toSpectatePlayer(
                 match.whitePlayerId,
                 match.whitePlayerName,

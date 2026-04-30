@@ -515,4 +515,38 @@ class MatchWebSocketController(
         notifyMatchCompleted(match, winningPlayer.playerId, "resignation")
     }
 
+    /**
+     * Handles a spectator subscribing to a live match. Sends the current match state
+     * to the spectator's user-queue without joining as a player or starting timers.
+     *
+     * @param matchId The unique identifier of the match.
+     * @param principal The authenticated spectator.
+     */
+    @MessageMapping("/match/{matchId}/spectate")
+    fun spectate(
+        @DestinationVariable matchId: String,
+        principal: Principal
+    ) {
+        val match = matchService.getMatch(matchId)
+        if (match == null) {
+            messagingTemplate.convertAndSendToUser(
+                principal.name,
+                "/queue/errors",
+                mapOf("error" to "Match not found", "matchId" to matchId)
+            )
+            return
+        }
+        val securePlayerId = (principal as JwtAuthenticationToken).token.subject
+        if (match.players.any { it.playerId == securePlayerId }) {
+            // participants must use /join — silently ignore here
+            return
+        }
+        val matchState = matchService.createMatchStateMessage(match)
+        messagingTemplate.convertAndSendToUser(
+            principal.name,
+            "/queue/match/$matchId/state",
+            matchState
+        )
+    }
+
 }

@@ -18,6 +18,7 @@ export type ChessBoardProps = {
   isCheck: boolean // used to highlight a King in check with a red glow
   clockState?: Pick<MatchStateMessage, "whitePlayerTime" | "blackPlayerTime">
   pieceOrigins: Map<Square, Square>
+  readOnly?: boolean // disables interaction; active-clock highlight derives from boardState.sideToMove
   lastMove?: Move // used to highlight the most recent move played
   playerLabels?: PlayerLabelsType
 }
@@ -36,6 +37,7 @@ const ChessBoard = ({
   isCheck,
   clockState = { whitePlayerTime: 0, blackPlayerTime: 0 },
   pieceOrigins,
+  readOnly = false,
   lastMove,
   playerLabels,
   children,
@@ -57,7 +59,17 @@ const ChessBoard = ({
     : boardState.squares.toReversed()
   const moves = legalMoves(boardState)
 
-  const isInteractable = isPlayersTurn && !isGameOver
+  const isInteractable = isPlayersTurn && !isGameOver && !readOnly
+
+  // For spectators, derive active clock from board side-to-move rather than isPlayersTurn.
+  const topPlayerColour = whitePerspective ? "BLACK" : "WHITE"
+  const bottomPlayerColour = whitePerspective ? "WHITE" : "BLACK"
+  const topClockActive = readOnly
+    ? boardState.sideToMove === topPlayerColour
+    : !isPlayersTurn
+  const bottomClockActive = readOnly
+    ? boardState.sideToMove === bottomPlayerColour
+    : isPlayersTurn
 
   const handleClick = (square: Square) => {
     if (!isInteractable) {
@@ -106,7 +118,7 @@ const ChessBoard = ({
                 ? clockState.blackPlayerTime
                 : clockState.whitePlayerTime
             }
-            isActiveClock={!isPlayersTurn}
+            isActiveClock={topClockActive}
             isGameOver={isGameOver}
           />
           {playerLabels && (
@@ -231,7 +243,7 @@ const ChessBoard = ({
                   ? clockState.whitePlayerTime
                   : clockState.blackPlayerTime
               }
-              isActiveClock={isPlayersTurn}
+              isActiveClock={bottomClockActive}
               isGameOver={isGameOver}
             />
             {playerLabels && (

@@ -329,9 +329,11 @@ class GameManagerService(
     }
 
     private fun toLiveMatch(match: org.checkmateplus.gameservermanager.models.TrackedMatch): GameServerProto.LiveMatch {
+        val websocketUrl = match.serverId?.let { registeredInstances[it]?.websocketUrl } ?: ""
         val builder = GameServerProto.LiveMatch.newBuilder()
             .setMatchId(match.matchId)
             .setServerId(match.serverId ?: "")
+            .setWebsocketUrl(websocketUrl)
             .setStatus(GameServerProto.MatchStatus.valueOf("MATCH_STATUS_${match.status}"))
             .setLastFen(match.lastFen ?: "")
             .setWhiteTimeSeconds(match.whiteTimeSeconds ?: 0)

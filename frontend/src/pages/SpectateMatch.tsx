@@ -1,0 +1,221 @@
+import Layout from "@/components/Layout"
+import { BackArrowLink } from "@/components/ui/back-arrow-link"
+import ChessBoard, { type ChessBoardProps } from "@/components/ui/ChessBoard"
+import { Spinner } from "@/components/ui/spinner"
+import { algebraicToSquare, fenToBoard } from "@/lib/chess.helpers"
+import { useJwt } from "@/lib/JwtProvider"
+import type { SpectateMatch as SpectateMatchType } from "@/lib/playerServiceTypes/SpectateMatch"
+import type { MatchEventMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchEventMessage"
+import type { MatchStateMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchStateMessage"
+import type { TimeUpdateMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/TimeUpdateMessage"
+import {
+  EMPTY_BOARD,
+  EMPTY_PIECE_ORIGINS,
+  type Board,
+  type Square,
+} from "@/types/Chess.type"
+import { useSpectateMatch } from "@/hooks/useSpectateMatch"
+import { Client, type IMessage } from "@stomp/stompjs"
+import { useEffect, useRef, useState } from "react"
+import { useLocation, useNavigate, useParams } from "react-router"
+import SockJS from "sockjs-client/dist/sockjs"
+
+function SpectateMatch() {
+  const { matchId } = useParams<{ matchId: string }>()
+  const navigate = useNavigate()
+  const { state } = useLocation() as { state: SpectateMatchType | null }
+
+  const haveRouterState = !!state?.websocketUrl
+  const {
+    data: queriedMatch,
+    isPending: queryPending,
+    isError: queryError,
+  } = useSpectateMatch(matchId, !haveRouterState)
+
+  const matchSummary: SpectateMatchType | null | undefined = haveRouterState
+    ? state
+    : queriedMatch
+  const websocketUrl = matchSummary?.websocketUrl
+
+  const [boardState, setBoardState] = useState<Board>(EMPTY_BOARD)
+  const [pieceOrigins, setPieceOrigins] =
+    useState<Map<Square, Square>>(EMPTY_PIECE_ORIGINS)
+  const [clockState, setClockState] = useState<ChessBoardProps["clockState"]>({
+    whitePlayerTime: matchSummary?.whiteTimeSeconds ?? 0,
+    blackPlayerTime: matchSummary?.blackTimeSeconds ?? 0,
+  })
+  const [isGameOver, setIsGameOver] = useState(false)
+  const [gameOverMessage, setGameOverMessage] = useState<string>()
+  const stompClient = useRef<Client | null>(null)
+  const { jwt, isPending: jwtIsPending } = useJwt()
+
+  useEffect(() => {
+    if (jwtIsPending || !jwt || !matchId || !websocketUrl) return
+    if (stompClient.current) return
+
+    const socket = new SockJS(`http://${websocketUrl}/match`)
+    const client = new Client({
+      webSocketFactory: () => socket,
+      connectHeaders: { Authorization: `Bearer ${jwt}` },
+      debug: () => {},
+      onConnect: () => {
+        client.subscribe(
+          `/user/queue/match/${matchId}/state`,
+          (message: IMessage) => {
+            const match: MatchStateMessage = JSON.parse(message.body)
+            setBoardState(fenToBoard(match.fen as string))
+            setClockState({
+              whitePlayerTime: match.whitePlayerTime,
+              blackPlayerTime: match.blackPlayerTime,
+            })
+          }
+        )
+
+        client.subscribe(`/user/queue/errors`, (message: IMessage) => {
+          const body = JSON.parse(message.body) as {
+            error?: string
+            matchId?: string
+          }
+          if (body.error === "Match not found") {
+            navigate("/spectate", { replace: true })
+          }
+        })
+
+        client.subscribe(
+          `/topic/match/${matchId}/state`,
+          (message: IMessage) => {
+            const match: MatchStateMessage = JSON.parse(message.body)
+            const newBoard = fenToBoard(match.fen as string)
+            setBoardState(newBoard)
+            if (match.lastMove) {
+              const move = {
+                from: algebraicToSquare(match.lastMove.from as string),
+                to: algebraicToSquare(match.lastMove.to as string),
+              }
+              setPieceOrigins((prev) => {
+                const originOfFrom = prev.get(move.from)
+                if (originOfFrom === undefined || originOfFrom === null)
+                  return prev
+                const next = new Map(prev)
+                const origin = prev.get(move.from) ?? move.from
+                const wKs = origin === 60 && move.to === 62
+                const wQs = origin === 60 && move.to === 58
+                const bKs = origin === 4 && move.to === 6
+                const bQs = origin === 4 && move.to === 2
+                if (wKs) {
+                  next.set(61 as Square, 63 as Square)
+                  next.delete(63 as Square)
+                }
+                if (wQs) {
+                  next.set(59 as Square, 56 as Square)
+                  next.delete(56 as Square)
+                }
+                if (bKs) {
+                  next.set(5 as Square, 7 as Square)
+                  next.delete(7 as Square)
+                }
+                if (bQs) {
+                  next.set(3 as Square, 0 as Square)
+                  next.delete(0 as Square)
+                }
+                next.set(move.to, origin)
+                next.delete(move.from)
+                return next
+              })
+            }
+          }
+        )
+
+        client.subscribe(
+          `/topic/match/${matchId}/time`,
+          (message: IMessage) => {
+            const t: TimeUpdateMessage = JSON.parse(message.body)
+            setClockState({
+              whitePlayerTime: t.whitePlayerTime,
+              blackPlayerTime: t.blackPlayerTime,
+            })
+          }
+        )
+
+        client.subscribe(
+          `/topic/match/${matchId}/events`,
+          (message: IMessage) => {
+            const body: MatchEventMessage = JSON.parse(message.body)
+            if (
+              body.eventType === "MATCH_ENDED" ||
+              body.eventType === "TIME_EXPIRED" ||
+              body.eventType === "PLAYER_RESIGNED" ||
+              body.eventType === "DRAW_ACCEPTED"
+            ) {
+              setIsGameOver(true)
+              setGameOverMessage(body.message as string)
+            }
+          }
+        )
+
+        client.publish({
+          destination: `/app/match/${matchId}/spectate`,
+          body: "",
+        })
+      },
+    })
+
+    client.activate()
+    stompClient.current = client
+
+    return () => {
+      client.deactivate()
+      stompClient.current = null
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matchId, websocketUrl, jwt, jwtIsPending])
+
+  if (!matchId) {
+    return (
+      <Layout>
+        <p className="text-destructive">Missing match id.</p>
+        <BackArrowLink />
+      </Layout>
+    )
+  }
+
+  if (!haveRouterState && queryPending) {
+    return (
+      <Layout>
+        <Spinner />
+      </Layout>
+    )
+  }
+
+  if (!haveRouterState && (queryError || !queriedMatch)) {
+    return (
+      <Layout>
+        <p className="text-destructive">Match not found or no longer live.</p>
+        <BackArrowLink />
+      </Layout>
+    )
+  }
+
+  return (
+    <Layout>
+      <div className="flex w-full justify-center">
+        <div className="w-3/4">
+          {isGameOver && gameOverMessage && <p>{gameOverMessage}</p>}
+          <ChessBoard
+            readOnly
+            isPlayersTurn={false}
+            isGameOver={isGameOver}
+            boardState={boardState}
+            clockState={clockState}
+            moveCallback={() => {}}
+            whitePerspective={true}
+            pieceOrigins={pieceOrigins}
+          />
+        </div>
+      </div>
+      <BackArrowLink />
+    </Layout>
+  )
+}
+
+export default SpectateMatch

@@ -223,4 +223,5 @@ message LiveMatch {
   int64 updated_at = 20;
   optional MatchType match_type = 21;
   optional TimeControl time_control = 22;
+  string websocket_url = 23;
 }

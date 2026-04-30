@@ -9,6 +9,7 @@ const LIVE_MATCHES_QUERY = `
           matchId
           status
           serverId
+          websocketUrl
           whitePlayer { playerId displayName rating type }
           blackPlayer { playerId displayName rating type }
           whiteTimeSeconds

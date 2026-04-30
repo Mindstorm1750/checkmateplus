@@ -6,6 +6,7 @@ data class SpectateMatch(
     val matchId: String,
     val status: String,
     val serverId: String?,
+    val websocketUrl: String?,
     val whitePlayer: SpectatePlayer?,
     val blackPlayer: SpectatePlayer?,
     val whiteTimeSeconds: Int,

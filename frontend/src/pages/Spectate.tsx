@@ -21,6 +21,7 @@ import type { MatchType } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModel
 import { TimeControlToStringMap } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/TimeControl"
 import { Bot } from "lucide-react"
 import { useState } from "react"
+import { useNavigate } from "react-router"
 
 const matchTypeLabel: Record<MatchType, string> = {
   CASUAL_PVP: "Casual",
@@ -175,11 +176,13 @@ function PlayerTypeIcon({ type }: { type?: SpectatePlayer["type"] }) {
 }
 
 function MatchDetails({ match }: { match: SpectateMatch }) {
+  const navigate = useNavigate()
   const board = fenToBoard(match.lastFen ?? STARTING_FEN)
   const tcLabel = match.timeControl
     ? (TimeControlToStringMap.get(match.timeControl) ?? match.timeControl)
     : "—"
   const mtLabel = match.matchType ? matchTypeLabel[match.matchType] : "—"
+  const canWatchLive = !!match.websocketUrl && match.status === "ACTIVE"
 
   return (
     <>
@@ -188,6 +191,17 @@ function MatchDetails({ match }: { match: SpectateMatch }) {
           {playerLabel(match.whitePlayer)} vs {playerLabel(match.blackPlayer)}
         </DialogTitle>
       </DialogHeader>
+      {canWatchLive && (
+        <div className="flex justify-end">
+          <Button
+            onClick={() =>
+              navigate(`/spectate/${match.matchId}`, { state: match })
+            }
+          >
+            Watch live
+          </Button>
+        </div>
+      )}
       <div className="grid gap-4 sm:grid-cols-[1fr_auto_1fr]">
         <SpectatePlayerPanel
           player={match.whitePlayer}

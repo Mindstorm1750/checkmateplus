@@ -19,6 +19,7 @@ export type SpectateMatch = {
   matchId: string
   status: string
   serverId?: string
+  websocketUrl?: string
   whitePlayer?: SpectatePlayer
   blackPlayer?: SpectatePlayer
   whiteTimeSeconds: number

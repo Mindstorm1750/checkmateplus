@@ -28,6 +28,7 @@ type SpectateMatch {
     matchId: String!
     status: String!
     serverId: String
+    websocketUrl: String
     whitePlayer: SpectatePlayer
     blackPlayer: SpectatePlayer
     whiteTimeSeconds: Int!
