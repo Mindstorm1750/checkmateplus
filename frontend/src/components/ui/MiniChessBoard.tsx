@@ -35,7 +35,7 @@ const MiniChessBoard = ({
         return (
           <div
             key={`mini-square-${square}`}
-            className={`${squareColour} relative flex select-none items-center justify-center`}
+            className={`${squareColour} relative flex items-center justify-center select-none`}
           >
             {piece && (
               <img
