@@ -260,4 +260,3 @@ export type VoiceMove = {
   to: string | null
   promotion: string | null
 }
-

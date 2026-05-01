@@ -20,11 +20,12 @@ import type { MoveMessage } from "@/lib/stompMessageTypes/GameServer/models/mess
 import type { TimeUpdateMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/TimeUpdateMessage"
 import type { MatchFoundEvent } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/MatchFoundEvent"
 import {
-  EMPTY_BOARD,
-  EMPTY_PIECE_ORIGINS,
-  type Board,
-  type Move,
-  type Square, type PieceType,
+    EMPTY_BOARD,
+    EMPTY_PIECE_ORIGINS,
+    type Board,
+    type Move,
+    type Square,
+    type PieceType, type VoiceMove,
 } from "@/types/Chess.type"
 import { Client, type IMessage } from "@stomp/stompjs"
 import { useEffect, useRef, useState } from "react"
@@ -47,7 +48,7 @@ import type { DrawOfferState } from "@/types/Match.type.ts"
 import type { DrawResponseMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/DrawResponseMessage.ts"
 import type { ResignMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/ResignMessage.ts"
 import { usePlayerRating } from "@/hooks/usePlayerStats.ts"
-import {VoiceMoveButton} from "@/components/ui/VoiceMoveButton.tsx";
+import { VoiceMoveButton } from "@/components/ui/VoiceMoveButton.tsx"
 
 function Match() {
   const navigate = useNavigate()
@@ -352,32 +353,26 @@ function Match() {
     }
   }
 
-    type VoiceMove = {
-        from: string | null
-        to: string | null
-        promotion?: PieceType | null
+  const handleVoiceMove = (voiceMove: VoiceMove) => {
+    if (!voiceMove.from || !voiceMove.to) {
+      console.warn("Voice move missing resolved squares", voiceMove)
+      return
     }
 
-    const handleVoiceMove = (voiceMove: VoiceMove) => {
-        if (!voiceMove.from || !voiceMove.to) {
-            console.warn("Voice move missing resolved squares", voiceMove)
-            return
-        }
+    const from = algebraicToSquare(voiceMove.from)
+    const to = algebraicToSquare(voiceMove.to)
 
-        const from = algebraicToSquare(voiceMove.from)
-        const to = algebraicToSquare(voiceMove.to)
-
-        if (from == null || to == null) {
-            console.warn("Voice move contained invalid algebraic squares", voiceMove)
-            return
-        }
-
-        handleMove({
-            from,
-            to,
-            promotion: voiceMove.promotion ?? undefined,
-        })
+    if (from == null || to == null) {
+      console.warn("Voice move contained invalid algebraic squares", voiceMove)
+      return
     }
+
+    handleMove({
+      from,
+      to,
+      promotion: voiceMove.promotion as PieceType ?? undefined,
+    })
+  }
 
   return (
     <Layout>
@@ -432,14 +427,15 @@ function Match() {
                 </div>
               )}
             </ChessBoard>
-              <div className='flex w-full justify-center'>
-                  <VoiceMoveButton
-                      matchId={matchId}
-                      moveCallback={handleVoiceMove}
-                      boardState={boardState}
-                      whitePerspective={isPlayerWhite}
-                      isInteractable={isPlayersTurn && !isGameOver} />
-              </div>
+            <div className="flex w-full justify-center">
+              <VoiceMoveButton
+                matchId={matchId}
+                moveCallback={handleVoiceMove}
+                boardState={boardState}
+                whitePerspective={isPlayerWhite}
+                isInteractable={isPlayersTurn && !isGameOver}
+              />
+            </div>
           </div>
         </div>
         {isGameOver && <BackArrowLink />}

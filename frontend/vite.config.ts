@@ -13,8 +13,8 @@ export default defineConfig({
     },
   },
   server: {
-    host: '0.0.0.0',
+    host: "0.0.0.0",
     // test on phone over tailscale - elendil7 specific config - ignore
-    allowedHosts: ['pc'],
+    allowedHosts: ["pc"],
   },
 })
