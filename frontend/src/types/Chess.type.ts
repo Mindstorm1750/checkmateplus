@@ -254,3 +254,10 @@ export type Move = {
   to: Square
   promotion?: PieceType
 }
+
+export type VoiceMove = {
+  from: string | null
+  to: string | null
+  promotion: string | null
+}
+

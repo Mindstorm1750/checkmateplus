@@ -1,0 +1,147 @@
+package org.checkmateplus.voicecommandservice.controllers
+
+import org.checkmateplus.chessLibrary.chessEngine.toAlgebraic
+import org.checkmateplus.voicecommandservice.service.OpenAiService
+import org.checkmateplus.voicecommandservice.service.MoveValidationService
+import org.checkmateplus.voicecommandservice.service.GameServerClient
+import org.springframework.http.MediaType
+import org.springframework.http.HttpStatus
+import org.springframework.web.bind.annotation.*
+import org.springframework.web.multipart.MultipartFile
+import org.slf4j.LoggerFactory
+
+@RestController
+@RequestMapping("/api/voice")
+class VoiceCommandController(
+    private val openAiService: OpenAiService,
+    private val moveValidationService: MoveValidationService,
+    private val gameServerClient: GameServerClient
+) {
+    private val logger = LoggerFactory.getLogger(javaClass)
+
+    @PostMapping(
+        "/move",
+        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE],
+        produces = [MediaType.APPLICATION_JSON_VALUE]
+    )
+    fun voiceMove(
+        @RequestPart("audio") audio: MultipartFile,
+        @RequestPart("matchId") matchId: String
+    ): VoiceMoveResponse {
+        return try {
+            // Step 1: Transcribe audio to text
+            val transcript = openAiService.transcribe(audio)
+            logger.info("Transcribed: '$transcript' for match $matchId")
+
+            // Step 2: Fetch board state from GameServer
+            val board = gameServerClient.getBoardState(matchId)
+            if (board == null) {
+                logger.error("Could not fetch board state for match $matchId")
+                return VoiceMoveResponse(
+                    matchId = matchId,
+                    transcript = transcript,
+                    from = null,
+                    to = null,
+                    promotion = null,
+                    error = "Could not fetch match state from server"
+                )
+            }
+
+            // Step 3: Get legal moves for the board
+            val legalMoves = board.generateLegalMoves()
+            if (legalMoves.isEmpty()) {
+                logger.warn("No legal moves available for match $matchId")
+                return VoiceMoveResponse(
+                    matchId = matchId,
+                    transcript = transcript,
+                    from = null,
+                    to = null,
+                    promotion = null,
+                    error = "No legal moves available"
+                )
+            }
+
+            // Step 4: Parse the transcribed text into a move
+            val parsedMove = moveValidationService.parseVoiceMove(transcript)
+            if (parsedMove == null) {
+                logger.warn("Could not parse move from transcript: '$transcript'")
+                return VoiceMoveResponse(
+                    matchId = matchId,
+                    transcript = transcript,
+                    from = null,
+                    to = null,
+                    promotion = null,
+                    error = "Could not understand move. Try 'e2 to e4' or 'knight to f3'"
+                )
+            }
+
+            // Step 5: Validate the parsed move against legal moves
+            val validationResult = moveValidationService.validateMove(transcript, parsedMove, legalMoves, board)
+
+            return when (validationResult) {
+                is MoveValidationService.ValidationResult.Valid -> {
+                    val move = validationResult.move
+                    logger.info("Valid move parsed: $move for match $matchId")
+                    VoiceMoveResponse(
+                        matchId = matchId,
+                        transcript = transcript,
+                        from = move.from.toAlgebraic(),
+                        to = move.to.toAlgebraic(),
+                        promotion = move.promotion?.name,
+                        error = null
+                    )
+                }
+                is MoveValidationService.ValidationResult.Invalid -> {
+                    logger.warn("Invalid move: ${validationResult.reason}")
+                    VoiceMoveResponse(
+                        matchId = matchId,
+                        transcript = transcript,
+                        from = null,
+                        to = null,
+                        promotion = null,
+                        error = validationResult.reason
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            logger.error("Error processing voice move", e)
+            VoiceMoveResponse(
+                matchId = matchId,
+                transcript = null,
+                from = null,
+                to = null,
+                promotion = null,
+                error = "Server error: ${e.message}"
+            )
+        }
+    }
+
+    @GetMapping("/legal-moves/{matchId}")
+    @ResponseStatus(HttpStatus.OK)
+    fun getLegalMoves(@PathVariable matchId: String): LegalMovesDebugResponse {
+        val board = gameServerClient.getBoardState(matchId)
+        return if (board != null) {
+            val legalMoves = board.generateLegalMoves().map {
+                "${it.from.toString()} to ${it.to.toString()}"
+            }
+            LegalMovesDebugResponse(matchId, legalMoves, null)
+        } else {
+            LegalMovesDebugResponse(matchId, emptyList(), "Could not fetch board state")
+        }
+    }
+}
+
+data class VoiceMoveResponse(
+    val matchId: String,
+    val transcript: String?,
+    val from: String?,
+    val to: String?,
+    val promotion: String?,
+    val error: String?
+)
+
+data class LegalMovesDebugResponse(
+    val matchId: String,
+    val legalMoves: List<String>,
+    val error: String?
+)

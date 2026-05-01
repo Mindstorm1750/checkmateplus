@@ -24,7 +24,7 @@ import {
   EMPTY_PIECE_ORIGINS,
   type Board,
   type Move,
-  type Square,
+  type Square, type PieceType,
 } from "@/types/Chess.type"
 import { Client, type IMessage } from "@stomp/stompjs"
 import { useEffect, useRef, useState } from "react"
@@ -47,6 +47,7 @@ import type { DrawOfferState } from "@/types/Match.type.ts"
 import type { DrawResponseMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/DrawResponseMessage.ts"
 import type { ResignMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/ResignMessage.ts"
 import { usePlayerRating } from "@/hooks/usePlayerStats.ts"
+import {VoiceMoveButton} from "@/components/ui/VoiceMoveButton.tsx";
 
 function Match() {
   const navigate = useNavigate()
@@ -351,6 +352,33 @@ function Match() {
     }
   }
 
+    type VoiceMove = {
+        from: string | null
+        to: string | null
+        promotion?: PieceType | null
+    }
+
+    const handleVoiceMove = (voiceMove: VoiceMove) => {
+        if (!voiceMove.from || !voiceMove.to) {
+            console.warn("Voice move missing resolved squares", voiceMove)
+            return
+        }
+
+        const from = algebraicToSquare(voiceMove.from)
+        const to = algebraicToSquare(voiceMove.to)
+
+        if (from == null || to == null) {
+            console.warn("Voice move contained invalid algebraic squares", voiceMove)
+            return
+        }
+
+        handleMove({
+            from,
+            to,
+            promotion: voiceMove.promotion ?? undefined,
+        })
+    }
+
   return (
     <Layout>
       <Dialog open={resignConfirmationDialog}>
@@ -404,6 +432,14 @@ function Match() {
                 </div>
               )}
             </ChessBoard>
+              <div className='flex w-full justify-center'>
+                  <VoiceMoveButton
+                      matchId={matchId}
+                      moveCallback={handleVoiceMove}
+                      boardState={boardState}
+                      whitePerspective={isPlayerWhite}
+                      isInteractable={isPlayersTurn && !isGameOver} />
+              </div>
           </div>
         </div>
         {isGameOver && <BackArrowLink />}

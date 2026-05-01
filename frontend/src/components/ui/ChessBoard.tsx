@@ -28,6 +28,8 @@ export type PlayerLabelsType = {
   blackPlayerLabel: string
 }
 
+const FILE_LABELS = ["a", "b", "c", "d", "e", "f", "g", "h"] as const
+
 const ChessBoard = ({
   moveCallback,
   boardState,
@@ -55,8 +57,8 @@ const ChessBoard = ({
   } = BOARD_THEMES[preferences.boardColour]
 
   const squaresView = whitePerspective
-    ? boardState.squares
-    : boardState.squares.toReversed()
+      ? boardState.squares
+      : boardState.squares.toReversed()
   const moves = legalMoves(boardState)
 
   const isInteractable = isPlayersTurn && !isGameOver && !readOnly
@@ -90,7 +92,7 @@ const ChessBoard = ({
         moveCallback(attemptedMove)
         setSquareClicked(null)
       } else if (
-        isMoveInMoves({ ...attemptedMove, promotion: "QUEEN" }, moves)
+          isMoveInMoves({ ...attemptedMove, promotion: "QUEEN" }, moves)
       ) {
         // attempted move is actually to promote a pawn
         // need to open a dialog
@@ -149,7 +151,17 @@ const ChessBoard = ({
                   : isLightSquare
                     ? lightSquare
                     : darkSquare
-              // canMoveHere is used for the "dots" showing where a selected piece can move.
+                const showRankLabel = column === 0
+                const showFileLabel = row === 7
+                const rankLabel = whitePerspective ? (8 - row).toString() : (row + 1).toString()
+                const fileLabel = whitePerspective
+                    ? FILE_LABELS[column]
+                    : FILE_LABELS[7 - column]
+                const labelColour = isLightSquare
+                    ? "text-black/60"
+                    : "text-white/75"
+
+                // canMoveHere is used for the "dots" showing where a selected piece can move.
               const canMoveHere = moves
                 .filter((move) => move.from === squareClicked)
                 .some((move) => move.to === square)
@@ -160,6 +172,21 @@ const ChessBoard = ({
                   className={`select-none ${squareColourTheme} relative flex items-center justify-center`}
                   onClick={() => handleClick(square as Square)}
                 >
+                    {showRankLabel && (
+                        <span
+                            className={`pointer-events-none absolute top-1 left-1 text-[10px] font-bold ${labelColour}`}
+                        >
+                      {rankLabel}
+                    </span>
+                    )}
+
+                    {showFileLabel && (
+                        <span
+                            className={`pointer-events-none absolute right-1 bottom-1 text-[10px] font-bold ${labelColour}`}
+                        >
+                      {fileLabel}
+                    </span>
+                    )}
                   {canMoveHere && (
                     <div
                       className={`aspect-square w-1/3 rounded-full ${isLightSquare ? lightSquareHighlighted : darkSquareHighlighted}`}
@@ -170,11 +197,11 @@ const ChessBoard = ({
             })}
           </div>
 
-          {/* Just the pieces */}
-          <div className="pointer-events-none absolute inset-0 grid aspect-square w-full grid-cols-8 grid-rows-8">
-            {squaresView.map((piece, index) => {
-              const square = whitePerspective ? index : 63 - index
-              const origin = pieceOrigins.get(square as Square)
+            {/* Just the pieces */}
+            <div className="pointer-events-none absolute inset-0 grid aspect-square w-full grid-cols-8 grid-rows-8">
+              {squaresView.map((piece, index) => {
+                const square = whitePerspective ? index : 63 - index
+                const origin = pieceOrigins.get(square as Square)
 
               // for the fun animations
               const randomAngle = -135 + 45 * Math.random()

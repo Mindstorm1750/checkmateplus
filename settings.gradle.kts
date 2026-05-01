@@ -6,5 +6,6 @@ include(
     "GameServer",
     "GameServerManager",
     "PlayerService",
+    "VoiceCommandService",
     "StockfishEngine"
 )
