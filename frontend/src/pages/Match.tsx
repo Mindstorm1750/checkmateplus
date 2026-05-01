@@ -479,7 +479,15 @@ function MatchInner({ state }: { state: MatchRedirectType }) {
                   </div>
                 )}
               </ChessBoard>
-              <div className="flex w-full justify-center pt-2"></div>
+              <div className="flex w-full justify-center pt-2">
+                  <VoiceMoveButton
+                      matchId={matchId}
+                      moveCallback={handleVoiceMove}
+                      boardState={boardState}
+                      whitePerspective={isPlayerWhite}
+                      isInteractable={isPlayersTurn && !isGameOver}
+                  />
+              </div>
             </div>
             <div className="w-full shrink-0 md:w-72 lg:w-80">
               <MatchAnalysisPanel
