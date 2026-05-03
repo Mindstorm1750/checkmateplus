@@ -31,8 +31,11 @@ import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.stereotype.Controller
 import java.security.Principal
+import kotlin.collections.count
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.ExperimentalTime
 
 /**
  * WebSocket controller for handling real-time chess match interactions.
@@ -191,9 +194,9 @@ class MatchWebSocketController(
         }
     }
 
-    @OptIn(kotlin.time.ExperimentalTime::class)
+    @OptIn(ExperimentalTime::class)
     private fun notifyMatchCompleted(match: MatchState, winnerId: String, reason: String) {
-        val durationSeconds = (kotlin.time.Clock.System.now() - match.createdAt).inWholeSeconds.toInt()
+        val durationSeconds = (Clock.System.now() - match.createdAt).inWholeSeconds.toInt()
         gameServerService.reportMatchCompleted(
             matchId = match.matchId,
             winnerId = winnerId,
@@ -212,6 +215,49 @@ class MatchWebSocketController(
      * @param matchState The current state of the match.
      */
     private fun handleGameEndConditions(matchId: String, matchState: MatchStateMessage): Boolean {
+
+        //EVALUATE FEN FOR 50 MOVE RULE
+        //strip fen for half clock count
+        val match = matchService.getMatch(matchId)
+        if (match?.board?.halfMoveClock!! >= 100){
+                messagingTemplate.convertAndSend(
+                    "/topic/match/$matchId/events",
+                    MatchEventMessage(
+                        matchId = matchId,
+                        eventType = MatchEventType.MATCH_ENDED,
+                        message = "Draw by 50 move rule.",
+                        data = mapOf("result" to "draw")
+                    )
+                )
+                matchService.stopTimer(matchId)
+                val match = matchService.getMatch(matchId)
+                matchService.addMatchRecord(match!!.toMatchRecord(MatchOutcome.DRAW))
+                notifyMatchCompleted(match, winnerId = "", reason = "draw")
+                return true
+            }
+        //Next check 3 move rule
+        val fenRegex = Regex(
+            """^([rnbqkpRNBQKP1-8]+(?:/[rnbqkpRNBQKP1-8]+){7})\s([wb])\s(-|[KQkq]+)\s(-|[a-h][36])"""
+        ) //strips out the clocks, keeping board, side to move, castling, en passant
+        val strippedFen = match.turnHistory.mapNotNull { fenRegex.find(it.fen)?.value }
+        val current = strippedFen.lastOrNull()
+        val occurrences = strippedFen.count { it == current }
+        if (occurrences >= 3) {
+            messagingTemplate.convertAndSend(
+                "/topic/match/$matchId/events",
+                MatchEventMessage(
+                    matchId = matchId,
+                    eventType = MatchEventType.MATCH_ENDED,
+                    message = "Draw by 50 move rule.",
+                    data = mapOf("result" to "draw")
+                )
+            )
+            matchService.stopTimer(matchId)
+            matchService.addMatchRecord(match.toMatchRecord(MatchOutcome.DRAW))
+            notifyMatchCompleted(match, winnerId = "", reason = "draw")
+            return true
+        }
+
         when {
             matchState.isCheckmate -> {
                 val match = matchService.getMatch(matchId)
