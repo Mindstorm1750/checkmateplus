@@ -4,6 +4,7 @@ import ChessBoard, { type ChessBoardProps } from "@/components/ui/ChessBoard"
 import { Spinner } from "@/components/ui/spinner"
 import { algebraicToSquare, fenToBoard } from "@/lib/chess.helpers"
 import { useJwt } from "@/lib/JwtProvider"
+import { ensureFreshJwt } from "@/lib/auth"
 import type { SpectateMatch as SpectateMatchType } from "@/lib/playerServiceTypes/SpectateMatch"
 import type { MatchEventMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchEventMessage"
 import type { MatchStateMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchStateMessage"
@@ -54,10 +55,12 @@ function SpectateMatch() {
     if (jwtIsPending || !jwt || !matchId || !websocketUrl) return
     if (stompClient.current) return
 
-    const socket = new SockJS(`http://${websocketUrl}/match`)
     const client = new Client({
-      webSocketFactory: () => socket,
-      connectHeaders: { Authorization: `Bearer ${jwt}` },
+      webSocketFactory: () => new SockJS(`http://${websocketUrl}/match`),
+      beforeConnect: async () => {
+        const fresh = (await ensureFreshJwt()) ?? jwt
+        client.connectHeaders = { Authorization: `Bearer ${fresh}` }
+      },
       debug: () => {},
       onConnect: () => {
         client.subscribe(

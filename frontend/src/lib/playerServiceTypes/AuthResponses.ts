@@ -32,5 +32,6 @@ export type ConfirmTotpResponse = {
     playerId: string
     displayName: string
     refreshToken?: string
+    isGuest: boolean
   }
 }

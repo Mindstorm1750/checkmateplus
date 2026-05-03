@@ -16,21 +16,9 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { gqlNoJwt } from "@/lib/graphql"
-import type { ConfirmTotpResponse } from "@/lib/playerServiceTypes/AuthResponses"
 import { useJwt } from "@/lib/JwtProvider"
+import { useConfirmTotp } from "@/hooks/useAuthMutations"
 import Layout from "@/components/Layout"
-
-const CONFIRM_TOTP = `
-  mutation ConfirmTotp($code: String!) {
-    confirmTotp(code: $code) {
-      jwt
-      playerId
-      displayName
-      refreshToken
-    }
-  }
-`
 
 export default function ConfirmTotp() {
   const location = useLocation()
@@ -39,8 +27,12 @@ export default function ConfirmTotp() {
   const { qrCodeUri, secret } = location.state
 
   const [code, setCode] = useState("")
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const confirmMutation = useConfirmTotp()
+  const error = confirmMutation.error
+    ? confirmMutation.error instanceof Error
+      ? confirmMutation.error.message
+      : "Verification failed"
+    : null
 
   if (!qrCodeUri) {
     return (
@@ -57,22 +49,17 @@ export default function ConfirmTotp() {
     )
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setError(null)
-    setLoading(true)
-
-    try {
-      const data = await gqlNoJwt<ConfirmTotpResponse>(CONFIRM_TOTP, { code })
-      const { jwt, playerId, displayName } = data.confirmTotp
-      setAuth({ jwt, playerId, displayName })
-      navigate("/")
-    } catch (err) {
-      console.log(err)
-      setError(err instanceof Error ? err.message : "Verification failed")
-    } finally {
-      setLoading(false)
-    }
+    confirmMutation.mutate(
+      { code },
+      {
+        onSuccess: (identity) => {
+          setAuth(identity)
+          navigate("/")
+        },
+      }
+    )
   }
 
   return (
@@ -125,8 +112,10 @@ export default function ConfirmTotp() {
                   </Field>
                   {error && <p className="text-sm text-destructive">{error}</p>}
                   <Field>
-                    <Button type="submit" disabled={loading}>
-                      {loading ? "Verifying..." : "Verify & Complete Setup"}
+                    <Button type="submit" disabled={confirmMutation.isPending}>
+                      {confirmMutation.isPending
+                        ? "Verifying..."
+                        : "Verify & Complete Setup"}
                     </Button>
                   </Field>
                 </FieldGroup>

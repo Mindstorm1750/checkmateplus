@@ -31,6 +31,7 @@ import { useEffect, useRef, useState } from "react"
 import { useLocation, useNavigate } from "react-router"
 import SockJS from "sockjs-client/dist/sockjs"
 import { useJwt } from "@/lib/JwtProvider"
+import { ensureFreshJwt } from "@/lib/auth"
 import { getLocalStorage } from "@/lib/local-storage.helpers.ts"
 import {
   Dialog,
@@ -118,12 +119,11 @@ function Match() {
   }, [matchId, jwtIsPending])
 
   const connect = () => {
-    const socket = new SockJS(`https://${websocketUrl}/match`)
-
     const client = new Client({
-      webSocketFactory: () => socket,
-      connectHeaders: {
-        Authorization: `Bearer ${jwt}`,
+      webSocketFactory: () => new SockJS(`https://${websocketUrl}/match`),
+      beforeConnect: async () => {
+        const fresh = (await ensureFreshJwt()) ?? jwt
+        client.connectHeaders = { Authorization: `Bearer ${fresh}` }
       },
       debug: (str: string) => console.log(str),
       onConnect: () => {

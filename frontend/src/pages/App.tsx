@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/hover-card"
 import type { QueueStatus } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/QueueStatus"
 import { useJwt } from "@/lib/JwtProvider"
+import { ensureFreshJwt } from "@/lib/auth"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import type { MatchType } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/MatchType.ts"
 import { getLocalStorage } from "@/lib/local-storage.helpers.ts"
@@ -101,11 +102,12 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
   }
 
   const connect = () => {
-    const socket = new SockJS(import.meta.env.VITE_BASE_URL + "matchmaking")
     const client = new Client({
-      webSocketFactory: () => socket,
-      connectHeaders: {
-        Authorization: `Bearer ${jwt}`,
+      webSocketFactory: () =>
+        new SockJS(import.meta.env.VITE_BASE_URL + "matchmaking"),
+      beforeConnect: async () => {
+        const fresh = (await ensureFreshJwt()) ?? jwt
+        client.connectHeaders = { Authorization: `Bearer ${fresh}` }
       },
       debug: (str: string) => console.log(str),
       onConnect: () => {
@@ -217,12 +219,12 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
   const { jwt, isPending: jwtIsPending } = useJwt()
 
   const connect = () => {
-    const socket = new SockJS(import.meta.env.VITE_BASE_URL + "matchmaking")
-
     const client = new Client({
-      webSocketFactory: () => socket,
-      connectHeaders: {
-        Authorization: `Bearer ${jwt}`,
+      webSocketFactory: () =>
+        new SockJS(import.meta.env.VITE_BASE_URL + "matchmaking"),
+      beforeConnect: async () => {
+        const fresh = (await ensureFreshJwt()) ?? jwt
+        client.connectHeaders = { Authorization: `Bearer ${fresh}` }
       },
       debug: (str: string) => console.log(str),
       onConnect: () => {

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 import { Link, useNavigate } from "react-router"
 import { Button } from "@/components/ui/button.tsx"
 import { getLocalStorage } from "@/lib/local-storage.helpers.ts"
@@ -21,6 +21,18 @@ export default function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
   const { preferences, updatePreferences } = usePreferences()
   const { isGuest, signOut } = useJwt()
+  const [signingOut, setSigningOut] = useState(false)
+
+  const handleSignOut = async () => {
+    if (signingOut) return
+    setSigningOut(true)
+    try {
+      await signOut()
+      navigate("/")
+    } finally {
+      setSigningOut(false)
+    }
+  }
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
@@ -53,14 +65,8 @@ export default function Layout({ children }: { children: ReactNode }) {
                   </div>
                 </div>
               </Button>
-              <Button
-                onClick={() => {
-                  signOut()
-                  navigate("/")
-                  window.location.reload()
-                }}
-              >
-                Sign out
+              <Button onClick={handleSignOut} disabled={signingOut}>
+                {signingOut ? "Signing out..." : "Sign out"}
               </Button>
             </>
           )}

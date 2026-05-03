@@ -16,20 +16,9 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { gqlNoJwt } from "@/lib/graphql"
-import type { TotpLoginResponse } from "@/lib/playerServiceTypes/AuthResponses"
 import { useJwt } from "@/lib/JwtProvider"
+import { useLoginWithTotp } from "@/hooks/useAuthMutations"
 import GoogleIcon from "@/assets/icons/google.svg?react"
-
-const LOGIN_WITH_TOTP = `
-  mutation LoginWithTotp($username: String!, $code: String!) {
-    loginWithTotp(username: $username, code: $code) {
-      jwt
-      playerId
-      displayName
-    }
-  }
-`
 
 export function LoginForm({
   className,
@@ -39,27 +28,27 @@ export function LoginForm({
   const { setAuth, signOut } = useJwt()
   const [username, setUsername] = useState("")
   const [code, setCode] = useState("")
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const loginMutation = useLoginWithTotp()
+  const error = loginMutation.error
+    ? loginMutation.error instanceof Error
+      ? loginMutation.error.message
+      : "Login failed"
+    : null
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setError(null)
-    setLoading(true)
-
-    try {
-      const data = await gqlNoJwt<TotpLoginResponse>(LOGIN_WITH_TOTP, {
-        username,
-        code,
-      })
-      setAuth(data.loginWithTotp)
-      navigate("/")
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed")
-      signOut()
-    } finally {
-      setLoading(false)
-    }
+    loginMutation.mutate(
+      { username, code },
+      {
+        onSuccess: (identity) => {
+          setAuth(identity)
+          navigate("/")
+        },
+        onError: () => {
+          void signOut()
+        },
+      }
+    )
   }
 
   return (
@@ -104,8 +93,8 @@ export function LoginForm({
               </Field>
               {error && <p className="text-sm text-destructive">{error}</p>}
               <Field>
-                <Button type="submit" disabled={loading}>
-                  {loading ? "Logging in..." : "Login"}
+                <Button type="submit" disabled={loginMutation.isPending}>
+                  {loginMutation.isPending ? "Logging in..." : "Login"}
                 </Button>
                 <Button variant="outline" type="button">
                   <GoogleIcon />
