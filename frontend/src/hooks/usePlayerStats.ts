@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { gql } from "@/lib/graphql"
+import { gqlNoJwt } from "@/lib/graphql"
 import type {
   PlayerRating,
   PlayerStats,
@@ -51,7 +51,7 @@ export function usePlayerStats<QueryReturnType = PlayerStats>(
   return useQuery({
     queryKey: [queryKey, playerId],
     queryFn: () =>
-      gql<{ playerStats: QueryReturnType }>(query, { playerId }).then(
+      gqlNoJwt<{ playerStats: QueryReturnType }>(query, { playerId }).then(
         (d) => d.playerStats
       ),
     enabled: !!playerId, // won't run if no playerId

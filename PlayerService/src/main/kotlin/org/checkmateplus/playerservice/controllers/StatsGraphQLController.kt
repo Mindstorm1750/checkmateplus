@@ -14,7 +14,6 @@ class StatsGraphQLController(
     private val playerStatsService: PlayerStatsService
 ) {
     @QueryMapping
-    @PreAuthorize("hasRole('USER')")
     fun playerStats(@Argument playerId: String): PlayerStats =
         playerStatsService.getStats(playerId)
 
