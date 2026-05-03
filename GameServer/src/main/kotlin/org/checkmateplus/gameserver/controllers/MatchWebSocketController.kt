@@ -155,7 +155,7 @@ class MatchWebSocketController(
                         // Send the specific move notification
                         matchState.lastMove?.let { lastMove ->
                             messagingTemplate.convertAndSend(
-                                "/topic/match/$matchId/moves", botMatchStateMessage
+                                "/topic/match/$matchId/moves", lastMove
                             )
                         }
                         handleGameEndConditions(matchId, botMatchStateMessage)
@@ -222,19 +222,19 @@ class MatchWebSocketController(
             notifyMatchCompleted(match, winnerId = "", reason = "draw")
             return true
         }
-        //Next check 3 move rule
+        //Next check 3-fold repetition rule
         val fenRegex = Regex(
             """^([rnbqkpRNBQKP1-8]+(?:/[rnbqkpRNBQKP1-8]+){7})\s([wb])\s(-|[KQkq]+)\s(-|[a-h][36])"""
         ) //strips out the clocks, keeping board, side to move, castling, en passant
         val strippedFen = match.turnHistory.mapNotNull { fenRegex.find(it.fen)?.value }
-        val current = strippedFen.lastOrNull()
+        val current = fenRegex.find(matchState.fen)?.value // most current fen isn't directly contained in the turnHistory
         val occurrences = strippedFen.count { it == current }
-        if (occurrences >= 3) {
+        if (occurrences >= 2) { // only 2 other occurrences are needed for 3-fold repetition as the current position counts
             messagingTemplate.convertAndSend(
                 "/topic/match/$matchId/events", MatchEventMessage(
                     matchId = matchId,
                     eventType = MatchEventType.MATCH_ENDED,
-                    message = "Draw by 50 move rule.",
+                    message = "Draw by 3-fold repetition.",
                     data = mapOf("result" to "draw")
                 )
             )
@@ -405,9 +405,6 @@ class MatchWebSocketController(
                 promotion = botMove.promotion,
             )
             val botMatchStateMessage = matchService.processMove(matchId, botMoveMessage)
-            val botMoveNotification = MoveNotification(
-                matchId, botMoveMessage.from, botMoveMessage.to, botMoveMessage.promotion, botMoveMessage.playerId
-            )
 
             // Broadcast updated state to all players
             messagingTemplate.convertAndSend(
@@ -417,7 +414,7 @@ class MatchWebSocketController(
             // Send the specific move notification
             botMatchStateMessage.lastMove?.let { lastMove ->
                 messagingTemplate.convertAndSend(
-                    "/topic/match/$matchId/moves", botMoveNotification
+                    "/topic/match/$matchId/moves", lastMove
                 )
             }
         } else {
