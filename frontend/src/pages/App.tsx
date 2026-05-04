@@ -15,6 +15,7 @@ import {
   useState,
   type ComponentProps,
   type Dispatch,
+  type ReactNode,
   type SetStateAction,
 } from "react"
 import { useNavigate } from "react-router"
@@ -35,7 +36,7 @@ import {
   type TimeControl,
   TimeControlToStringMap,
 } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/TimeControl"
-import { Eye, Info, Trophy } from "lucide-react"
+import { Bot, Eye, Flame, Info, Play } from "lucide-react"
 import {
   HoverCard,
   HoverCardContent,
@@ -47,33 +48,149 @@ import { ensureFreshJwt } from "@/lib/auth"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import type { MatchType } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/MatchType.ts"
 import { getLocalStorage } from "@/lib/local-storage.helpers.ts"
+import { usePlayerStats } from "@/hooks/usePlayerStats"
+
+const QUICK_TIME_CONTROLS: { name: string; tc: TimeControl; label: string }[] =
+  [
+    { name: "Bullet", tc: "BULLET_1_0", label: "1+0" },
+    { name: "Blitz", tc: "BLITZ_3_0", label: "3+0" },
+    { name: "Rapid", tc: "RAPID_10_0", label: "10+0" },
+    { name: "Classical", tc: "CLASSICAL_30_0", label: "30+0" },
+  ]
 
 function App() {
   const navigate = useNavigate()
+  const { isGuest } = useJwt()
+  const playerId = getLocalStorage("playerId")
+  const displayName = getLocalStorage("displayName") ?? "friend"
+  const { data: stats } = usePlayerStats(isGuest ? null : playerId)
 
   return (
     <Layout>
-      <div className="flex flex-col items-center gap-4 pt-32 md:pt-16 lg:pt-0">
-        <PlayHumanButton className="min-w-3xs" />
-        <PlayComputerButton className="min-w-3xs" />
-        <Button className="min-w-3xs" onClick={() => navigate("/leaderboard")}>
-          <Trophy />
-          Leaderboard
-        </Button>
-        <Button className="min-w-3xs" onClick={() => navigate("/spectate")}>
-          <Eye />
-          Spectate
-        </Button>
+      <div className="lg:flex">
+        <div className="flex flex-col gap-7">
+          {stats && stats.currentStreak >= 2 && (
+            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-foreground/4 px-3 py-1.5 text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
+              <Flame className="size-3 text-emerald-400" />
+              You're on a {stats.currentStreak}-game win streak
+            </div>
+          )}
+
+          <div>
+            <h1 className="font-serif text-5xl leading-[1.02] tracking-tight md:text-6xl">
+              <b>{isGuest ? "Welcome," : "Welcome back,"}</b>
+              <br />
+              <span className="truncate text-muted-foreground italic">
+                {displayName}.
+              </span>
+            </h1>
+            {!isGuest && stats && (
+              <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                Rating{" "}
+                <span className="font-semibold text-foreground">
+                  {stats.skillRating ?? "—"}
+                </span>{" "}
+                ·{" "}
+                <span className="font-semibold text-foreground">
+                  {stats.totalGames}
+                </span>{" "}
+                games played
+                {stats.totalGames > 0 && (
+                  <>
+                    {" · "}
+                    <span className="font-semibold text-foreground">
+                      {Math.round(stats.winRate)}%
+                    </span>{" "}
+                    win rate
+                  </>
+                )}
+              </p>
+            )}
+          </div>
+
+          <PlayHumanButton
+            trigger={
+              <button
+                type="button"
+                className="flex h-14 w-full cursor-pointer items-center justify-center gap-3 rounded-xl bg-primary px-5 text-base font-bold text-primary-foreground transition-all hover:bg-primary/90"
+              >
+                <Play className="size-5 fill-current" />
+                Play against humans
+              </button>
+            }
+          />
+
+          <div className="grid grid-cols-2 gap-3">
+            <PlayComputerButton
+              trigger={
+                <button
+                  type="button"
+                  className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-muted text-sm font-medium text-foreground transition-all hover:bg-muted/80"
+                >
+                  <Bot className="size-4" />
+                  Play computer
+                </button>
+              }
+            />
+            <button
+              type="button"
+              onClick={() => navigate("/spectate")}
+              className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-muted text-sm font-medium text-foreground transition-all hover:bg-muted/80"
+            >
+              <Eye className="size-4" />
+              Spectate
+            </button>
+          </div>
+
+          <div>
+            <div className="mb-2.5 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+              Quick play · time control
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {QUICK_TIME_CONTROLS.map((tc) => (
+                <PlayHumanButton
+                  key={tc.tc}
+                  initialTimeControl={tc.tc}
+                  trigger={
+                    <button
+                      type="button"
+                      className="flex cursor-pointer flex-col items-start gap-0.5 rounded-lg border border-border bg-foreground/[0.03] px-3 py-3.5 text-left transition-all hover:bg-foreground/[0.06]"
+                    >
+                      <span className="text-[11px] font-medium text-muted-foreground">
+                        {tc.name}
+                      </span>
+                      <span className="text-lg font-bold text-foreground tabular-nums">
+                        {tc.label}
+                      </span>
+                    </button>
+                  }
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+        <div>test</div>
       </div>
     </Layout>
   )
 }
 
-const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
+type PlayHumanButtonProps = ComponentProps<typeof Button> & {
+  trigger?: ReactNode
+  initialTimeControl?: TimeControl
+}
+
+const PlayHumanButton = ({
+  trigger,
+  initialTimeControl,
+  ...buttonProps
+}: PlayHumanButtonProps) => {
   const [inQueue, setInQueue] = useState<boolean>(false)
   const [queueSeconds, setQueueSeconds] = useState<number>(0)
   const queueTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const [timeControl, setTimeControl] = useState<TimeControl | "ANY">()
+  const [timeControl, setTimeControl] = useState<
+    TimeControl | "ANY" | undefined
+  >(initialTimeControl)
   const [matchType, setMatchType] = useState<MatchType>("COMPETITIVE_PVP")
   const titleText = "Play against humans"
   const descriptionText = "Get matched with other players"
@@ -159,7 +276,7 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button {...props}>{titleText}</Button>
+        {trigger ?? <Button {...buttonProps}>{titleText}</Button>}
       </DialogTrigger>
       <DialogContent showCloseButton={false}>
         <DialogHeader>
@@ -213,7 +330,14 @@ const PlayHumanButton = (props: ComponentProps<typeof Button>) => {
   )
 }
 
-const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
+type PlayComputerButtonProps = ComponentProps<typeof Button> & {
+  trigger?: ReactNode
+}
+
+const PlayComputerButton = ({
+  trigger,
+  ...buttonProps
+}: PlayComputerButtonProps) => {
   const titleText = "Play against a computer"
   const [inQueue, setInQueue] = useState<boolean>(false)
   // timeControl won't actually ever be "ANY" here because we don't set includeAny = true in the SelectTimeControl component
@@ -278,7 +402,7 @@ const PlayComputerButton = (props: ComponentProps<typeof Button>) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button {...props}>{titleText}</Button>
+        {trigger ?? <Button {...buttonProps}>{titleText}</Button>}
       </DialogTrigger>
       <DialogContent showCloseButton={false}>
         <DialogHeader>

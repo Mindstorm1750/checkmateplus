@@ -37,10 +37,13 @@ export default function Layout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
+    <div className="mx-auto px-4 py-8">
       <div className="flex items-center justify-between gap-2">
-        <h1 className="text-xl font-bold md:text-2xl lg:text-3xl">
-          <Link to="/">Checkmate+</Link>
+        <h1 className="font-serif text-2xl font-bold tracking-tight md:text-3xl lg:text-4xl">
+          <Link to="/">
+            Checkmate
+            <span className="font-sans font-black text-brand-accent">+</span>
+          </Link>
         </h1>
         <div className="flex min-w-0 items-center gap-2">
           {isGuest ? (
