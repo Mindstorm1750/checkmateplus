@@ -456,7 +456,7 @@ const Clock = ({
 
   return (
     <div
-      className={`${topClock ? "rounded-t-lg" : "rounded-b-lg"} ${isActiveClock && !isGameOver && "dark:bg-green-900 bg-green-300"} ${isGameOver && time <= 0 && "dark:bg-red-900 bg-red-300"} flex w-1/4 items-center justify-center border-2 p-2 text-center text-2xl lg:text-3xl`}
+      className={`${topClock ? "rounded-t-lg" : "rounded-b-lg"} ${isActiveClock && !isGameOver && "bg-green-300 dark:bg-green-900"} ${isGameOver && time <= 0 && "bg-red-300 dark:bg-red-900"} flex w-1/4 items-center justify-center border-2 p-2 text-center text-2xl lg:text-3xl`}
     >{`${minutes}:${seconds}`}</div>
   )
 }

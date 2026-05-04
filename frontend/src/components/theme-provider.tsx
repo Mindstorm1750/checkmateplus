@@ -61,7 +61,7 @@ export function ThemeProvider({
 
   return (
     <ThemeProviderContext.Provider {...props} value={value}>
-      {children}
+      <div className="brand-gradient min-h-screen">{children}</div>
     </ThemeProviderContext.Provider>
   )
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react"
 import type { Board, VoiceMove } from "@/types/Chess.type.ts"
-import {Button} from "@/components/ui/button.tsx";
+import { Button } from "@/components/ui/button.tsx"
 
 export type VoiceMoveButtonProps = {
   matchId: String
@@ -139,8 +139,8 @@ export const VoiceMoveButton = ({
         onMouseDown={startRecording}
         onMouseUp={stopRecording}
         onMouseLeave={() => isRecording && stopRecording()}
-        className='min-w-[180px]'
-        variant={isRecording ? 'destructive' : 'default'}
+        className="min-w-[180px]"
+        variant={isRecording ? "destructive" : "default"}
       >
         {!isInteractable
           ? "Not your turn"
@@ -153,7 +153,7 @@ export const VoiceMoveButton = ({
         <div
           className={[
             "absolute top-full z-50 mt-2 w-full rounded-md",
-            "bg-destructive px-3 py-2 text-center text-sm text-white dark:text-black shadow-lg",
+            "bg-destructive px-3 py-2 text-center text-sm text-white shadow-lg dark:text-black",
             "transition-all duration-500",
             isToastVisible
               ? "translate-y-0 opacity-100"
