@@ -4,7 +4,7 @@ import {
   setLocalStorage,
 } from "@/lib/local-storage.helpers.ts"
 
-type Theme = "dark" | "light" | "system"
+export type Theme = "dark" | "light" | "system"
 
 type ThemeProviderProps = {
   children: React.ReactNode

@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router"
 import { Button } from "@/components/ui/button.tsx"
 import { getLocalStorage } from "@/lib/local-storage.helpers.ts"
 import { useJwt } from "@/lib/JwtProvider"
-import { Eye, Settings, User } from "lucide-react"
+import { Settings, User } from "lucide-react"
 import {
   Dialog,
   DialogClose,
@@ -16,10 +16,12 @@ import {
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import { type Preferences, usePreferences } from "@/lib/PreferencesProvider.tsx"
 import { BoardPreview } from "@/components/ui/board-preview.tsx"
+import { type Theme, useTheme } from "@/components/theme-provider.tsx"
 
 export default function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
   const { preferences, updatePreferences } = usePreferences()
+  const { theme, setTheme } = useTheme()
   const { isGuest, signOut } = useJwt()
   const [signingOut, setSigningOut] = useState(false)
 
@@ -40,10 +42,6 @@ export default function Layout({ children }: { children: ReactNode }) {
         <h1 className="text-xl font-bold md:text-2xl lg:text-3xl">
           <Link to="/">Checkmate+</Link>
         </h1>
-        <Button variant="outline" onClick={() => navigate("/spectate")}>
-          <Eye />
-          Spectate
-        </Button>
         <div className="flex min-w-0 items-center gap-2">
           {isGuest ? (
             <>
@@ -118,6 +116,17 @@ export default function Layout({ children }: { children: ReactNode }) {
                   >
                     <ToggleGroupItem value="NORMAL">Normal</ToggleGroupItem>
                     <ToggleGroupItem value="FUN">Fun</ToggleGroupItem>
+                  </ToggleGroup>
+                  <p className="pt-2">Theme:</p>
+                  <ToggleGroup
+                    type="single"
+                    variant="outline"
+                    value={theme}
+                    onValueChange={(e) => setTheme(e as Theme)}
+                  >
+                    <ToggleGroupItem value="light">Light</ToggleGroupItem>
+                    <ToggleGroupItem value="dark">Dark</ToggleGroupItem>
+                    <ToggleGroupItem value="system">System</ToggleGroupItem>
                   </ToggleGroup>
                 </div>
               </DialogHeader>
