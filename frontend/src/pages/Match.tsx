@@ -397,8 +397,17 @@ function Match() {
               pieceOrigins={pieceOrigins}
               playerLabels={playerLabels}
             >
-              {!isGameOver && (
-                <div className="flex items-center gap-2">
+              {!isGameOver && (<div className='flex items-center gap-2 w-full'>
+                  <div className='shrink-0'>
+                      <VoiceMoveButton
+                          matchId={matchId}
+                          moveCallback={handleVoiceMove}
+                          boardState={boardState}
+                          whitePerspective={isPlayerWhite}
+                          isInteractable={isPlayersTurn && !isGameOver}
+                      />
+                  </div>
+                <div className="flex ml-auto items-center gap-2">
                   <Button
                     onClick={() => setResignConfirmationDialog(true)}
                     variant="outline"
@@ -425,17 +434,11 @@ function Match() {
                       </Button>
                     </>
                   )}
-                </div>
+                </div></div>
               )}
             </ChessBoard>
-            <div className="flex w-full justify-center">
-              <VoiceMoveButton
-                matchId={matchId}
-                moveCallback={handleVoiceMove}
-                boardState={boardState}
-                whitePerspective={isPlayerWhite}
-                isInteractable={isPlayersTurn && !isGameOver}
-              />
+            <div className="flex w-full justify-center pt-2">
+
             </div>
           </div>
         </div>

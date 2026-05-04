@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react"
 import type { Board, VoiceMove } from "@/types/Chess.type.ts"
+import {Button} from "@/components/ui/button.tsx";
 
 export type VoiceMoveButtonProps = {
   matchId: String
@@ -133,37 +134,26 @@ export const VoiceMoveButton = ({
 
   return (
     <div className="relative inline-block">
-      <button
+      <Button
         disabled={!isInteractable}
         onMouseDown={startRecording}
         onMouseUp={stopRecording}
         onMouseLeave={() => isRecording && stopRecording()}
-        className={[
-          "inline-flex items-center justify-center",
-          "rounded px-4 py-2",
-          "text-sm font-medium text-white",
-          "transition-colors",
-          "min-w-[180px]",
-          !isInteractable
-            ? "cursor-not-allowed bg-gray-500 opacity-60"
-            : isRecording
-              ? "bg-red-500"
-              : "bg-blue-500",
-        ].join(" ")}
-        type="button"
+        className='min-w-[180px]'
+        variant={isRecording ? 'destructive' : 'default'}
       >
         {!isInteractable
           ? "Not your turn"
           : isRecording
             ? "Listening…"
             : "Hold to Speak Move"}
-      </button>
+      </Button>
 
       {toastMessage && (
         <div
           className={[
             "absolute top-full z-50 mt-2 w-full rounded-md",
-            "bg-red-600 px-3 py-2 text-center text-sm text-white shadow-lg",
+            "bg-destructive px-3 py-2 text-center text-sm text-white dark:text-black shadow-lg",
             "transition-all duration-500",
             isToastVisible
               ? "translate-y-0 opacity-100"
