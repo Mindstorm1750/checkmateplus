@@ -10,4 +10,5 @@ class StockfishEngineApplicationTests {
     fun contextLoads() {
     }
 
+
 }
