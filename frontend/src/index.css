@@ -134,8 +134,8 @@
     background: linear-gradient(
             to bottom,
             var(--color-brand-accent-muted) 0%,
-            var(--color-sidebar-border) 130px,
-            var(--color-sidebar-border) calc(100% - 130px),
+            var(--color-secondary) 130px,
+            var(--color-secondary) calc(100% - 130px),
             var(--color-brand-accent-muted) 100%
     );
 }
