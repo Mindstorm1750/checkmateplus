@@ -51,9 +51,11 @@ export default function Spectate() {
         hasNextPage,
         isFetchingNextPage,
     } = useLiveMatches()
-    const [selected, setSelected] = useState<SpectateMatch | null>(null)
+    const [selectedId, setSelectedId] = useState<SpectateMatch['matchId'] | null>(null)
 
-    const matches = data?.pages.flatMap((p) => p.matches) ?? []
+    const unfilteredMatches = data?.pages.flatMap((p) => p.matches) ?? []
+    const matches = unfilteredMatches.filter((match) => match.status == "ACTIVE")
+    const selected = matches.find((match) => match.matchId === selectedId)
 
     return (
         <Layout>
@@ -71,7 +73,7 @@ export default function Spectate() {
                         <MatchCard
                             key={match.matchId}
                             match={match}
-                            onClick={() => setSelected(match)}
+                            onClick={() => setSelectedId(match.matchId)}
                         />
                     ))}
                 </div>
@@ -89,8 +91,8 @@ export default function Spectate() {
             )}
             <BackArrowLink/>
             <Dialog
-                open={selected !== null}
-                onOpenChange={(open) => !open && setSelected(null)}
+                open={selectedId !== null && selected !== undefined}
+                onOpenChange={(open) => !open && setSelectedId(null)}
             >
                 <DialogContent className="flex max-h-[90dvh] flex-col overflow-y-auto sm:max-w-4xl">
                     {selected && <MatchDetails match={selected}/>}
