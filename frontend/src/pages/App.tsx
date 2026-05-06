@@ -31,7 +31,7 @@ import {
   type TimeControl,
   TimeControlToStringMap,
 } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/TimeControl"
-import { Bot, Eye, Flame, Info, Play } from "lucide-react"
+import { ArrowRight, Bot, Eye, Flame, Info, Play } from "lucide-react"
 import {
   HoverCard,
   HoverCardContent,
@@ -42,6 +42,14 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import type { MatchType } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/MatchType.ts"
 import { getLocalStorage } from "@/lib/local-storage.helpers.ts"
 import { usePlayerStats } from "@/hooks/usePlayerStats"
+import { useLiveMatches } from "@/hooks/useLiveMatches"
+import MiniChessBoard from "@/components/ui/MiniChessBoard"
+import { fenToBoard, STARTING_FEN } from "@/lib/chess.helpers"
+import type {
+  SpectateMatch,
+  SpectatePlayer,
+} from "@/lib/playerServiceTypes/SpectateMatch"
+import { MmrChart } from "../components/mmrChart"
 import { QueueButton } from "@/components/QueueButton.tsx"
 
 const QUICK_TIME_CONTROLS: { name: string; tc: TimeControl; label: string }[] =
@@ -61,8 +69,8 @@ function App() {
 
   return (
     <Layout>
-      <div className="lg:flex">
-        <div className="flex flex-col gap-7">
+      <div className="lg:flex lg:items-start lg:gap-12">
+        <div className="flex flex-col gap-7 lg:max-w-md lg:flex-1">
           {stats && stats.currentStreak >= 2 && (
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-foreground/4 px-3 py-1.5 text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
               <Flame className="size-3 text-emerald-400" />
@@ -163,9 +171,97 @@ function App() {
             </div>
           </div>
         </div>
-        <div>test</div>
+        <LiveHeroBoardCard />
       </div>
+      {!isGuest && (
+        <div className="mt-12">
+          <MmrChart />
+        </div>
+      )}
     </Layout>
+  )
+}
+
+const formatClock = (seconds: number): string => {
+  const safe = Math.max(0, Math.floor(seconds))
+  const m = Math.floor(safe / 60)
+  const s = safe % 60
+  return `${m}:${s.toString().padStart(2, "0")}`
+}
+
+const labelForPlayer = (player?: SpectatePlayer): string => {
+  if (!player) return "—"
+  if (player.type === "ANONYMOUS") return player.displayName || "Guest"
+  return player.displayName
+}
+
+function LiveHeroBoardCard() {
+  const navigate = useNavigate()
+  const { data, isLoading, isError } = useLiveMatches(1)
+  const match: SpectateMatch | undefined = data?.pages[0]?.matches[0]
+
+  if (isLoading || isError || !match) return null
+
+  const board = fenToBoard(match.lastFen ?? STARTING_FEN)
+
+  return (
+    <div className="mt-8 ml-auto flex flex-col gap-3.5 rounded-2xl border border-border bg-card p-5 lg:mt-0 lg:w-96 lg:shrink-0">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded bg-destructive px-2 py-0.5 text-[10px] font-bold tracking-widest text-white uppercase">
+            <span className="size-1.5 animate-pulse rounded-full bg-white" />
+            Live
+          </span>
+          <span className="text-xs text-muted-foreground">Top board</span>
+        </div>
+        <span className="text-xs text-muted-foreground tabular-nums">
+          Move {match.moveNumber}
+        </span>
+      </div>
+
+      <PlayerTimerRow
+        player={match.blackPlayer}
+        seconds={match.blackTimeSeconds}
+      />
+
+      <MiniChessBoard boardState={board} />
+
+      <PlayerTimerRow
+        player={match.whitePlayer}
+        seconds={match.whiteTimeSeconds}
+      />
+
+      <button
+        type="button"
+        onClick={() => navigate(`/spectate/${match.matchId}`, { state: match })}
+        className="mt-1 flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border text-sm font-medium text-foreground transition-colors hover:bg-muted"
+      >
+        Watch full game
+        <ArrowRight className="size-4" />
+      </button>
+    </div>
+  )
+}
+
+function PlayerTimerRow({
+  player,
+  seconds,
+}: {
+  player?: SpectatePlayer
+  seconds: number
+}) {
+  return (
+    <div className="flex items-center justify-between text-sm">
+      <div>
+        <div className="font-semibold">{labelForPlayer(player)}</div>
+        <div className="text-xs text-muted-foreground tabular-nums">
+          {player?.rating ?? "—"}
+        </div>
+      </div>
+      <div className="rounded-md bg-muted px-3 py-1.5 text-base font-bold tabular-nums">
+        {formatClock(seconds)}
+      </div>
+    </div>
   )
 }
 
