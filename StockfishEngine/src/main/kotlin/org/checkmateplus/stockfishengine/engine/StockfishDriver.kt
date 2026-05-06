@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 
-internal class StockfishDriver(private val executablePath: String) : AutoCloseable {
+class StockfishDriver(private val executablePath: String) : AutoCloseable {
 
     private val logger = LoggerFactory.getLogger(javaClass)
 
