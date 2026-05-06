@@ -35,9 +35,9 @@ import {Client, type IMessage} from "@stomp/stompjs"
 import {useEffect, useRef, useState} from "react"
 import {useLocation, useNavigate} from "react-router"
 import SockJS from "sockjs-client/dist/sockjs"
-import { useJwt } from "@/lib/JwtProvider"
-import { ensureFreshJwt } from "@/lib/auth"
-import { getLocalStorage } from "@/lib/local-storage.helpers.ts"
+import {useJwt} from "@/lib/JwtProvider"
+import {ensureFreshJwt} from "@/lib/auth"
+import {getLocalStorage} from "@/lib/local-storage.helpers.ts"
 import {
     Dialog,
     DialogClose,
@@ -138,10 +138,10 @@ function MatchInner({state}: { state: MatchRedirectType }) {
 
     const connect = () => {
         const client = new Client({
-            webSocketFactory: () => new SockJS(`https://${websocketUrl}/match`),
+            webSocketFactory: () => new SockJS(`${import.meta.env.VITE_HTTP_PROTOCOL}://${websocketUrl}/match`),
             beforeConnect: async () => {
                 const fresh = (await ensureFreshJwt()) ?? jwt
-                client.connectHeaders = { Authorization: `Bearer ${fresh}` }
+                client.connectHeaders = {Authorization: `Bearer ${fresh}`}
             },
             debug: (str: string) => console.log(str),
             onConnect: () => {
