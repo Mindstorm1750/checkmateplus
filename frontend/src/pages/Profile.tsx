@@ -9,13 +9,22 @@ import {
 } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
 import { useMatchHistory } from "@/hooks/useMatchHistory"
-import { usePlayerStats } from "@/hooks/usePlayerStats"
+import { usePlayerRating, usePlayerStats } from "@/hooks/usePlayerStats"
 import { getLocalStorage } from "@/lib/local-storage.helpers"
 import { useJwt } from "@/lib/JwtProvider"
 import { TimeControlToStringMap } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/TimeControl"
 import type { MatchResult } from "@/lib/playerServiceTypes/MatchResult"
 import { useNavigate } from "react-router"
 import { BackArrowLink } from "@/components/ui/back-arrow-link.tsx"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table.tsx"
+import type { MatchSummary } from "@/lib/playerServiceTypes/MatchSummary.ts"
 
 function formatDuration(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000)
@@ -152,33 +161,24 @@ export default function Profile() {
             )}
             {matches.length > 0 && (
               <div className="flex flex-col gap-2">
-                {matches.map((match) => (
-                  <div
-                    key={match.matchId}
-                    className="flex items-center justify-between rounded-md border px-3 py-2 text-sm"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span
-                        className={`font-semibold ${resultColour[match.result]}`}
-                      >
-                        {match.result}
-                      </span>
-                      <span className="text-muted-foreground">
-                        {match.colour === "WHITE" ? "White" : "Black"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3 text-muted-foreground">
-                      <span>
-                        {TimeControlToStringMap.get(match.timeControl) ??
-                          match.timeControl}
-                      </span>
-                      {match.gameDurationMs && (
-                        <span>{formatDuration(match.gameDurationMs)}</span>
-                      )}
-                      <span>{formatDate(match.createdAtEpochMs)}</span>
-                    </div>
-                  </div>
-                ))}
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Result</TableHead>
+                      <TableHead>Colour</TableHead>
+                      <TableHead>Opponent</TableHead>
+                      <TableHead>Time Control</TableHead>
+                      <TableHead>Duration</TableHead>
+                      <TableHead>Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {matches.map((match) => (
+                      <MatchRow key={match.matchId} match={match} />
+                    ))}
+                  </TableBody>
+                </Table>
+
                 {hasNextPage && (
                   <Button
                     variant="outline"
@@ -206,5 +206,32 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
         <p className="text-xl font-bold tabular-nums">{value}</p>
       </CardContent>
     </Card>
+  )
+}
+
+function MatchRow({ match }: { match: MatchSummary }) {
+  const { data: opponent } = usePlayerRating(match.opponentId ?? null)
+
+  return (
+    <TableRow key={match.matchId}>
+      <TableCell className={`font-semibold ${resultColour[match.result]}`}>
+        {match.result}
+      </TableCell>
+      <TableCell className="text-muted-foreground">
+        {match.colour === "WHITE" ? "White" : "Black"}
+      </TableCell>
+      <TableCell>
+        {opponent
+          ? `${opponent.displayName}${opponent.skillRating ? ` (${opponent.skillRating})` : ""}`
+          : "Loading..."}
+      </TableCell>
+      <TableCell>
+        {TimeControlToStringMap.get(match.timeControl) ?? match.timeControl}
+      </TableCell>
+      <TableCell>
+        {match.gameDurationMs ? formatDuration(match.gameDurationMs) : "—"}
+      </TableCell>
+      <TableCell>{formatDate(match.createdAtEpochMs)}</TableCell>
+    </TableRow>
   )
 }

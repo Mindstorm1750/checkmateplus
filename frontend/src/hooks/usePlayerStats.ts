@@ -31,6 +31,7 @@ const PLAYER_RATING_QUERY = `
       playerStats(playerId: $playerId) {
         playerId
         skillRating
+        displayName
       }
     }
   `

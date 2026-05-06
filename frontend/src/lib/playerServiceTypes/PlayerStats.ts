@@ -21,4 +21,7 @@ export type PlayerStats = {
   memberSinceEpochMs: number
 }
 
-export type PlayerRating = Pick<PlayerStats, "skillRating" | "playerId">
+export type PlayerRating = Pick<
+  PlayerStats,
+  "skillRating" | "playerId" | "displayName"
+>
