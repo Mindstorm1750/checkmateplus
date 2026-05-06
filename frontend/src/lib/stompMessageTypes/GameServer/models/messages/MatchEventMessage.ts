@@ -19,3 +19,10 @@ export type MatchEventType =
   | "RECONNECTED"
   | "DISCONNECTED"
   | "ILLEGAL_MOVE"
+
+export const GAME_OVER_TITLES: Partial<Record<MatchEventType, string>> = {
+  MATCH_ENDED: "Game ended",
+  TIME_EXPIRED: "Game ended by time-out",
+  PLAYER_RESIGNED: "Game ended by resignation",
+  DRAW_ACCEPTED: "Game ended by draw agreement",
+}

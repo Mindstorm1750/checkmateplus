@@ -11,7 +11,6 @@ import {
   DialogTrigger,
 } from "../components/ui/dialog"
 import {
-  useRef,
   useState,
   type ComponentProps,
   type Dispatch,
@@ -19,11 +18,7 @@ import {
   type SetStateAction,
 } from "react"
 import { useNavigate } from "react-router"
-import { Client, type IMessage } from "@stomp/stompjs"
-import SockJS from "sockjs-client/dist/sockjs"
 import type { JoinRequest } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/JoinRequest"
-import type { MatchFoundEvent } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/MatchFoundEvent"
-import { Spinner } from "@/components/ui/spinner"
 import {
   Select,
   SelectContent,
@@ -42,13 +37,12 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card"
-import type { QueueStatus } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/QueueStatus"
 import { useJwt } from "@/lib/JwtProvider"
-import { ensureFreshJwt } from "@/lib/auth"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import type { MatchType } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/MatchType.ts"
 import { getLocalStorage } from "@/lib/local-storage.helpers.ts"
 import { usePlayerStats } from "@/hooks/usePlayerStats"
+import { QueueButton } from "@/components/QueueButton.tsx"
 
 const QUICK_TIME_CONTROLS: { name: string; tc: TimeControl; label: string }[] =
   [
@@ -185,92 +179,18 @@ const PlayHumanButton = ({
   initialTimeControl,
   ...buttonProps
 }: PlayHumanButtonProps) => {
-  const [inQueue, setInQueue] = useState<boolean>(false)
-  const [queueSeconds, setQueueSeconds] = useState<number>(0)
-  const queueTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [timeControl, setTimeControl] = useState<
     TimeControl | "ANY" | undefined
   >(initialTimeControl)
   const [matchType, setMatchType] = useState<MatchType>("COMPETITIVE_PVP")
+  const [inQueue, setInQueue] = useState(false)
   const titleText = "Play against humans"
   const descriptionText = "Get matched with other players"
-  const navigate = useNavigate()
-  const stompClient = useRef<Client | null>(null)
-  const { jwt, isGuest, isPending: jwtIsPending } = useJwt()
-
-  const formatQueueTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60)
-    const s = seconds % 60
-    return `${m}:${s.toString().padStart(2, "0")}`
-  }
-
-  const startQueueTimer = () => {
-    if (queueTimerRef.current) {
-      clearInterval(queueTimerRef.current)
-    }
-    setQueueSeconds(0)
-    queueTimerRef.current = setInterval(() => {
-      setQueueSeconds((prev) => prev + 1)
-    }, 1000)
-  }
-
-  const stopQueueTimer = () => {
-    if (queueTimerRef.current) {
-      clearInterval(queueTimerRef.current)
-      queueTimerRef.current = null
-    }
-    setQueueSeconds(0)
-  }
-
-  const connect = () => {
-    const client = new Client({
-      webSocketFactory: () =>
-        new SockJS(import.meta.env.VITE_BASE_URL + "matchmaking"),
-      beforeConnect: async () => {
-        const fresh = (await ensureFreshJwt()) ?? jwt
-        client.connectHeaders = { Authorization: `Bearer ${fresh}` }
-      },
-      debug: (str: string) => console.log(str),
-      onConnect: () => {
-        // Subscribe to your specific user queue for status updates
-        client.subscribe("/user/queue/status", (message: IMessage) => {
-          const body: QueueStatus = JSON.parse(message.body)
-          console.log("/user/queue/status", { body })
-        })
-
-        // Subscribe to match found events
-        client.subscribe("/user/queue/match", (message: IMessage) => {
-          const match: MatchFoundEvent = JSON.parse(message.body)
-          setInQueue(false) // Match found, no longer in queue, redirect to match page
-          stopQueueTimer()
-          navigate(`/match`, { state: match })
-        })
-
-        joinQueue() // send join request immediately after connecting
-      },
-      onStompError: (frame: { headers: { [x: string]: string } }) => {
-        console.log({ error: frame })
-      },
-    })
-
-    client.activate()
-    stompClient.current = client
-  }
-
-  const joinQueue = () => {
-    if (stompClient.current?.connected) {
-      const joinRequest: JoinRequest = {
-        displayName: getLocalStorage("displayName") ?? "",
-        matchType: isGuest ? "CASUAL_PVP" : (matchType ?? "CASUAL_PVP"),
-        timeControl: timeControl == "ANY" ? undefined : timeControl,
-      }
-      stompClient.current.publish({
-        destination: "/app/join",
-        body: JSON.stringify(joinRequest),
-      })
-      setInQueue(true)
-      startQueueTimer()
-    }
+  const { isGuest } = useJwt()
+  const joinRequest: JoinRequest = {
+    displayName: getLocalStorage("displayName") ?? "",
+    matchType: isGuest ? "CASUAL_PVP" : (matchType ?? "CASUAL_PVP"),
+    timeControl: timeControl == "ANY" ? undefined : timeControl,
   }
 
   return (
@@ -303,27 +223,23 @@ const PlayHumanButton = ({
           includeAny
         />
         <DialogFooter>
-          <DialogClose asChild>
-            <Button
-              onClick={() => {
-                stompClient.current?.deactivate()
-                setInQueue(false)
-              }}
-              variant="outline"
-            >
-              Cancel
-            </Button>
-          </DialogClose>
-          <Button
-            onClick={connect}
-            variant={inQueue ? "secondary" : "default"}
-            disabled={inQueue || timeControl === undefined || jwtIsPending}
-          >
-            {inQueue && <Spinner data-icon="inline-start" />}
-            {inQueue
-              ? `Queueing... (${formatQueueTime(queueSeconds)})`
-              : "Join queue"}
-          </Button>
+          {!inQueue && (
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+          )}
+          <QueueButton
+            buttonText="Join queue"
+            joinRequest={joinRequest}
+            onQueueChange={setInQueue}
+            cancelTrigger={(onClick) => (
+              <DialogClose asChild>
+                <Button onClick={onClick} variant="outline">
+                  Cancel
+                </Button>
+              </DialogClose>
+            )}
+          />
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -339,64 +255,17 @@ const PlayComputerButton = ({
   ...buttonProps
 }: PlayComputerButtonProps) => {
   const titleText = "Play against a computer"
-  const [inQueue, setInQueue] = useState<boolean>(false)
   // timeControl won't actually ever be "ANY" here because we don't set includeAny = true in the SelectTimeControl component
   const [timeControl, setTimeControl] = useState<TimeControl | "ANY">()
-  const navigate = useNavigate()
-  const stompClient = useRef<Client | null>(null)
-  const { jwt, isPending: jwtIsPending } = useJwt()
-
-  const connect = () => {
-    const client = new Client({
-      webSocketFactory: () =>
-        new SockJS(import.meta.env.VITE_BASE_URL + "matchmaking"),
-      beforeConnect: async () => {
-        const fresh = (await ensureFreshJwt()) ?? jwt
-        client.connectHeaders = { Authorization: `Bearer ${fresh}` }
-      },
-      debug: (str: string) => console.log(str),
-      onConnect: () => {
-        // Subscribe to your specific user queue for status updates
-        // client.subscribe('/user/queue/status', (message: IMessage) => {
-        //   const body: QueueStatus = JSON.parse(message.body);
-        // });
-
-        // Subscribe to match found events
-        client.subscribe("/user/queue/match", (message: IMessage) => {
-          const match: MatchFoundEvent = JSON.parse(message.body)
-          setInQueue(false) // Match found, no longer in queue, redirect to match page
-          navigate(`/match`, { state: match })
-        })
-
-        joinQueue() // send join request immediately after connecting
-      },
-      // onStompError: (frame: { headers: { [x: string]: string; }; }) => {
-      // },
-    })
-
-    client.activate()
-    stompClient.current = client
-  }
-
-  const joinQueue = () => {
-    if (stompClient.current?.connected) {
-      // const randomMoveTimeModelType: BotConfiguration['botMoveTimeModelType'] = Math.random() > 0.5 ? 'REALISTIC' : 'MEDIAN';
-      // un-comment for randomised botMoveTimeModelType
-      const joinRequest: JoinRequest = {
-        displayName: getLocalStorage("displayName") ?? "",
-        matchType: "PVE",
-        botConfiguration: {
-          botModelType: "MINMAX",
-          botMoveTimeModelType: "REALISTIC",
-        },
-        timeControl: timeControl == "ANY" ? undefined : timeControl,
-      }
-      stompClient.current.publish({
-        destination: "/app/join",
-        body: JSON.stringify(joinRequest),
-      })
-      setInQueue(true)
-    }
+  const [inQueue, setInQueue] = useState(false)
+  const joinRequest: JoinRequest = {
+    displayName: getLocalStorage("displayName") ?? "",
+    matchType: "PVE",
+    botConfiguration: {
+      botModelType: "MINMAX",
+      botMoveTimeModelType: "REALISTIC",
+    },
+    timeControl: timeControl == "ANY" ? undefined : timeControl,
   }
 
   return (
@@ -410,25 +279,23 @@ const PlayComputerButton = ({
         </DialogHeader>
         <SelectTimeControl value={timeControl} callBack={setTimeControl} />
         <DialogFooter>
-          <DialogClose asChild>
-            <Button
-              onClick={() => {
-                stompClient.current?.deactivate()
-                setInQueue(false)
-              }}
-              variant="outline"
-            >
-              Cancel
-            </Button>
-          </DialogClose>
-          <Button
-            onClick={connect}
-            variant={inQueue ? "secondary" : "default"}
-            disabled={inQueue || timeControl === undefined || jwtIsPending}
-          >
-            {inQueue && <Spinner data-icon="inline-start" />}
-            {inQueue ? "Joining..." : "Play"}
-          </Button>
+          {!inQueue && (
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+          )}
+          <QueueButton
+            joinRequest={joinRequest}
+            onQueueChange={setInQueue}
+            buttonText="Play"
+            cancelTrigger={(onClick) => (
+              <DialogClose asChild>
+                <Button onClick={onClick} variant="outline">
+                  Cancel
+                </Button>
+              </DialogClose>
+            )}
+          />
         </DialogFooter>
       </DialogContent>
     </Dialog>
