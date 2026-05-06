@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service
 class MatchRecordService(
     private val matchRecordRepository: MatchRecordRepository,
     private val playerRepository: PlayerRepository,
-    private val glicko2Service: Glicko2Service
+    private val glicko2Service: Glicko2Service,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 

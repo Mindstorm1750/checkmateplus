@@ -7,6 +7,7 @@ type Mutation {
     refresh(refreshToken: String!): AuthResponse!
     logout(refreshToken: String!): Boolean!
     postGameSurvey(matchId: String!, surveyScore: Int!, optionalComments: String): Survey!
+    requestMatchAnalysis(matchId: ID!): MatchAnalysis!
 }
 
 type Query {
@@ -16,6 +17,30 @@ type Query {
     leaderboard(size: Int = 10): [LeaderboardEntry!]!
     liveMatches(afterCursor: String, size: Int = 20): SpectateMatchPage!
     spectateMatch(matchId: ID!): SpectateMatch
+    matchAnalysis(matchId: ID!): MatchAnalysis
+}
+
+type MatchAnalysis {
+    matchId: String!
+    status: String!
+    moves: [MoveAnalysis!]!
+}
+
+type MoveAnalysis {
+    ply: Int!
+    moveUci: String!
+    bestMoveUci: String!
+    scoreBefore: AnalysisScore!
+    scoreAfter: AnalysisScore!
+    cpLoss: Int!
+    classification: String!
+    pv: [String!]!
+    depth: Int!
+}
+
+type AnalysisScore {
+    cp: Int
+    mate: Int
 }
 
 type SpectateMatchPage {

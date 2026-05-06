@@ -68,7 +68,15 @@ class MatchRecordEntity(
     var historyJson: String = "[]",
 
     @Column(name = "createdAtEpochMs", nullable = false)
-    var createdAtEpochMs: Long
+    var createdAtEpochMs: Long,
+
+    @Column(name = "analysis_json")
+    @JdbcTypeCode(SqlTypes.JSON)
+    var analysisJson: String? = null,
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "analysis_status", nullable = false)
+    var analysisStatus: AnalysisStatus = AnalysisStatus.PENDING
 ) {
     @get:Transient
     val board: Board get() = Json.decodeFromString(boardJson)

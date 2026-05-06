@@ -66,6 +66,7 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     implementation(project(":ChessLibrary"))
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
     implementation("dev.samstevens.totp:totp-spring-boot-starter:1.7.1") {
         exclude(group = "com.google.zxing", module = "javase") //resolve vulnerability cve 8.8
         //actually care cause this is the TOTP lib
