@@ -51,6 +51,13 @@ function SpectateMatch() {
   const stompClient = useRef<Client | null>(null)
   const { jwt, isPending: jwtIsPending } = useJwt()
 
+  const playerLabels = matchSummary
+    ? {
+        whitePlayerLabel: `${matchSummary.whitePlayer?.displayName ?? ""}${matchSummary.whitePlayer?.rating && ` (${matchSummary.whitePlayer?.rating})`}`,
+        blackPlayerLabel: `${matchSummary.blackPlayer?.displayName ?? ""}${matchSummary.blackPlayer?.rating && ` (${matchSummary.blackPlayer?.rating})`}`,
+      }
+    : undefined
+
   useEffect(() => {
     if (jwtIsPending || !jwt || !matchId || !websocketUrl) return
     if (stompClient.current) return
@@ -216,6 +223,7 @@ function SpectateMatch() {
             whitePerspective={true}
             pieceOrigins={pieceOrigins}
             isCheck={isCheck}
+            playerLabels={playerLabels}
           />
         </div>
       </div>
