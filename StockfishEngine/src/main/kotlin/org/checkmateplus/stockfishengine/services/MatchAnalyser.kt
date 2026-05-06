@@ -90,11 +90,11 @@ class MatchAnalyser(
     private fun classify(cpLoss: Int, played: String, best: String?): Classification {
         if (best != null && played == best) return Classification.CLASSIFICATION_BEST
         return when {
-            cpLoss < 10 -> Classification.CLASSIFICATION_BEST
-            cpLoss < 25 -> Classification.CLASSIFICATION_GREAT
-            cpLoss < 50 -> Classification.CLASSIFICATION_GOOD
+            cpLoss < 10 -> Classification.CLASSIFICATION_GREAT
+            cpLoss < 25 -> Classification.CLASSIFICATION_GOOD
+            cpLoss < 50 -> Classification.CLASSIFICATION_OK
             cpLoss < 100 -> Classification.CLASSIFICATION_INACCURACY
-            cpLoss < 250 -> Classification.CLASSIFICATION_MISTAKE
+            cpLoss < 200 -> Classification.CLASSIFICATION_MISTAKE
             else -> Classification.CLASSIFICATION_BLUNDER
         }
     }
