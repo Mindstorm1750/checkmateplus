@@ -63,7 +63,7 @@ function SpectateMatch() {
     if (stompClient.current) return
 
     const client = new Client({
-      webSocketFactory: () => new SockJS(`http://${websocketUrl}/match`),
+      webSocketFactory: () => new SockJS(`${import.meta.env.VITE_HTTP_PROTOCOL}://${websocketUrl}/match`),
       beforeConnect: async () => {
         const fresh = (await ensureFreshJwt()) ?? jwt
         client.connectHeaders = { Authorization: `Bearer ${fresh}` }
