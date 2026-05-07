@@ -6,7 +6,11 @@ import { algebraicToSquare, fenToBoard } from "@/lib/chess.helpers"
 import { useJwt } from "@/lib/JwtProvider"
 import { ensureFreshJwt } from "@/lib/auth"
 import type { SpectateMatch as SpectateMatchType } from "@/lib/playerServiceTypes/SpectateMatch"
-import type { MatchEventMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchEventMessage"
+import {
+  GAME_OVER_TITLES,
+  type MatchEventMessage,
+  type MatchEventType,
+} from "@/lib/stompMessageTypes/GameServer/models/messages/MatchEventMessage"
 import type {
   MatchStateMessage,
   MoveHistoryEntry,
@@ -26,6 +30,15 @@ import { useEffect, useRef, useState } from "react"
 import { useLocation, useNavigate, useParams } from "react-router"
 import SockJS from "sockjs-client/dist/sockjs"
 import { usePlayerRating } from "@/hooks/usePlayerStats.ts"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog.tsx"
+import { Button } from "@/components/ui/button.tsx"
 
 function SpectateMatch() {
   const { matchId } = useParams<{ matchId: string }>()
@@ -59,6 +72,8 @@ function SpectateMatch() {
   })
   const [isGameOver, setIsGameOver] = useState(false)
   const [gameOverMessage, setGameOverMessage] = useState<string>()
+  const [gameOverDialogOpen, setGameOverDialogOpen] = useState(false)
+  const [gameOverEventType, setGameOverEventType] = useState<MatchEventType>()
   const stompClient = useRef<Client | null>(null)
   const { jwt, isPending: jwtIsPending } = useJwt()
   const { data: whitePlayerRatingData } = usePlayerRating(
@@ -153,6 +168,8 @@ function SpectateMatch() {
               body.eventType === "DRAW_ACCEPTED"
             ) {
               setIsGameOver(true)
+              setGameOverEventType(body.eventType)
+              setGameOverDialogOpen(true)
               setGameOverMessage(body.message as string)
             }
           }
@@ -249,7 +266,6 @@ function SpectateMatch() {
       <div className="flex w-full justify-center">
         <div className="flex w-full flex-col gap-4 md:w-11/12 md:flex-row lg:w-5/6">
           <div className="min-w-0 md:flex-1">
-            {isGameOver && gameOverMessage && <p>{gameOverMessage}</p>}
             <ChessBoard
               readOnly
               isPlayersTurn={false}
@@ -272,6 +288,25 @@ function SpectateMatch() {
           </div>
         </div>
       </div>
+      <Dialog
+        open={gameOverDialogOpen}
+        onOpenChange={(open) => !open && setGameOverDialogOpen(false)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {gameOverEventType && GAME_OVER_TITLES[gameOverEventType]}
+            </DialogTitle>
+            <DialogDescription>{gameOverMessage}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setGameOverDialogOpen(false)}>Close</Button>
+            <Button onClick={() => navigate("/spectate")}>
+              Back to Spectate
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <BackArrowLink />
     </Layout>
   )
