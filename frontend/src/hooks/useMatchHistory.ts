@@ -21,7 +21,10 @@ const MATCH_HISTORY_QUERY = `
     }
   `
 
-export function useMatchHistory(playerId: string | null, pageSize = 20) {
+export function useMatchHistory(
+  playerId: string | null | undefined,
+  pageSize = 20
+) {
   return useInfiniteQuery({
     queryKey: ["matchHistory", playerId],
     queryFn: ({ pageParam }) =>

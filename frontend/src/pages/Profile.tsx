@@ -10,11 +10,9 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import { useMatchHistory } from "@/hooks/useMatchHistory"
 import { usePlayerRating, usePlayerStats } from "@/hooks/usePlayerStats"
-import { getLocalStorage } from "@/lib/local-storage.helpers"
-import { useJwt } from "@/lib/JwtProvider"
 import { TimeControlToStringMap } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/TimeControl"
 import type { MatchResult } from "@/lib/playerServiceTypes/MatchResult"
-import { useNavigate } from "react-router"
+import { useNavigate, useParams } from "react-router"
 import { BackArrowLink } from "@/components/ui/back-arrow-link.tsx"
 import {
   Table,
@@ -49,16 +47,15 @@ const resultColour: Record<MatchResult, string> = {
 }
 
 export default function Profile() {
-  const navigate = useNavigate()
-  const { isGuest } = useJwt()
-  const playerId = getLocalStorage("playerId")
-  const displayName = getLocalStorage("displayName")
+  const { playerId } = useParams<{ playerId: string }>()
 
   const {
     data: stats,
     isLoading: statsLoading,
     isError: statsError,
   } = usePlayerStats(playerId)
+
+  const displayName = stats?.displayName
 
   const {
     data: historyPages,
@@ -70,27 +67,6 @@ export default function Profile() {
   } = useMatchHistory(playerId)
 
   const matches = historyPages?.pages.flatMap((p) => p.matches) ?? []
-
-  if (isGuest) {
-    return (
-      <Layout>
-        <Card>
-          <CardContent className="flex flex-col items-center gap-4 pt-6">
-            <p>You are playing as a guest.</p>
-            <p className="text-sm text-muted-foreground">
-              Register an account to track your stats and match history.
-            </p>
-            <div className="flex gap-2">
-              <Button onClick={() => navigate("/register")}>Register</Button>
-              <Button variant="outline" onClick={() => navigate("/login")}>
-                Login
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </Layout>
-    )
-  }
 
   return (
     <Layout>
@@ -211,6 +187,7 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 
 function MatchRow({ match }: { match: MatchSummary }) {
   const { data: opponent } = usePlayerRating(match.opponentId ?? null)
+  const navigate = useNavigate()
 
   return (
     <TableRow key={match.matchId}>
@@ -220,10 +197,15 @@ function MatchRow({ match }: { match: MatchSummary }) {
       <TableCell className="text-muted-foreground">
         {match.colour === "WHITE" ? "White" : "Black"}
       </TableCell>
-      <TableCell>
-        {opponent
-          ? `${opponent.displayName}${opponent.skillRating ? ` (${opponent.skillRating})` : ""}`
-          : "Loading..."}
+      <TableCell
+        className="cursor-pointer"
+        onClick={() => opponent && navigate(`/profile/${opponent.playerId}`)}
+      >
+        {opponent ? (
+          <p className="hover:underline">{`${opponent.displayName}${opponent.skillRating ? ` (${opponent.skillRating})` : ""}`}</p>
+        ) : (
+          "Loading..."
+        )}
       </TableCell>
       <TableCell>
         {TimeControlToStringMap.get(match.timeControl) ?? match.timeControl}

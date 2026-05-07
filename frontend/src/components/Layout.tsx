@@ -24,6 +24,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const { theme, setTheme } = useTheme()
   const { isGuest, signOut } = useJwt()
   const [signingOut, setSigningOut] = useState(false)
+  const ourPlayerId = getLocalStorage("playerId")
 
   const handleSignOut = async () => {
     if (signingOut) return
@@ -55,7 +56,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             <>
               <Button
                 className="min-w-10 shrink p-3"
-                onClick={() => navigate("/profile")}
+                onClick={() => navigate(`/profile/${ourPlayerId}`)}
               >
                 <div className="min-w-0">
                   <div className="flex items-center justify-between gap-2">
