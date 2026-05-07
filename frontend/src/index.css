@@ -161,6 +161,5 @@
     }
     100% {
         transform: rotate(0deg);
-        opacity: 0.5;
     }
 }

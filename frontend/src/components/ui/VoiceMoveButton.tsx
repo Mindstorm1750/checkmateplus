@@ -133,13 +133,13 @@ export const VoiceMoveButton = ({
   }
 
   return (
-    <div className="relative inline-block">
+    <div className="flex w-[180px] flex-col">
       <Button
         disabled={!isInteractable}
         onMouseDown={startRecording}
         onMouseUp={stopRecording}
         onMouseLeave={() => isRecording && stopRecording()}
-        className="min-w-[180px]"
+        className="w-full"
         variant={isRecording ? "destructive" : "default"}
       >
         {!isInteractable
@@ -152,7 +152,7 @@ export const VoiceMoveButton = ({
       {toastMessage && (
         <div
           className={[
-            "absolute top-full z-50 mt-2 w-full rounded-md",
+            "mt-2 w-full rounded-md",
             "bg-destructive px-3 py-2 text-center text-sm text-white shadow-lg dark:text-black",
             "transition-all duration-500",
             isToastVisible

@@ -433,7 +433,7 @@ function MatchInner({state}: { state: MatchRedirectType }) {
                             readOnly={isPreviewing}
                         >
                             {!isGameOver && (
-                                <div className="flex w-full items-center gap-2">
+                                <div className="flex w-full items-start gap-2">
                                     <div className="shrink-0">
                                         <VoiceMoveButton
                                             matchId={matchId}
@@ -443,7 +443,7 @@ function MatchInner({state}: { state: MatchRedirectType }) {
                                             isInteractable={isPlayersTurn && !isGameOver}
                                         />
                                     </div>
-                                    <div className="ml-auto flex items-center gap-2">
+                                    <div className="ml-auto flex items-start gap-2">
                                         <Button
                                             onClick={() => setResignConfirmationDialog(true)}
                                             variant="outline"
