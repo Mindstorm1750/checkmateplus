@@ -32,10 +32,9 @@ function formatDuration(ms: number): string {
 }
 
 function formatDate(epochMs: number): string {
-  return new Date(epochMs).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
+  return new Date(epochMs).toLocaleString("en-GB", {
+    dateStyle: "medium",
+    timeStyle: "short",
   })
 }
 

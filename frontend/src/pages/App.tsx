@@ -31,7 +31,7 @@ import {
   type TimeControl,
   TimeControlToStringMap,
 } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/TimeControl"
-import { ArrowRight, Bot, Eye, Flame, Info, Play } from "lucide-react"
+import { ArrowRight, Bot, Eye, Flame, Info, Play, Trophy } from "lucide-react"
 import {
   HoverCard,
   HoverCardContent,
@@ -49,9 +49,10 @@ import type {
   SpectateMatch,
   SpectatePlayer,
 } from "@/lib/playerServiceTypes/SpectateMatch"
-import { MmrChart } from "../components/mmrChart"
 import { QueueButton } from "@/components/QueueButton.tsx"
 import { spectateMatchFilter } from "@/lib/spectate-match-filter.ts"
+import { useLeaderboard } from "@/hooks/useLeaderboard"
+import { Spinner } from "@/components/ui/spinner"
 
 const QUICK_TIME_CONTROLS: { name: string; tc: TimeControl; label: string }[] =
   [
@@ -67,6 +68,11 @@ function App() {
   const playerId = getLocalStorage("playerId")
   const displayName = getLocalStorage("displayName") ?? "friend"
   const { data: stats } = usePlayerStats(isGuest ? null : playerId)
+  const { data: liveData, isLoading: liveLoading } = useLiveMatches(1)
+  const topMatch: SpectateMatch | undefined =
+    liveData?.pages[0]?.matches &&
+    spectateMatchFilter(liveData.pages[0].matches, playerId)[0]
+  const showLive = !liveLoading && Boolean(topMatch)
 
   return (
     <Layout>
@@ -147,7 +153,7 @@ function App() {
                   trigger={
                     <button
                       type="button"
-                      className="flex cursor-pointer flex-col items-start gap-0.5 rounded-lg border border-border bg-foreground/[0.03] px-3 py-3.5 text-left transition-all hover:bg-foreground/[0.06]"
+                      className="flex cursor-pointer flex-col items-start gap-0.5 rounded-lg border border-border bg-foreground/3 px-3 py-3.5 text-left transition-all hover:bg-foreground/6"
                     >
                       <span className="text-[11px] font-medium text-muted-foreground">
                         {tc.name}
@@ -162,13 +168,14 @@ function App() {
             </div>
           </div>
         </div>
-        <LiveHeroBoardCard />
+        {!liveLoading &&
+          (topMatch ? (
+            <LiveHeroBoardCard match={topMatch} />
+          ) : (
+            <LeaderboardCard className="mt-8 lg:mt-0 lg:flex-1 lg:self-stretch" />
+          ))}
       </div>
-      {!isGuest && (
-        <div className="mt-12">
-          <MmrChart />
-        </div>
-      )}
+      {showLive && <LeaderboardCard className="mt-12 lg:max-w-md" />}
     </Layout>
   )
 }
@@ -186,16 +193,8 @@ const labelForPlayer = (player?: SpectatePlayer): string => {
   return player.displayName
 }
 
-function LiveHeroBoardCard() {
+function LiveHeroBoardCard({ match }: { match: SpectateMatch }) {
   const navigate = useNavigate()
-  const { data, isLoading, isError } = useLiveMatches(1)
-  const ourPlayerId = getLocalStorage("playerId")
-  const match: SpectateMatch | undefined =
-    data?.pages[0]?.matches &&
-    spectateMatchFilter(data?.pages[0]?.matches, ourPlayerId)[0]
-
-  if (isLoading || isError || !match) return null
-
   const board = fenToBoard(match.lastFen ?? STARTING_FEN)
 
   return (
@@ -231,6 +230,69 @@ function LiveHeroBoardCard() {
         className="mt-1 flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border text-sm font-medium text-foreground transition-colors hover:bg-muted"
       >
         Watch full game
+        <ArrowRight className="size-4" />
+      </button>
+    </div>
+  )
+}
+
+function LeaderboardCard({ className = "" }: { className?: string }) {
+  const navigate = useNavigate()
+  const { data, isLoading, isError } = useLeaderboard(10)
+
+  return (
+    <div
+      className={`flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 ${className}`}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded bg-foreground/10 px-2 py-0.5 text-[10px] font-bold tracking-widest text-foreground uppercase">
+            <Trophy className="size-3" />
+            Top 10
+          </span>
+          <span className="text-xs text-muted-foreground">Leaderboard</span>
+        </div>
+      </div>
+
+      {isLoading && (
+        <div className="flex justify-center py-10">
+          <Spinner />
+        </div>
+      )}
+      {isError && (
+        <p className="text-sm text-destructive">Failed to load leaderboard.</p>
+      )}
+      {data && (
+        <ul className="flex flex-1 flex-col">
+          {data.slice(0, 10).map((entry, idx) => (
+            <li
+              key={entry.playerId}
+              className={`flex items-center justify-between py-2.5 text-sm ${
+                idx > 0 ? "border-t border-border/60" : ""
+              }`}
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="w-6 text-right text-muted-foreground tabular-nums">
+                  {entry.rank}
+                </span>
+                <span className="truncate font-medium">
+                  {entry.displayName}
+                </span>
+              </div>
+              <span className="font-semibold tabular-nums">
+                {entry.skillRating}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <button
+        type="button"
+        onClick={() => navigate("/leaderboard")}
+        className="mt-auto flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border text-sm font-medium text-foreground transition-colors hover:bg-muted"
+      >
+        View full leaderboard
         <ArrowRight className="size-4" />
       </button>
     </div>
@@ -310,9 +372,9 @@ const PlayHumanButton = ({
           {isGuest ? (
             <HoverCard>
               <HoverCardTrigger asChild>
-                <span className="[animation:wiggle_1s_ease-in-out_0.2s_1_forwards] cursor-not-allowed">
+                <span className="animate-[wiggle_1s_ease-in-out_0.2s_1_forwards] cursor-not-allowed">
                   <ToggleGroupItem
-                    className="pointer-events-none !rounded-l-none !border-l-0"
+                    className="pointer-events-none rounded-l-none! border-l-0!"
                     disabled={true}
                     value="COMPETITIVE_PVP"
                   >
@@ -421,7 +483,7 @@ export const SelectTimeControl = ({
   value,
 }: {
   callBack: Dispatch<SetStateAction<TimeControl | "ANY" | undefined>>
-  includeAny?: Boolean
+  includeAny?: boolean
   value: TimeControl | "ANY" | undefined
 }) => {
   return (
