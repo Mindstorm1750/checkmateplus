@@ -16,6 +16,7 @@ import Login from "@/pages/Login.tsx"
 import Register from "@/pages/Register.tsx"
 import ConfirmTotp from "@/pages/ConfirmTotp.tsx"
 import Profile from "@/pages/Profile.tsx"
+import MatchReview from "@/pages/MatchReview.tsx"
 
 const queryClient = new QueryClient()
 
@@ -38,6 +39,10 @@ createRoot(document.getElementById("root")!).render(
                 <Route path="/register" element={<Register />} />
                 <Route path="/confirmTOTP" element={<ConfirmTotp />} />
                 <Route path="/profile/:playerId" element={<Profile />} />
+                <Route
+                  path="/match/:matchId/review"
+                  element={<MatchReview />}
+                />
               </Routes>
             </BrowserRouter>
           </ThemeProvider>

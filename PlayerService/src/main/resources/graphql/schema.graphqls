@@ -18,6 +18,29 @@ type Query {
     liveMatches(afterCursor: String, size: Int = 20): SpectateMatchPage!
     spectateMatch(matchId: ID!): SpectateMatch
     matchAnalysis(matchId: ID!): MatchAnalysis
+    matchMoveHistory(matchId: ID!): MatchMoveHistory
+}
+
+type MatchMoveHistory {
+    matchId: String!
+    whitePlayer: SpectatePlayer
+    blackPlayer: SpectatePlayer
+    timeControl: TimeControl!
+    matchType: String!
+    outcome: String!
+    finalFen: String!
+    moves: [MoveHistoryView!]!
+    createdAtEpochMs: Float!
+    gameDurationMs: Float!
+}
+
+type MoveHistoryView {
+    san: String!
+    from: String!
+    to: String!
+    fenAfter: String!
+    colour: String!
+    playerId: String!
 }
 
 type MatchAnalysis {

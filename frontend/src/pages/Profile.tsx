@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
 import { useMatchHistory } from "@/hooks/useMatchHistory"
+import { useRequestMatchAnalysis } from "@/hooks/useRequestMatchAnalysis"
 import { usePlayerRating, usePlayerStats } from "@/hooks/usePlayerStats"
 import { TimeControlToStringMap } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/TimeControl"
 import type { MatchResult } from "@/lib/playerServiceTypes/MatchResult"
@@ -23,20 +24,10 @@ import {
   TableRow,
 } from "@/components/ui/table.tsx"
 import type { MatchSummary } from "@/lib/playerServiceTypes/MatchSummary.ts"
-
-function formatDuration(ms: number): string {
-  const totalSeconds = Math.floor(ms / 1000)
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-  return minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`
-}
-
-function formatDate(epochMs: number): string {
-  return new Date(epochMs).toLocaleString("en-GB", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  })
-}
+import { MatchDetailsDialog } from "@/components/match-details/MatchDetailsDialog"
+import { useEffect, useState } from "react"
+import { getLocalStorage } from "@/lib/local-storage.helpers"
+import { formatDate, formatDuration } from "@/lib/match-format.helpers"
 
 const resultColour: Record<MatchResult, string> = {
   WIN: "text-green-500",
@@ -47,6 +38,7 @@ const resultColour: Record<MatchResult, string> = {
 
 export default function Profile() {
   const { playerId } = useParams<{ playerId: string }>()
+  const isOwnProfile = playerId === getLocalStorage("playerId")
 
   const {
     data: stats,
@@ -66,6 +58,45 @@ export default function Profile() {
   } = useMatchHistory(playerId)
 
   const matches = historyPages?.pages.flatMap((p) => p.matches) ?? []
+
+  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null)
+  const selectedMatch =
+    matches.find((m) => m.matchId === selectedMatchId) ?? null
+
+  const [toast, setToast] = useState<string | null>(null)
+  const [toastVisible, setToastVisible] = useState(false)
+  useEffect(() => {
+    if (!toast) return
+    setToastVisible(true)
+    const fade = window.setTimeout(() => setToastVisible(false), 4500)
+    const remove = window.setTimeout(() => setToast(null), 5000)
+    return () => {
+      window.clearTimeout(fade)
+      window.clearTimeout(remove)
+    }
+  }, [toast])
+
+  const { mutateAsync: requestAnalysis } = useRequestMatchAnalysis()
+  const [queueing, setQueueing] = useState(false)
+
+  const handleQueueAll = async () => {
+    if (matches.length === 0) return
+    setQueueing(true)
+    try {
+      const results = await Promise.allSettled(
+        matches.map((m) => requestAnalysis(m.matchId))
+      )
+      const ok = results.filter((r) => r.status === "fulfilled").length
+      const failed = results.length - ok
+      setToast(
+        failed === 0
+          ? `Queued ${ok} match${ok === 1 ? "" : "es"} for analysis`
+          : `Queued ${ok}, ${failed} failed`
+      )
+    } finally {
+      setQueueing(false)
+    }
+  }
 
   return (
     <Layout>
@@ -120,11 +151,38 @@ export default function Profile() {
 
         {/* Match History */}
         <Card>
-          <CardHeader>
-            <CardTitle>Match History</CardTitle>
-            <CardDescription>Your recent games</CardDescription>
+          <CardHeader className="flex flex-row items-start justify-between gap-2">
+            <div>
+              <CardTitle>Match History</CardTitle>
+              <CardDescription>Your recent games</CardDescription>
+            </div>
+            {isOwnProfile && matches.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleQueueAll}
+                disabled={queueing}
+              >
+                {queueing ? "Queueing..." : "Queue all matches for analysis"}
+              </Button>
+            )}
           </CardHeader>
           <CardContent>
+            {toast && (
+              <div
+                className={[
+                  "mb-2 rounded-md bg-primary px-3 py-2 text-center text-sm text-primary-foreground",
+                  "transition-all duration-500",
+                  toastVisible
+                    ? "translate-y-0 opacity-100"
+                    : "translate-y-2 opacity-0",
+                ].join(" ")}
+                role="status"
+                aria-live="polite"
+              >
+                {toast}
+              </div>
+            )}
             {historyLoading && <Spinner />}
             {historyError && (
               <p className="text-destructive">Failed to load match history.</p>
@@ -149,7 +207,11 @@ export default function Profile() {
                   </TableHeader>
                   <TableBody>
                     {matches.map((match) => (
-                      <MatchRow key={match.matchId} match={match} />
+                      <MatchRow
+                        key={match.matchId}
+                        match={match}
+                        onSelect={() => setSelectedMatchId(match.matchId)}
+                      />
                     ))}
                   </TableBody>
                 </Table>
@@ -169,6 +231,11 @@ export default function Profile() {
         </Card>
       </div>
       <BackArrowLink />
+      <MatchDetailsDialog
+        match={selectedMatch}
+        open={selectedMatchId !== null && selectedMatch !== null}
+        onOpenChange={(open) => !open && setSelectedMatchId(null)}
+      />
     </Layout>
   )
 }
@@ -184,12 +251,22 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
   )
 }
 
-function MatchRow({ match }: { match: MatchSummary }) {
+function MatchRow({
+  match,
+  onSelect,
+}: {
+  match: MatchSummary
+  onSelect: () => void
+}) {
   const { data: opponent } = usePlayerRating(match.opponentId ?? null)
   const navigate = useNavigate()
 
   return (
-    <TableRow key={match.matchId}>
+    <TableRow
+      key={match.matchId}
+      onClick={onSelect}
+      className="cursor-pointer hover:bg-accent/50"
+    >
       <TableCell className={`font-semibold ${resultColour[match.result]}`}>
         {match.result}
       </TableCell>
@@ -197,8 +274,10 @@ function MatchRow({ match }: { match: MatchSummary }) {
         {match.colour === "WHITE" ? "White" : "Black"}
       </TableCell>
       <TableCell
-        className="cursor-pointer"
-        onClick={() => opponent && navigate(`/profile/${opponent.playerId}`)}
+        onClick={(e) => {
+          e.stopPropagation()
+          if (opponent) navigate(`/profile/${opponent.playerId}`)
+        }}
       >
         {opponent ? (
           <p className="hover:underline">{`${opponent.displayName}${opponent.skillRating ? ` (${opponent.skillRating})` : ""}`}</p>
