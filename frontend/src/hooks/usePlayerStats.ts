@@ -36,7 +36,7 @@ const PLAYER_RATING_QUERY = `
     }
   `
 
-export function usePlayerRating(playerId: string | null) {
+export function usePlayerRating(playerId: string | null | undefined) {
   return usePlayerStats<PlayerRating>(
     playerId,
     PLAYER_RATING_QUERY,
@@ -45,7 +45,7 @@ export function usePlayerRating(playerId: string | null) {
 }
 
 export function usePlayerStats<QueryReturnType = PlayerStats>(
-  playerId: string | null,
+  playerId: string | null | undefined,
   query: string = DEFAULT_PLAYER_STATS_QUERY,
   queryKey: string = "playerStats"
 ) {

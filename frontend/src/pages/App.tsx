@@ -41,7 +41,7 @@ import { useJwt } from "@/lib/JwtProvider"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import type { MatchType } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/MatchType.ts"
 import { getLocalStorage } from "@/lib/local-storage.helpers.ts"
-import { usePlayerStats } from "@/hooks/usePlayerStats"
+import { usePlayerRating, usePlayerStats } from "@/hooks/usePlayerStats"
 import { useLiveMatches } from "@/hooks/useLiveMatches"
 import MiniChessBoard from "@/components/ui/MiniChessBoard"
 import { fenToBoard, STARTING_FEN } from "@/lib/chess.helpers"
@@ -51,6 +51,7 @@ import type {
 } from "@/lib/playerServiceTypes/SpectateMatch"
 import { MmrChart } from "../components/mmrChart"
 import { QueueButton } from "@/components/QueueButton.tsx"
+import { spectateMatchFilter } from "@/lib/spectate-match-filter.ts"
 
 const QUICK_TIME_CONTROLS: { name: string; tc: TimeControl; label: string }[] =
   [
@@ -73,7 +74,7 @@ function App() {
         <div className="flex flex-col gap-7 lg:max-w-md lg:flex-1">
           {stats && stats.currentStreak >= 2 && (
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-foreground/4 px-3 py-1.5 text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
-              <Flame className="size-3 text-emerald-400" />
+              <Flame className="size-3 text-brand-accent" />
               You're on a {stats.currentStreak}-game win streak
             </div>
           )}
@@ -198,7 +199,10 @@ const labelForPlayer = (player?: SpectatePlayer): string => {
 function LiveHeroBoardCard() {
   const navigate = useNavigate()
   const { data, isLoading, isError } = useLiveMatches(1)
-  const match: SpectateMatch | undefined = data?.pages[0]?.matches[0]
+  const ourPlayerId = getLocalStorage("playerId")
+  const match: SpectateMatch | undefined =
+    data?.pages[0]?.matches &&
+    spectateMatchFilter(data?.pages[0]?.matches, ourPlayerId)[0]
 
   if (isLoading || isError || !match) return null
 
@@ -250,12 +254,13 @@ function PlayerTimerRow({
   player?: SpectatePlayer
   seconds: number
 }) {
+  const { data: playerData } = usePlayerRating(player?.playerId)
   return (
     <div className="flex items-center justify-between text-sm">
       <div>
         <div className="font-semibold">{labelForPlayer(player)}</div>
         <div className="text-xs text-muted-foreground tabular-nums">
-          {player?.rating ?? "—"}
+          {playerData?.skillRating && `Rating: ${playerData.skillRating}`}
         </div>
       </div>
       <div className="rounded-md bg-muted px-3 py-1.5 text-base font-bold tabular-nums">

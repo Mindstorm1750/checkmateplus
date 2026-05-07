@@ -23,6 +23,7 @@ import { Bot } from "lucide-react"
 import { useState } from "react"
 import { useNavigate } from "react-router"
 import { getLocalStorage } from "@/lib/local-storage.helpers.ts"
+import { spectateMatchFilter } from "@/lib/spectate-match-filter.ts"
 
 const matchTypeLabel: Record<MatchType, string> = {
   CASUAL_PVP: "Casual",
@@ -59,13 +60,7 @@ export default function Spectate() {
   const ourPlayerId = getLocalStorage("playerId")
 
   const unfilteredMatches = data?.pages.flatMap((p) => p.matches) ?? []
-  const matches = unfilteredMatches
-    .filter((match) => match.status == "ACTIVE")
-    .filter(
-      (match) =>
-        ourPlayerId != match.whitePlayer?.playerId &&
-        ourPlayerId != match.blackPlayer?.playerId
-    ) // filter out matches we're involved in as spectating our own match runs into problems
+  const matches = spectateMatchFilter(unfilteredMatches, ourPlayerId ?? "")
   const selected = matches.find((match) => match.matchId === selectedId)
 
   return (

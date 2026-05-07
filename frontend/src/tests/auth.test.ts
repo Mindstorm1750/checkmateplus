@@ -147,21 +147,22 @@ describe("ensureFreshJwt", () => {
   test("refreshes when expiring and persists new tokens", async () => {
     const farFuture = Math.floor(Date.now() / 1000) + 3600
     const newJwt = makeJwt(farFuture)
-    const fetchSpy = vi.fn(async () =>
-      new Response(
-        JSON.stringify({
-          data: {
-            refresh: {
-              jwt: newJwt,
-              refreshToken: "rt-new",
-              playerId: "p1",
-              displayName: "Alice",
-              isGuest: false,
+    const fetchSpy = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            data: {
+              refresh: {
+                jwt: newJwt,
+                refreshToken: "rt-new",
+                playerId: "p1",
+                displayName: "Alice",
+                isGuest: false,
+              },
             },
-          },
-        }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      )
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        )
     )
     vi.stubGlobal("fetch", fetchSpy)
     const soon = Math.floor(Date.now() / 1000) + 5
@@ -178,21 +179,22 @@ describe("ensureFreshJwt", () => {
   test("two concurrent callers share one fetch", async () => {
     const farFuture = Math.floor(Date.now() / 1000) + 3600
     const newJwt = makeJwt(farFuture)
-    const fetchSpy = vi.fn(async () =>
-      new Response(
-        JSON.stringify({
-          data: {
-            refresh: {
-              jwt: newJwt,
-              refreshToken: "rt-new",
-              playerId: "p1",
-              displayName: "Alice",
-              isGuest: false,
+    const fetchSpy = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            data: {
+              refresh: {
+                jwt: newJwt,
+                refreshToken: "rt-new",
+                playerId: "p1",
+                displayName: "Alice",
+                isGuest: false,
+              },
             },
-          },
-        }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      )
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        )
     )
     vi.stubGlobal("fetch", fetchSpy)
     const soon = Math.floor(Date.now() / 1000) + 5
@@ -207,11 +209,12 @@ describe("ensureFreshJwt", () => {
   })
 
   test("clears storage and returns null on refresh failure", async () => {
-    const fetchSpy = vi.fn(async () =>
-      new Response(
-        JSON.stringify({ errors: [{ message: "invalid refresh token" }] }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      )
+    const fetchSpy = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({ errors: [{ message: "invalid refresh token" }] }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        )
     )
     vi.stubGlobal("fetch", fetchSpy)
     const soon = Math.floor(Date.now() / 1000) + 5
