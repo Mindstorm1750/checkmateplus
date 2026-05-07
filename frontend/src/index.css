@@ -139,3 +139,28 @@
             var(--color-brand-accent-muted) 100%
     );
 }
+
+@keyframes wiggle {
+    0% {
+        transform: rotate(0deg);
+    }
+    15% {
+        transform: rotate(-6deg);
+    }
+    30% {
+        transform: rotate(6deg);
+    }
+    45% {
+        transform: rotate(-4deg);
+    }
+    60% {
+        transform: rotate(4deg);
+    }
+    75% {
+        transform: rotate(-1deg);
+    }
+    100% {
+        transform: rotate(0deg);
+        opacity: 0.5;
+    }
+}

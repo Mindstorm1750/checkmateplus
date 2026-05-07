@@ -113,36 +113,26 @@ function App() {
 
           <PlayHumanButton
             trigger={
-              <button
-                type="button"
-                className="flex h-14 w-full cursor-pointer items-center justify-center gap-3 rounded-xl bg-primary px-5 text-base font-bold text-primary-foreground transition-all hover:bg-primary/90"
-              >
+              <Button className="min-h-12">
                 <Play className="size-5 fill-current" />
                 Play against humans
-              </button>
+              </Button>
             }
           />
 
           <div className="grid grid-cols-2 gap-3">
             <PlayComputerButton
               trigger={
-                <button
-                  type="button"
-                  className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-muted text-sm font-medium text-foreground transition-all hover:bg-muted/80"
-                >
+                <Button variant="outline">
                   <Bot className="size-4" />
                   Play computer
-                </button>
+                </Button>
               }
             />
-            <button
-              type="button"
-              onClick={() => navigate("/spectate")}
-              className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-muted text-sm font-medium text-foreground transition-all hover:bg-muted/80"
-            >
+            <Button onClick={() => navigate("/spectate")} variant="outline">
               <Eye className="size-4" />
               Spectate
-            </button>
+            </Button>
           </div>
 
           <div>
@@ -283,11 +273,13 @@ const PlayHumanButton = ({
   const [timeControl, setTimeControl] = useState<
     TimeControl | "ANY" | undefined
   >(initialTimeControl)
-  const [matchType, setMatchType] = useState<MatchType>("COMPETITIVE_PVP")
+  const { isGuest } = useJwt()
+  const [matchType, setMatchType] = useState<MatchType>(
+    isGuest ? "CASUAL_PVP" : "COMPETITIVE_PVP"
+  )
   const [inQueue, setInQueue] = useState(false)
   const titleText = "Play against humans"
   const descriptionText = "Get matched with other players"
-  const { isGuest } = useJwt()
   const joinRequest: JoinRequest = {
     displayName: getLocalStorage("displayName") ?? "",
     matchType: isGuest ? "CASUAL_PVP" : (matchType ?? "CASUAL_PVP"),
@@ -306,18 +298,38 @@ const PlayHumanButton = ({
             {descriptionText}
           </DialogDescription>
         </DialogHeader>
-        {!isGuest && (
-          <ToggleGroup
-            type="single"
-            variant="outline"
-            value={matchType}
-            onValueChange={(e) => setMatchType(e as MatchType)}
-            defaultValue="COMPETITIVE_PVP"
-          >
-            <ToggleGroupItem value="CASUAL_PVP">Casual</ToggleGroupItem>
+
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          value={matchType}
+          onValueChange={(e) => setMatchType(e as MatchType)}
+          defaultValue={isGuest ? "CASUAL_PVP" : "COMPETITIVE_PVP"}
+        >
+          <ToggleGroupItem value="CASUAL_PVP">Casual</ToggleGroupItem>
+          {isGuest ? (
+            <HoverCard>
+              <HoverCardTrigger asChild>
+                <span className="[animation:wiggle_1s_ease-in-out_0.2s_1_forwards] cursor-not-allowed">
+                  <ToggleGroupItem
+                    className="pointer-events-none !rounded-l-none !border-l-0"
+                    disabled={true}
+                    value="COMPETITIVE_PVP"
+                  >
+                    Ranked
+                  </ToggleGroupItem>
+                </span>
+              </HoverCardTrigger>
+              <HoverCardContent>
+                <p className="text-sm">
+                  Create an account to play ranked games.
+                </p>
+              </HoverCardContent>
+            </HoverCard>
+          ) : (
             <ToggleGroupItem value="COMPETITIVE_PVP">Ranked</ToggleGroupItem>
-          </ToggleGroup>
-        )}
+          )}
+        </ToggleGroup>
         <SelectTimeControl
           value={timeControl}
           callBack={setTimeControl}

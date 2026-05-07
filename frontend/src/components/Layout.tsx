@@ -88,6 +88,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                     variant="outline"
                     value={preferences.boardColour}
                     onValueChange={(e) =>
+                      e &&
                       updatePreferences({
                         boardColour: e as Preferences["boardColour"],
                       })
@@ -113,6 +114,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                     variant="outline"
                     value={preferences.animationType}
                     onValueChange={(e) =>
+                      e &&
                       updatePreferences({
                         animationType: e as Preferences["animationType"],
                       })
@@ -126,7 +128,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                     type="single"
                     variant="outline"
                     value={theme}
-                    onValueChange={(e) => setTheme(e as Theme)}
+                    onValueChange={(e) => e && setTheme(e as Theme)}
                   >
                     <ToggleGroupItem value="light">Light</ToggleGroupItem>
                     <ToggleGroupItem value="dark">Dark</ToggleGroupItem>
