@@ -1,13 +1,6 @@
-package org.checkmateplus.gameserver.util
+package org.checkmateplus.chessLibrary.chessEngine
 
 import kotlin.math.abs
-import org.checkmateplus.chessLibrary.chessEngine.Board
-import org.checkmateplus.chessLibrary.chessEngine.BoardState
-import org.checkmateplus.chessLibrary.chessEngine.Colour
-import org.checkmateplus.chessLibrary.chessEngine.Move
-import org.checkmateplus.chessLibrary.chessEngine.PieceType
-import org.checkmateplus.chessLibrary.chessEngine.toAlgebraic
-import org.checkmateplus.chessLibrary.chessEngine.toFileRank
 
 object SanFormatter {
 
@@ -29,7 +22,7 @@ object SanFormatter {
 
         val isPawn = pieceType == PieceType.PAWN
         val isCapture = preMoveBoard.squares[move.to] != null ||
-            (isPawn && move.to == preMoveBoard.enPassantSquare)
+                (isPawn && move.to == preMoveBoard.enPassantSquare)
 
         val sb = StringBuilder()
 
@@ -44,9 +37,9 @@ object SanFormatter {
             sb.append(pieceLetter(pieceType))
             val ambiguous = preMoveBoard.generateLegalMoves().filter { other ->
                 other != move &&
-                    other.to == move.to &&
-                    preMoveBoard.squares[other.from]?.type == pieceType &&
-                    preMoveBoard.squares[other.from]?.color == colour
+                        other.to == move.to &&
+                        preMoveBoard.squares[other.from]?.type == pieceType &&
+                        preMoveBoard.squares[other.from]?.color == colour
             }
             if (ambiguous.isNotEmpty()) {
                 val (fromFile, fromRank) = move.from.toFileRank()

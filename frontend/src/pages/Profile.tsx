@@ -10,7 +10,11 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import { useMatchHistory } from "@/hooks/useMatchHistory"
 import { useRequestMatchAnalysis } from "@/hooks/useRequestMatchAnalysis"
-import { usePlayerRating, usePlayerStats } from "@/hooks/usePlayerStats"
+import {
+  usePlayerName,
+  usePlayerRating,
+  usePlayerStats,
+} from "@/hooks/usePlayerStats"
 import { TimeControlToStringMap } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/TimeControl"
 import type { MatchResult } from "@/lib/playerServiceTypes/MatchResult"
 import { useNavigate, useParams } from "react-router"
@@ -259,6 +263,7 @@ function MatchRow({
   onSelect: () => void
 }) {
   const { data: opponent } = usePlayerRating(match.opponentId ?? null)
+  const { data: opponentName } = usePlayerName(match.opponentId)
   const navigate = useNavigate()
 
   return (
@@ -279,8 +284,10 @@ function MatchRow({
           if (opponent) navigate(`/profile/${opponent.playerId}`)
         }}
       >
-        {opponent ? (
-          <p className="hover:underline">{`${opponent.displayName}${opponent.skillRating ? ` (${opponent.skillRating})` : ""}`}</p>
+        {opponentName ? (
+          <p
+            className={`${opponent ? "hover:underline" : "text-muted-foreground"}`}
+          >{`${opponentName.displayName}${opponent?.skillRating ? ` (${opponent.skillRating})` : ""}`}</p>
         ) : (
           "Loading..."
         )}

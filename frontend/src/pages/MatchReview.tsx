@@ -83,8 +83,7 @@ export default function MatchReview() {
   }
 
   const status = analysis?.status
-  const showAnalyseCta =
-    !status || status === "PENDING" || status === "FAILED"
+  const showAnalyseCta = !status || status === "PENDING" || status === "FAILED"
   const showAnalysing = status === "QUEUED" || status === "RUNNING"
 
   return (

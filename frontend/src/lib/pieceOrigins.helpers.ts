@@ -5,7 +5,7 @@ type Step = { from: Square; to: Square }
 const setCastlingRook = (
   next: Map<Square, Square>,
   rookTo: Square,
-  rookFrom: Square,
+  rookFrom: Square
 ) => {
   const rookOrigin = next.get(rookFrom) ?? rookFrom
   next.set(rookTo, rookOrigin)
@@ -14,7 +14,7 @@ const setCastlingRook = (
 
 export const applyForwardStep = (
   prev: Map<Square, Square>,
-  move: Step,
+  move: Step
 ): Map<Square, Square> => {
   const originOfFrom = prev.get(move.from)
   if (originOfFrom === undefined || originOfFrom === null) {
@@ -33,7 +33,7 @@ export const applyForwardStep = (
 
 export const applyBackwardStep = (
   prev: Map<Square, Square>,
-  move: Step,
+  move: Step
 ): Map<Square, Square> => {
   const originOfTo = prev.get(move.to)
   if (originOfTo === undefined || originOfTo === null) {

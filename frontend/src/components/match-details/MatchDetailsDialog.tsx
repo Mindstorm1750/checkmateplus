@@ -101,9 +101,7 @@ function Body({ match }: { match: MatchSummary }) {
         >
           {requestPending ? "Queueing..." : "Analyse this match"}
         </Button>
-        <Button
-          onClick={() => navigate(`/match/${match.matchId}/review`)}
-        >
+        <Button onClick={() => navigate(`/match/${match.matchId}/review`)}>
           Review match
         </Button>
       </div>

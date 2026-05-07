@@ -275,7 +275,10 @@ function LeaderboardCard({ className = "" }: { className?: string }) {
                 <span className="w-6 text-right text-muted-foreground tabular-nums">
                   {entry.rank}
                 </span>
-                <span className="truncate font-medium">
+                <span
+                  className="cursor-pointer truncate font-medium hover:underline"
+                  onClick={() => navigate(`/profile/${entry.playerId}`)}
+                >
                   {entry.displayName}
                 </span>
               </div>
@@ -306,7 +309,7 @@ function PlayerTimerRow({
   player?: SpectatePlayer
   seconds: number
 }) {
-  const { data: playerData } = usePlayerRating(player?.playerId)
+  const { data: playerData } = usePlayerRating(player?.playerId ?? null)
   return (
     <div className="flex items-center justify-between text-sm">
       <div>

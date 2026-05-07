@@ -2,7 +2,9 @@ package org.checkmateplus.playerservice.controllers
 
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+import org.checkmateplus.chessLibrary.chessEngine.FenToBoard
 import org.checkmateplus.chessLibrary.chessEngine.PieceType
+import org.checkmateplus.chessLibrary.chessEngine.SanFormatter.toSan
 import org.checkmateplus.chessLibrary.chessEngine.toAlgebraic
 import org.checkmateplus.chessLibrary.playerModels.history.Turn
 import org.checkmateplus.playerservice.entitys.MatchRecordEntity
@@ -51,10 +53,10 @@ class MatchHistoryGraphQLController(
     private fun Turn.toView(whitePlayerId: String?): MoveHistoryView {
         val from = move.from.toAlgebraic()
         val to = move.to.toAlgebraic()
-        val promo = move.promotion?.let { promoChar(it) }.orEmpty()
         val colour = if (player.playerId == whitePlayerId) "WHITE" else "BLACK"
+        val hotfixBoard = FenToBoard(fen)
         return MoveHistoryView(
-            san = "$from$to$promo",
+            san = toSan(hotfixBoard, move, hotfixBoard.applyMove(move)),
             from = from,
             to = to,
             fenAfter = fen,

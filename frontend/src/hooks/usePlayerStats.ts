@@ -36,12 +36,28 @@ const PLAYER_RATING_QUERY = `
     }
   `
 
+const PLAYER_NAME_QUERY = `
+    query PlayerStats($playerId: String!) {
+      playerStats(playerId: $playerId) {
+        playerId
+        displayName
+      }
+    }
+  `
+
 export function usePlayerRating(playerId: string | null | undefined) {
+  const isPlayerRegistered = playerId
+    ? playerId.split("-")[0] == "RUser"
+    : false
   return usePlayerStats<PlayerRating>(
-    playerId,
+    isPlayerRegistered ? playerId : null,
     PLAYER_RATING_QUERY,
     "playerRating"
   )
+}
+
+export function usePlayerName(playerId: string | null | undefined) {
+  return usePlayerStats<PlayerRating>(playerId, PLAYER_NAME_QUERY, "playerName")
 }
 
 export function usePlayerStats<QueryReturnType = PlayerStats>(

@@ -1,11 +1,6 @@
 import { useEffect, useRef, type ReactNode } from "react"
 import type { MoveHistoryEntry } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchStateMessage"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableRow,
-} from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
 
 export type AnalysisScore = { cp?: number; mate?: number }
@@ -18,6 +13,32 @@ export type Classification =
   | "CLASSIFICATION_INACCURACY"
   | "CLASSIFICATION_MISTAKE"
   | "CLASSIFICATION_BLUNDER"
+
+export const CLASSIFICATION_LABEL: Record<
+  MoveAnalysis["classification"],
+  string
+> = {
+  CLASSIFICATION_BEST: "(Best)",
+  CLASSIFICATION_GREAT: "(Great)",
+  CLASSIFICATION_GOOD: "(Good)",
+  CLASSIFICATION_OK: "(Okay)",
+  CLASSIFICATION_INACCURACY: "(Inaccurate)",
+  CLASSIFICATION_MISTAKE: "(Mistake)",
+  CLASSIFICATION_BLUNDER: "(Blunder)",
+}
+
+export const CLASSIFICATION_COLOUR: Record<
+  MoveAnalysis["classification"],
+  string
+> = {
+  CLASSIFICATION_BEST: "var(--color-classification-best)",
+  CLASSIFICATION_GREAT: "var(--color-classification-great)",
+  CLASSIFICATION_GOOD: "var(--color-classification-good)",
+  CLASSIFICATION_OK: "var(--color-classification-ok)",
+  CLASSIFICATION_INACCURACY: "var(--color-classification-inaccuracy)",
+  CLASSIFICATION_MISTAKE: "var(--color-classification-mistake)",
+  CLASSIFICATION_BLUNDER: "var(--color-classification-blunder)",
+}
 
 export type MoveAnalysis = {
   ply: number
@@ -36,11 +57,7 @@ export type MoveHistoryProps = {
   selectedIndex: number | null
   onSelect: (index: number | null) => void
   analyses?: Map<number, MoveAnalysis>
-  renderAnalysis?: (
-    move: MoveHistoryEntry,
-    index: number,
-    analysis: MoveAnalysis | undefined,
-  ) => ReactNode
+  renderAnalysis?: (analysis: MoveAnalysis | undefined) => ReactNode
   className?: string
 }
 
@@ -140,14 +157,12 @@ const MoveHistory = ({
         }}
         className={cn(
           "cursor-pointer px-2 py-1 text-sm transition-colors hover:bg-accent/50",
-          isSelected && "bg-accent font-semibold hover:bg-accent",
+          isSelected && "bg-accent font-semibold hover:bg-accent"
         )}
       >
         <span>{move.san}</span>
         {renderAnalysis && (
-          <span className="ml-1 align-middle">
-            {renderAnalysis(move, index, analysis)}
-          </span>
+          <span className="ml-1 align-middle">{renderAnalysis(analysis)}</span>
         )}
       </TableCell>
     )

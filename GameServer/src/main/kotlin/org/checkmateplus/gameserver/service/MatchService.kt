@@ -22,7 +22,7 @@ import org.checkmateplus.gameserver.models.messages.MoveHistoryEntry
 import org.checkmateplus.gameserver.models.messages.MoveMessage
 import org.checkmateplus.gameserver.models.messages.MoveNotification
 import org.checkmateplus.gameserver.models.messages.TimeUpdateMessage
-import org.checkmateplus.gameserver.util.SanFormatter
+import org.checkmateplus.chessLibrary.chessEngine.SanFormatter
 import org.springframework.stereotype.Service
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -264,7 +264,7 @@ class MatchService(
         match?.board ?: throw IllegalStateException("Board not initialized")
         val boardState = match.board!!.getBoardState()
         var isCheckmate = false
-        var isCheck = match.board!!.isInCheck(match.activeTurn)
+        val isCheck = match.board!!.isInCheck(match.activeTurn)
         var isStalemate = false
         var isDraw = false
         if (boardState == BoardState.CHECKMATE) {
@@ -284,7 +284,7 @@ class MatchService(
                 from = turn.move.from.toAlgebraic(),
                 to = turn.move.to.toAlgebraic(),
                 fenAfter = postBoard.toFen(),
-                colour = if (i % 2 == 0) Colour.WHITE else Colour.BLACK,
+                colour = if (i % 2 == 0) WHITE else BLACK,
                 playerId = turn.player.playerId
             )
         }

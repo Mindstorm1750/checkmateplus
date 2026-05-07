@@ -5,6 +5,7 @@ import kotlin.test.assertEquals
 import org.checkmateplus.chessLibrary.chessEngine.FenToBoard
 import org.checkmateplus.chessLibrary.chessEngine.Move
 import org.checkmateplus.chessLibrary.chessEngine.PieceType
+import org.checkmateplus.chessLibrary.chessEngine.SanFormatter
 import org.checkmateplus.chessLibrary.chessEngine.toSquare
 
 class SanFormatterTest {
