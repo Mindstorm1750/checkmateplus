@@ -23,6 +23,7 @@ import {
   EMPTY_PIECE_ORIGINS,
   type Board,
   type Square,
+  type Move,
 } from "@/types/Chess.type"
 import { useSpectateMatch } from "@/hooks/useSpectateMatch"
 import { Client, type IMessage } from "@stomp/stompjs"
@@ -62,6 +63,7 @@ function SpectateMatch() {
   const [pieceOrigins, setPieceOrigins] =
     useState<Map<Square, Square>>(EMPTY_PIECE_ORIGINS)
   const [moveHistory, setMoveHistory] = useState<MoveHistoryEntry[]>([])
+  const [lastMove, setLastMove] = useState<Move>()
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
   const [previewPieceOrigins, setPreviewPieceOrigins] =
     useState<Map<Square, Square>>(EMPTY_PIECE_ORIGINS)
@@ -140,6 +142,7 @@ function SpectateMatch() {
                 from: algebraicToSquare(match.lastMove.from as string),
                 to: algebraicToSquare(match.lastMove.to as string),
               }
+              setLastMove(move)
               setPieceOrigins((prev) => applyForwardStep(prev, move))
             }
             setMoveHistory(match.moveHistory ?? [])
@@ -202,6 +205,16 @@ function SpectateMatch() {
     : pieceOrigins
 
   useEffect(() => {
+    if (previewIndex == null) {
+      setLastMove(undefined)
+    }
+    if (previewIndex !== null && moveHistory[previewIndex]) {
+      const move = moveHistory[previewIndex]
+      setLastMove({
+        from: algebraicToSquare(move.from),
+        to: algebraicToSquare(move.to),
+      })
+    }
     const liveIdx = moveHistory.length - 1
     const priorRaw = priorDisplayedIndexRef.current
     const priorIdx = priorRaw ?? liveIdx
@@ -277,6 +290,7 @@ function SpectateMatch() {
               pieceOrigins={displayedPieceOrigins}
               isCheck={isCheck}
               playerLabels={playerLabels}
+              lastMove={lastMove}
             />
           </div>
           <div className="w-full shrink-0 md:w-72 lg:w-80">
