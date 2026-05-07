@@ -5,9 +5,11 @@ import org.checkmateplus.chessLibrary.botEngine.BotEngine
 import org.checkmateplus.chessLibrary.botEngine.BotModelType
 import org.checkmateplus.chessLibrary.chessEngine.Board
 import org.checkmateplus.chessLibrary.chessEngine.BoardState
+import org.checkmateplus.chessLibrary.chessEngine.Colour
 import org.checkmateplus.chessLibrary.chessEngine.Colour.BLACK
 import org.checkmateplus.chessLibrary.chessEngine.Colour.WHITE
 import org.checkmateplus.chessLibrary.chessEngine.Move
+import org.checkmateplus.chessLibrary.chessEngine.toAlgebraic
 import org.checkmateplus.chessLibrary.chessEngine.toSquare
 import org.checkmateplus.chessLibrary.playerModels.MatchType
 import org.checkmateplus.chessLibrary.playerModels.Player
@@ -16,9 +18,11 @@ import org.checkmateplus.chessLibrary.playerModels.history.MatchRecord
 import org.checkmateplus.chessLibrary.playerModels.history.Turn
 import org.checkmateplus.gameserver.models.MatchState
 import org.checkmateplus.gameserver.models.messages.MatchStateMessage
+import org.checkmateplus.gameserver.models.messages.MoveHistoryEntry
 import org.checkmateplus.gameserver.models.messages.MoveMessage
 import org.checkmateplus.gameserver.models.messages.MoveNotification
 import org.checkmateplus.gameserver.models.messages.TimeUpdateMessage
+import org.checkmateplus.gameserver.util.SanFormatter
 import org.springframework.stereotype.Service
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -273,6 +277,17 @@ class MatchService(
             isStalemate = true
             isDraw = true
         }
+        val moveHistory = match.turnHistory.mapIndexed { i, turn ->
+            val postBoard = match.turnHistory.getOrNull(i + 1)?.board ?: match.board!!
+            MoveHistoryEntry(
+                san = SanFormatter.toSan(turn.board, turn.move, postBoard),
+                from = turn.move.from.toAlgebraic(),
+                to = turn.move.to.toAlgebraic(),
+                fenAfter = postBoard.toFen(),
+                colour = if (i % 2 == 0) Colour.WHITE else Colour.BLACK,
+                playerId = turn.player.playerId
+            )
+        }
         return MatchStateMessage(
             matchId = match.matchId,
             fen = match.board!!.toFen(),
@@ -284,7 +299,8 @@ class MatchService(
             isDraw = isDraw,
             lastMove = lastMove,
             whitePlayer = match.players.getOrNull(0),
-            blackPlayer = match.players.getOrNull(1)
+            blackPlayer = match.players.getOrNull(1),
+            moveHistory = moveHistory
         )
     }
 

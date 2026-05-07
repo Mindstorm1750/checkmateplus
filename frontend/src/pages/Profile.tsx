@@ -194,7 +194,7 @@ function MatchRow({ match }: { match: MatchSummary }) {
       <TableCell className={`font-semibold ${resultColour[match.result]}`}>
         {match.result}
       </TableCell>
-      <TableCell className="text-muted-foreground">
+      <TableCell className="">
         {match.colour === "WHITE" ? "White" : "Black"}
       </TableCell>
       <TableCell

@@ -18,8 +18,11 @@ import {
 } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchEventMessage"
 import type {
     MatchStateMessage,
+    MoveHistoryEntry,
     Player,
 } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchStateMessage"
+import {applyBackwardStep, applyForwardStep} from "@/lib/pieceOrigins.helpers"
+import MatchAnalysisPanel from "@/components/match-analysis/MatchAnalysisPanel"
 import type {MoveMessage} from "@/lib/stompMessageTypes/GameServer/models/messages/MoveMessage"
 import type {TimeUpdateMessage} from "@/lib/stompMessageTypes/GameServer/models/messages/TimeUpdateMessage"
 import {
@@ -89,6 +92,11 @@ function MatchInner({state}: { state: MatchRedirectType }) {
      */
     const [pieceOrigins, setPieceOrigins] =
         useState<Map<Square, Square>>(EMPTY_PIECE_ORIGINS)
+    const [moveHistory, setMoveHistory] = useState<MoveHistoryEntry[]>([])
+    const [previewIndex, setPreviewIndex] = useState<number | null>(null)
+    const [previewPieceOrigins, setPreviewPieceOrigins] =
+        useState<Map<Square, Square>>(EMPTY_PIECE_ORIGINS)
+    const priorDisplayedIndexRef = useRef<number | null>(null)
     const [clockState, setClockState] = useState<ChessBoardProps["clockState"]>()
     const [isPlayersTurn, setIsPlayersTurn] = useState<boolean>(false)
     const [isPlayerWhite, setIsPlayerWhite] = useState<boolean>(true)
@@ -206,6 +214,7 @@ function MatchInner({state}: { state: MatchRedirectType }) {
                             })
                         }
                         setIsPlayerWhite(match.whitePlayer?.playerId === playerId)
+                        setMoveHistory(match.moveHistory ?? [])
                     }
                 )
 
@@ -238,45 +247,10 @@ function MatchInner({state}: { state: MatchRedirectType }) {
                             const move = {
                                 from: algebraicToSquare(match.lastMove.from),
                                 to: algebraicToSquare(match.lastMove.to),
-                                promotion: match.lastMove.promotion,
                             }
-                            setPieceOrigins((prev) => {
-                                const originOfSquareMovedFrom = prev.get(move.from)
-                                if (
-                                    originOfSquareMovedFrom === undefined ||
-                                    originOfSquareMovedFrom === null
-                                ) {
-                                    // if pieceOrigins has already been updated with a move, the square we're moving from will have no origin (be undefined)
-                                    // therefore we should leave pieceOrigins as is.
-                                    return prev
-                                }
-                                const newPieceOrigins = new Map(prev)
-                                const origin = prev.get(move.from) ?? move.from
-                                const whiteCastledKingside = origin == 60 && move.to == 62
-                                const whiteCastledQueenside = origin == 60 && move.to == 58
-                                const blackCastledKingside = origin == 4 && move.to == 6
-                                const blackCastledQueenside = origin == 4 && move.to == 2
-                                if (whiteCastledKingside) {
-                                    newPieceOrigins.set(61, 63)
-                                    newPieceOrigins.delete(63)
-                                }
-                                if (whiteCastledQueenside) {
-                                    newPieceOrigins.set(59, 56)
-                                    newPieceOrigins.delete(56)
-                                }
-                                if (blackCastledKingside) {
-                                    newPieceOrigins.set(5, 7)
-                                    newPieceOrigins.delete(7)
-                                }
-                                if (blackCastledQueenside) {
-                                    newPieceOrigins.set(3, 0)
-                                    newPieceOrigins.delete(0)
-                                }
-                                newPieceOrigins.set(move.to, origin)
-                                newPieceOrigins.delete(move.from)
-                                return newPieceOrigins
-                            })
+                            setPieceOrigins((prev) => applyForwardStep(prev, move))
                         }
+                        setMoveHistory(match.moveHistory ?? [])
                     }
                 )
 
@@ -398,22 +372,65 @@ function MatchInner({state}: { state: MatchRedirectType }) {
         })
     }
 
+    const isPreviewing = previewIndex !== null
+    const displayedBoardState =
+        isPreviewing && moveHistory[previewIndex!]
+            ? fenToBoard(moveHistory[previewIndex!].fenAfter)
+            : boardState
+    const displayedPieceOrigins = isPreviewing ? previewPieceOrigins : pieceOrigins
+
+    useEffect(() => {
+        const liveIdx = moveHistory.length - 1
+        const priorRaw = priorDisplayedIndexRef.current
+        const priorIdx = priorRaw ?? liveIdx
+        const nextIdx = previewIndex ?? liveIdx
+
+        priorDisplayedIndexRef.current = previewIndex
+
+        if (nextIdx === priorIdx) return
+
+        const baseMap = priorRaw === null ? pieceOrigins : previewPieceOrigins
+
+        if (nextIdx === priorIdx + 1 && moveHistory[nextIdx]) {
+            const move = moveHistory[nextIdx]
+            setPreviewPieceOrigins(
+                applyForwardStep(baseMap, {
+                    from: algebraicToSquare(move.from),
+                    to: algebraicToSquare(move.to),
+                }),
+            )
+        } else if (nextIdx === priorIdx - 1 && moveHistory[priorIdx]) {
+            const move = moveHistory[priorIdx]
+            setPreviewPieceOrigins(
+                applyBackwardStep(baseMap, {
+                    from: algebraicToSquare(move.from),
+                    to: algebraicToSquare(move.to),
+                }),
+            )
+        } else {
+            setPreviewPieceOrigins(EMPTY_PIECE_ORIGINS)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [previewIndex])
+
     return (
         <Layout>
             <Dialog open={resignConfirmationDialog}>
                 <div className="flex w-full justify-center">
-                    <div className="w-full md:w-3/4">
+                    <div className="flex flex-col gap-4 w-full md:w-11/12 lg:w-5/6 md:flex-row">
+                        <div className="md:flex-1 min-w-0">
                         <ChessBoard
                             isPlayersTurn={isPlayersTurn}
                             isGameOver={isGameOver}
                             isCheck={isCheck}
                             lastMove={lastMove}
-                            boardState={boardState}
+                            boardState={displayedBoardState}
                             clockState={clockState}
                             moveCallback={handleMove}
                             whitePerspective={isPlayerWhite}
-                            pieceOrigins={pieceOrigins}
+                            pieceOrigins={displayedPieceOrigins}
                             playerLabels={playerLabels}
+                            readOnly={isPreviewing}
                         >
                             {!isGameOver && (
                                 <div className="flex w-full items-center gap-2">
@@ -458,6 +475,14 @@ function MatchInner({state}: { state: MatchRedirectType }) {
                             )}
                         </ChessBoard>
                         <div className="flex w-full justify-center pt-2"></div>
+                        </div>
+                        <div className="w-full md:w-72 lg:w-80 shrink-0">
+                            <MatchAnalysisPanel
+                                moves={moveHistory}
+                                selectedIndex={previewIndex}
+                                onSelect={setPreviewIndex}
+                            />
+                        </div>
                     </div>
                 </div>
                 {isGameOver && <BackArrowLink/>}

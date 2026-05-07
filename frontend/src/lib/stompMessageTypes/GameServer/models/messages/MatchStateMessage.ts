@@ -12,6 +12,16 @@ export type MatchStateMessage = {
   lastMove?: MoveNotification
   whitePlayer?: Player
   blackPlayer?: Player
+  moveHistory: MoveHistoryEntry[]
+}
+
+export type MoveHistoryEntry = {
+  san: string
+  from: string
+  to: string
+  fenAfter: string
+  colour: "WHITE" | "BLACK"
+  playerId: string
 }
 
 export type MoveNotification = {

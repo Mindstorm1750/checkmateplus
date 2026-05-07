@@ -44,6 +44,7 @@ import kotlin.time.ExperimentalTime
     MatchEventMessage::class,
     MatchEventType::class,
     MatchStateMessage::class,
+    MoveHistoryEntry::class,
     MoveMessage::class,
     MoveNotification::class,
     ResignMessage::class,

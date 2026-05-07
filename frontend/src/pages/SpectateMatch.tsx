@@ -7,8 +7,13 @@ import { useJwt } from "@/lib/JwtProvider"
 import { ensureFreshJwt } from "@/lib/auth"
 import type { SpectateMatch as SpectateMatchType } from "@/lib/playerServiceTypes/SpectateMatch"
 import type { MatchEventMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchEventMessage"
-import type { MatchStateMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchStateMessage"
+import type {
+  MatchStateMessage,
+  MoveHistoryEntry,
+} from "@/lib/stompMessageTypes/GameServer/models/messages/MatchStateMessage"
 import type { TimeUpdateMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/TimeUpdateMessage"
+import { applyBackwardStep, applyForwardStep } from "@/lib/pieceOrigins.helpers"
+import MatchAnalysisPanel from "@/components/match-analysis/MatchAnalysisPanel"
 import {
   EMPTY_BOARD,
   EMPTY_PIECE_ORIGINS,
@@ -42,6 +47,11 @@ function SpectateMatch() {
   const [isCheck, setIsCheck] = useState<boolean>(false)
   const [pieceOrigins, setPieceOrigins] =
     useState<Map<Square, Square>>(EMPTY_PIECE_ORIGINS)
+  const [moveHistory, setMoveHistory] = useState<MoveHistoryEntry[]>([])
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null)
+  const [previewPieceOrigins, setPreviewPieceOrigins] =
+    useState<Map<Square, Square>>(EMPTY_PIECE_ORIGINS)
+  const priorDisplayedIndexRef = useRef<number | null>(null)
   const [clockState, setClockState] = useState<ChessBoardProps["clockState"]>({
     whitePlayerTime: matchSummary?.whiteTimeSeconds ?? 0,
     blackPlayerTime: matchSummary?.blackTimeSeconds ?? 0,
@@ -79,6 +89,7 @@ function SpectateMatch() {
               whitePlayerTime: match.whitePlayerTime,
               blackPlayerTime: match.blackPlayerTime,
             })
+            setMoveHistory(match.moveHistory ?? [])
           }
         )
 
@@ -104,37 +115,9 @@ function SpectateMatch() {
                 from: algebraicToSquare(match.lastMove.from as string),
                 to: algebraicToSquare(match.lastMove.to as string),
               }
-              setPieceOrigins((prev) => {
-                const originOfFrom = prev.get(move.from)
-                if (originOfFrom === undefined || originOfFrom === null)
-                  return prev
-                const next = new Map(prev)
-                const origin = prev.get(move.from) ?? move.from
-                const wKs = origin === 60 && move.to === 62
-                const wQs = origin === 60 && move.to === 58
-                const bKs = origin === 4 && move.to === 6
-                const bQs = origin === 4 && move.to === 2
-                if (wKs) {
-                  next.set(61 as Square, 63 as Square)
-                  next.delete(63 as Square)
-                }
-                if (wQs) {
-                  next.set(59 as Square, 56 as Square)
-                  next.delete(56 as Square)
-                }
-                if (bKs) {
-                  next.set(5 as Square, 7 as Square)
-                  next.delete(7 as Square)
-                }
-                if (bQs) {
-                  next.set(3 as Square, 0 as Square)
-                  next.delete(0 as Square)
-                }
-                next.set(move.to, origin)
-                next.delete(move.from)
-                return next
-              })
+              setPieceOrigins((prev) => applyForwardStep(prev, move))
             }
+            setMoveHistory(match.moveHistory ?? [])
           }
         )
 
@@ -182,6 +165,47 @@ function SpectateMatch() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchId, websocketUrl, jwt, jwtIsPending])
 
+  const isPreviewing = previewIndex !== null
+  const displayedBoardState =
+    isPreviewing && moveHistory[previewIndex!]
+      ? fenToBoard(moveHistory[previewIndex!].fenAfter)
+      : boardState
+  const displayedPieceOrigins = isPreviewing ? previewPieceOrigins : pieceOrigins
+
+  useEffect(() => {
+    const liveIdx = moveHistory.length - 1
+    const priorRaw = priorDisplayedIndexRef.current
+    const priorIdx = priorRaw ?? liveIdx
+    const nextIdx = previewIndex ?? liveIdx
+
+    priorDisplayedIndexRef.current = previewIndex
+
+    if (nextIdx === priorIdx) return
+
+    const baseMap = priorRaw === null ? pieceOrigins : previewPieceOrigins
+
+    if (nextIdx === priorIdx + 1 && moveHistory[nextIdx]) {
+      const move = moveHistory[nextIdx]
+      setPreviewPieceOrigins(
+        applyForwardStep(baseMap, {
+          from: algebraicToSquare(move.from),
+          to: algebraicToSquare(move.to),
+        }),
+      )
+    } else if (nextIdx === priorIdx - 1 && moveHistory[priorIdx]) {
+      const move = moveHistory[priorIdx]
+      setPreviewPieceOrigins(
+        applyBackwardStep(baseMap, {
+          from: algebraicToSquare(move.from),
+          to: algebraicToSquare(move.to),
+        }),
+      )
+    } else {
+      setPreviewPieceOrigins(EMPTY_PIECE_ORIGINS)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewIndex])
+
   if (!matchId) {
     return (
       <Layout>
@@ -211,20 +235,29 @@ function SpectateMatch() {
   return (
     <Layout>
       <div className="flex w-full justify-center">
-        <div className="w-3/4">
-          {isGameOver && gameOverMessage && <p>{gameOverMessage}</p>}
-          <ChessBoard
-            readOnly
-            isPlayersTurn={false}
-            isGameOver={isGameOver}
-            boardState={boardState}
-            clockState={clockState}
-            moveCallback={() => {}}
-            whitePerspective={true}
-            pieceOrigins={pieceOrigins}
-            isCheck={isCheck}
-            playerLabels={playerLabels}
-          />
+        <div className="flex flex-col gap-4 w-full md:w-11/12 lg:w-5/6 md:flex-row">
+          <div className="md:flex-1 min-w-0">
+            {isGameOver && gameOverMessage && <p>{gameOverMessage}</p>}
+            <ChessBoard
+              readOnly
+              isPlayersTurn={false}
+              isGameOver={isGameOver}
+              boardState={displayedBoardState}
+              clockState={clockState}
+              moveCallback={() => {}}
+              whitePerspective={true}
+              pieceOrigins={displayedPieceOrigins}
+              isCheck={isCheck}
+              playerLabels={playerLabels}
+            />
+          </div>
+          <div className="w-full md:w-72 lg:w-80 shrink-0">
+            <MatchAnalysisPanel
+              moves={moveHistory}
+              selectedIndex={previewIndex}
+              onSelect={setPreviewIndex}
+            />
+          </div>
         </div>
       </div>
       <BackArrowLink />
