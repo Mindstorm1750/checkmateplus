@@ -29,6 +29,7 @@ export type ChessBoardProps = {
   readOnly?: boolean // disables interaction; active-clock highlight derives from boardState.sideToMove
   lastMove?: Move // used to highlight the most recent move played
   playerLabels?: PlayerLabelsType
+  hideClocks?: boolean
 }
 
 export type PlayerLabelsType = {
@@ -50,6 +51,7 @@ const ChessBoard = ({
   readOnly = false,
   lastMove,
   playerLabels,
+  hideClocks = false,
   children,
 }: React.PropsWithChildren<ChessBoardProps>) => {
   const [squareClicked, setSquareClicked] = useState<Square | null>()
@@ -124,7 +126,10 @@ const ChessBoard = ({
             <div className="flex items-center gap-0" key={`black ${pieceType}`}>
               <span className="text-sm text-black">{count}</span>
               <img
-                src={pieceToSvg({ pieceType, colour: "BLACK" })} // The pieces that the White player captures are Black in colour
+                src={pieceToSvg({
+                  pieceType,
+                  colour: "BLACK",
+                })} // The pieces that the White player captures are Black in colour
                 id={`${count}x black ${pieceType}`}
                 alt={`${count}x black ${pieceType}s captured`}
                 className="size-5 -translate-y-0.5"
@@ -150,7 +155,10 @@ const ChessBoard = ({
             <div className="flex items-center gap-0" key={`white ${pieceType}`}>
               <span className="text-sm text-black">{count}</span>
               <img
-                src={pieceToSvg({ pieceType, colour: "WHITE" })} // The pieces that the Black player captures are White in colour
+                src={pieceToSvg({
+                  pieceType,
+                  colour: "WHITE",
+                })} // The pieces that the Black player captures are White in colour
                 id={`${count}x white ${pieceType}`}
                 alt={`${count}x white ${pieceType}s captured`}
                 className="size-5 -translate-y-0.5"
@@ -212,18 +220,20 @@ const ChessBoard = ({
     <Dialog open={askForPromotion}>
       <div className="flex w-full flex-col">
         <div className="flex flex-row items-center gap-3">
-          <Clock
-            topClock={true}
-            time={
-              whitePerspective
-                ? clockState.blackPlayerTime
-                : clockState.whitePlayerTime
-            }
-            isActiveClock={topClockActive}
-            isGameOver={isGameOver}
-          />
+          {!hideClocks && (
+            <Clock
+              topClock={true}
+              time={
+                whitePerspective
+                  ? clockState.blackPlayerTime
+                  : clockState.whitePlayerTime
+              }
+              isActiveClock={topClockActive}
+              isGameOver={isGameOver}
+            />
+          )}
           {playerLabels && (
-            <p>
+            <p className="p-2">
               {whitePerspective
                 ? playerLabels.blackPlayerLabel
                 : playerLabels.whitePlayerLabel}
@@ -369,18 +379,20 @@ const ChessBoard = ({
         </div>
         <div className="flex-col">
           <div className="flex items-center gap-3">
-            <Clock
-              topClock={false}
-              time={
-                whitePerspective
-                  ? clockState.whitePlayerTime
-                  : clockState.blackPlayerTime
-              }
-              isActiveClock={bottomClockActive}
-              isGameOver={isGameOver}
-            />
+            {!hideClocks && (
+              <Clock
+                topClock={false}
+                time={
+                  whitePerspective
+                    ? clockState.whitePlayerTime
+                    : clockState.blackPlayerTime
+                }
+                isActiveClock={bottomClockActive}
+                isGameOver={isGameOver}
+              />
+            )}
             {playerLabels && (
-              <p>
+              <p className="p-2">
                 {whitePerspective
                   ? playerLabels.whitePlayerLabel
                   : playerLabels.blackPlayerLabel}

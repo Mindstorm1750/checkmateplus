@@ -10,6 +10,7 @@ import org.checkmateplus.chessLibrary.playerModels.MatchStatus
 import org.checkmateplus.chessLibrary.playerModels.MatchType
 import org.checkmateplus.chessLibrary.playerModels.TimeControl
 import org.checkmateplus.chessLibrary.playerModels.history.MatchOutcome
+import org.checkmateplus.chessLibrary.playerModels.history.Turn
 import org.checkmateplus.playerservice.entitys.players.PlayerEntity
 import org.checkmateplus.playerservice.models.MatchResult
 import org.checkmateplus.playerservice.models.MatchSummary
@@ -113,7 +114,8 @@ class MatchRecordEntity(
             val timeControlSeconds = timeControl.minutes * 60L
             val timeUsedByWhite = timeControlSeconds - remainingWhitePlayerTime
             val timeUsedByBlack = timeControlSeconds - remainingBlackPlayerTime
-            return (timeUsedByWhite + timeUsedByBlack) * 1000L
+            val timeNegatedByIncrement = history.size * timeControl.increment
+            return (timeUsedByWhite + timeUsedByBlack + timeNegatedByIncrement) * 1000L
         }
 
     @get:Transient
@@ -137,4 +139,8 @@ class MatchRecordEntity(
     @get:Transient
     val isDraw: Boolean
         get() = matchOutcome == MatchOutcome.DRAW
+
+    @get:Transient
+    val history: List<Turn>
+        get() = Json.decodeFromString(historyJson)
 }
