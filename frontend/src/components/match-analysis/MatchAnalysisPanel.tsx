@@ -19,30 +19,38 @@ export type MatchAnalysisPanelProps = {
   className?: string
 }
 
-const CP_CLAMP = 1000
+const CP_CLAMP = 500
 
-const scoreToPercent = (score: AnalysisScore | undefined): number | null => {
+const scoreToPercent = (
+  score: AnalysisScore | undefined,
+  colourCorrection: 1 | -1
+): number | null => {
   if (!score) return null
   if (typeof score.mate === "number") {
     if (score.mate === 0) return 50
-    return score.mate > 0 ? 100 : 0
+    return colourCorrection * score.mate > 0 ? 100 : 0
   }
   if (typeof score.cp === "number") {
-    const clamped = Math.max(-CP_CLAMP, Math.min(CP_CLAMP, score.cp))
+    const correctedCp = score.cp * colourCorrection
+    const clamped = Math.max(-CP_CLAMP, Math.min(CP_CLAMP, correctedCp))
     return ((clamped + CP_CLAMP) / (2 * CP_CLAMP)) * 100
   }
   return null
 }
 
-const formatScore = (score: AnalysisScore | undefined): string | null => {
+const formatScore = (
+  score: AnalysisScore | undefined,
+  colourCorrection: 1 | -1 //
+): string | null => {
   if (!score) return null
   if (typeof score.mate === "number") {
     if (score.mate === 0) return "0"
-    const sign = score.mate > 0 ? "" : "−"
-    return `${sign}M${Math.abs(score.mate)}`
+    const correctedMate = colourCorrection * score.mate
+    const sign = correctedMate > 0 ? "" : "−"
+    return `${sign}M${Math.abs(correctedMate)}`
   }
   if (typeof score.cp === "number") {
-    const pawns = score.cp / 100
+    const pawns = (score.cp / 100) * colourCorrection
     const sign = pawns > 0 ? "+" : pawns < 0 ? "−" : ""
     return `${sign}${Math.abs(pawns).toFixed(2)}`
   }
@@ -77,11 +85,15 @@ const MatchAnalysisPanel = ({
       : moves.length > 0
         ? moves.length
         : null
-  const focusAnalysis =
-    focusPly !== null ? analyses?.get(focusPly) : undefined
+  const focusAnalysis = focusPly !== null ? analyses?.get(focusPly) : undefined
+  const colourCorrection: 1 | -1 =
+    moves[focusPly ? focusPly - 1 : 0]?.colour === "WHITE" ? 1 : -1
 
-  const evalPercent = scoreToPercent(focusAnalysis?.scoreAfter)
-  const evalLabel = formatScore(focusAnalysis?.scoreAfter)
+  const evalPercent = scoreToPercent(
+    focusAnalysis?.scoreAfter,
+    colourCorrection
+  )
+  const evalLabel = formatScore(focusAnalysis?.scoreAfter, colourCorrection)
 
   const showBestMove =
     !!focusAnalysis &&
@@ -136,7 +148,7 @@ const MatchAnalysisPanel = ({
                   />
                 </div>
                 {evalLabel && (
-                  <span className="w-12 text-right text-xs font-mono tabular-nums text-muted-foreground">
+                  <span className="w-12 text-right font-mono text-xs text-muted-foreground tabular-nums">
                     {evalLabel}
                   </span>
                 )}
