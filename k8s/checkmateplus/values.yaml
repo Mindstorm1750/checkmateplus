@@ -130,6 +130,13 @@ playerservice:
     SPRING_DATA_REDIS_PORT: "6379"
     GAMESERVERMANAGER_HOST: "{{ .Release.Name }}-gameservermanager"
     GAMESERVERMANAGER_PORT: "9090"
+    STOCKFISHENGINE_HOST: "{{ .Release.Name }}-stockfishengine"
+    STOCKFISHENGINE_PORT: "9093"
+    ANALYSIS_ENABLED: "true"
+    ANALYSIS_DEPTH: "16"
+    ANALYSIS_DEADLINE_SECONDS: "600"
+    ANALYSIS_QUEUE_KEY: "analysis:queue"
+    ANALYSIS_QUEUE_POLL_SECONDS: "10"
   secretName: checkmateplus-playerservice-secret
   resources:
     requests:
@@ -161,7 +168,7 @@ voicecommandservice:
       memory: 256Mi
     limits:
       cpu: 1000m
-      memory: 512Mi
+      memory: 1024Mi
   serviceAccount:
     create: false
     name: "checkmateplus-default"
@@ -187,7 +194,7 @@ stockfishengine:
       memory: 256Mi
     limits:
       cpu: 1000m
-      memory: 768Mi
+      memory: 1024Mi
   serviceAccount:
     create: false
     name: "checkmateplus-default"
