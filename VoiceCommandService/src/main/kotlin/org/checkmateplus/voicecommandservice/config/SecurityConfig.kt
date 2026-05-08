@@ -42,18 +42,18 @@ class SecurityConfig(@Value("\${jwt.secret}") private val jwtSecret: String) {
         return http.build()
     }
 
-    // allow cors-less requests to backend from vite origin
     @Bean
-    fun corsConfigurationSource(): CorsConfigurationSource {
-        val config = CorsConfiguration().apply {
-            allowedOrigins = listOf("http://localhost:5173") // Vite dev origin
-            allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
-            allowedHeaders = listOf("*")
-            allowCredentials = true
-        }
-
+    fun corsConfigurationSource(
+        @Value("\${allowed-origins}") allowedOrigins: String
+    ): CorsConfigurationSource {
+        val config = CorsConfiguration()
+        config.allowedOriginPatterns = allowedOrigins.split(",")
+        config.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
+        config.allowedHeaders = listOf("*")
+        config.allowCredentials = true
         val source = UrlBasedCorsConfigurationSource()
         source.registerCorsConfiguration("/**", config)
         return source
     }
 }
+
