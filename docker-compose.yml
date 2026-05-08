@@ -88,12 +88,15 @@ services:
   voicecommandservice:
     image: git.cs.kent.ac.uk:5050/jhl28/checkmate/voicecommandservice:latest
     container_name: voicecommandservice
-    expose: ["9100:9100"]
+    ports:
+      - "9100:9100"
+
     networks:
       - game-network
     restart: unless-stopped
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - jwt.secret=MtBTjKZfckEP9if9FdwmggOtf2Geh9YQXBxLmNxEnR0=
 
   redis:
     image: redis:8.6.0-alpine
