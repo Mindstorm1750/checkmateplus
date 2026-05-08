@@ -137,7 +137,7 @@ tasks.bootBuildImage {
         "BP_NATIVE_IMAGE" to "true", //if you want to disable comment out the native image plugin and set to false here!
         "BP_NATIVE_IMAGE_BUILD_ARGUMENTS" to """
             -march=x86-64-v3
-            --gc=G1 
+            --gc=G1
             -O3
             """.trimIndent(),
         "BP_JVM_VERSION" to "25",
@@ -153,6 +153,25 @@ tasks.bootBuildImage {
     // the build args
     // if you want a very quick build use -Ob it will cause less performance as the image will not receive optimization
     // also disables machine-learning PGO!
+}
+
+tasks.register<org.springframework.boot.gradle.tasks.bundling.BootBuildImage>("javaBootBuildImage") {
+    group = "build"
+    description = "Builds a JVM (non-native) OCI image via Paketo buildpacks."
+    archiveFile.set(tasks.bootJar.flatMap { it.archiveFile })
+    dependsOn(tasks.bootJar)
+    val projectname = project.name.lowercase(Locale.getDefault())
+    val projectVersion = project.version.toString().lowercase()
+    val commitSha = System.getenv("CI_COMMIT_SHA") ?: ""
+    val tag = if (commitSha != "") commitSha else projectVersion
+    imageName = "git.cs.kent.ac.uk:5050/jhl28/checkmate/${projectname}:${tag}-jvm"
+    environment.set(mapOf(
+        "BP_SPRING_AOT_ENABLED" to "true",
+        "BP_JVM_CDS_ENABLED" to "true",
+        "BP_JVM_VERSION" to "25",
+        "BP_BINARY_COMPRESSION_METHOD" to "upx"
+    ))
+    buildpacks = listOf("docker.io/paketobuildpacks/oracle", "urn:cnb:builder:paketo-buildpacks/java")
 }
 allOpen {
     annotation("jakarta.persistence.Entity")

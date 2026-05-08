@@ -28,6 +28,7 @@ class SecurityConfig(@Value("\${jwt.secret}") private val jwtSecret: String) {
                 // allow api/voice
                 auth
                     .requestMatchers("/api/voice/**").permitAll()
+                    .requestMatchers("/actuator/health/**").permitAll()
                     .anyRequest().authenticated()
             }
             .oauth2ResourceServer { oauth2 ->
