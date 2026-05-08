@@ -12,9 +12,4 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  server: {
-    host: "0.0.0.0",
-    // test on phone over tailscale - elendil7 specific config - ignore
-    allowedHosts: ["pc"],
-  },
 })

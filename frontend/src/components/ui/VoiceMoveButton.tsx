@@ -14,6 +14,7 @@ export const VoiceMoveButton = ({
   matchId,
   moveCallback,
   isInteractable,
+  boardState
 }: VoiceMoveButtonProps) => {
   const [isRecording, setIsRecording] = useState(false)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
@@ -112,6 +113,7 @@ export const VoiceMoveButton = ({
     const formData = new FormData()
     formData.append("audio", blob, "move.webm")
     formData.append("matchId", String(matchId))
+    formData.append("board", JSON.stringify(boardState))
 
     const res = await fetch("http://localhost:9100/api/voice/move", {
       method: "POST",

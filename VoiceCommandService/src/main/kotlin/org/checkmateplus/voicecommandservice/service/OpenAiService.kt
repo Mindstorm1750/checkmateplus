@@ -8,6 +8,7 @@ import com.openai.models.audio.AudioResponseFormat
 import com.openai.models.audio.transcriptions.TranscriptionCreateParams
 import com.openai.models.audio.transcriptions.TranscriptionCreateResponse
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.nio.file.Files
@@ -17,10 +18,15 @@ import java.nio.file.Path
  * Service for querying OpenAI to get STT transcription and if necessary determine most likely move (if basic parsing fails)
  */
 @Service
-class OpenAiService {
+class OpenAiService(
+     @Value("\${openai.api-key}") private val apiKey: String,
+     @Value("\${openai.base-url}") private val baseUrl: String,) {
 
     private val logger = LoggerFactory.getLogger(javaClass)
-    private val client = OpenAIOkHttpClient.fromEnv()
+    private val client = OpenAIOkHttpClient.builder()
+        .apiKey(apiKey)
+        .baseUrl(baseUrl)
+        .build()
 
     // dumb workaround because openai official lib expects path to file so we make a temp file
     fun transcribe(file: MultipartFile): String {
