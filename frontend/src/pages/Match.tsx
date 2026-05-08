@@ -486,7 +486,6 @@ function MatchInner({ state }: { state: MatchRedirectType }) {
                       boardState={boardState}
                       whitePerspective={isPlayerWhite}
                       isInteractable={isPlayersTurn && !isGameOver}
-                      websocketUrl={websocketUrl}
                   />
               </div>
             </div>
