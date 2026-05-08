@@ -115,7 +115,7 @@ export const VoiceMoveButton = ({
     formData.append("matchId", String(matchId))
     formData.append("board", JSON.stringify(boardState))
 
-    const res = await fetch("http://localhost:9100/api/voice/move", {
+    const res = await fetch(`${import.meta.env.VITE_VOICE_URL}`, {
       method: "POST",
       body: formData,
     })
