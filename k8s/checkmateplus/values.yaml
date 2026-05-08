@@ -32,7 +32,7 @@ gameserver:
   image:
     repository: git.cs.kent.ac.uk:5050/jhl28/checkmate/gameserver
     tag: 2.2.0
-  replicaCount: 2
+  replicaCount: 1
   service:
     httpPort: 8090
     grpcPort: 9091
