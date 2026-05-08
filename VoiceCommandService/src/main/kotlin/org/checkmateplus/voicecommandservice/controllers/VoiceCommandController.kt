@@ -26,15 +26,18 @@ class VoiceCommandController(
     )
     fun voiceMove(
         @RequestPart("audio") audio: MultipartFile,
-        @RequestPart("matchId") matchId: String
+        @RequestPart("matchId") matchId: String,
+        @RequestPart("gameServerUrl") gameServerUrl: String
     ): VoiceMoveResponse {
         return try {
+            val gameServerApiUrl = "$gameServerUrl/api"
+
             // Step 1: Transcribe audio to text
             val transcript = openAiService.transcribe(audio)
             logger.info("Transcribed: '$transcript' for match $matchId")
 
             // Step 2: Fetch board state from GameServer
-            val board = gameServerClient.getBoardState(matchId)
+            val board = gameServerClient.getBoardState(matchId, gameServerApiUrl)
             if (board == null) {
                 logger.error("Could not fetch board state for match $matchId")
                 return VoiceMoveResponse(
@@ -113,20 +116,6 @@ class VoiceCommandController(
                 promotion = null,
                 error = "Server error: ${e.message}"
             )
-        }
-    }
-
-    @GetMapping("/legal-moves/{matchId}")
-    @ResponseStatus(HttpStatus.OK)
-    fun getLegalMoves(@PathVariable matchId: String): LegalMovesDebugResponse {
-        val board = gameServerClient.getBoardState(matchId)
-        return if (board != null) {
-            val legalMoves = board.generateLegalMoves().map {
-                "${it.from.toString()} to ${it.to.toString()}"
-            }
-            LegalMovesDebugResponse(matchId, legalMoves, null)
-        } else {
-            LegalMovesDebugResponse(matchId, emptyList(), "Could not fetch board state")
         }
     }
 }

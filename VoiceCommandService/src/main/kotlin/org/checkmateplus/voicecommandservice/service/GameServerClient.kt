@@ -24,10 +24,10 @@ class GameServerClient(
      * Fetch the current board state for a match.
      * Returns null if match not found or error occurs.
      */
-    fun getBoardState(matchId: String): Board? {
+    fun getBoardState(matchId: String, gameServerApiUrl: String): Board? {
         return try {
             val response = restTemplate.getForObject(
-                "$gameServerUrl/api/matches/$matchId/board",
+                "$gameServerApiUrl/matches/$matchId/board",
                 BoardStateResponse::class.java
             )
 
@@ -47,10 +47,5 @@ class GameServerClient(
     data class BoardStateResponse(
         val matchId: String,
         val fen: String
-    )
-
-    data class LegalMovesResponse(
-        val matchId: String,
-        val moves: List<String>
     )
 }

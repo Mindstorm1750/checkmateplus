@@ -23,24 +23,6 @@ class MatchStateController(
             throw IllegalArgumentException("Match not found: $matchId")
         }
     }
-
-    @GetMapping("/{matchId}/legal-moves")
-    @ResponseStatus(HttpStatus.OK)
-    fun getLegalMoves(@PathVariable matchId: String): LegalMovesDto {
-        val match = matchService.getMatch(matchId)
-        if (match?.board == null) {
-            throw IllegalArgumentException("Match not found: $matchId")
-        }
-
-        val legalMoves = match.board!!.generateLegalMoves().map { move ->
-            "${move.from} to ${move.to}"
-        }
-
-        return LegalMovesDto(
-            matchId = matchId,
-            moves = legalMoves
-        )
-    }
 }
 
 data class BoardStateDto(
