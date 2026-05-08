@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react"
 import type { Board, VoiceMove } from "@/types/Chess.type.ts"
 import { Button } from "@/components/ui/button.tsx"
+import { isMobile } from "react-device-detect"
 
 export type VoiceMoveButtonProps = {
   matchId: String
@@ -14,7 +15,7 @@ export const VoiceMoveButton = ({
   matchId,
   moveCallback,
   isInteractable,
-  boardState
+  boardState,
 }: VoiceMoveButtonProps) => {
   const [isRecording, setIsRecording] = useState(false)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
@@ -148,7 +149,9 @@ export const VoiceMoveButton = ({
           ? "Not your turn"
           : isRecording
             ? "Listening…"
-            : "Hold to Speak Move"}
+            : isMobile
+              ? "Press to Speak Move"
+              : "Hold to Speak Move"}
       </Button>
 
       {toastMessage && (
