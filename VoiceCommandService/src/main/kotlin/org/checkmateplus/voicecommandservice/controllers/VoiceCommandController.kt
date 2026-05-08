@@ -2,6 +2,7 @@ package org.checkmateplus.voicecommandservice.controllers
 
 import kotlinx.serialization.json.Json
 import org.checkmateplus.chessLibrary.chessEngine.Board
+import org.checkmateplus.chessLibrary.chessEngine.Piece
 import org.checkmateplus.chessLibrary.chessEngine.toAlgebraic
 import org.checkmateplus.voicecommandservice.service.OpenAiService
 import org.checkmateplus.voicecommandservice.service.MoveValidationService
@@ -29,7 +30,14 @@ class VoiceCommandController(
         @RequestPart("board") boardJson: String,
     ): VoiceMoveResponse {
         return try {
-            val board = Json.decodeFromString<Board>(boardJson) //deserialise the board from sent from the frontend
+            val alteredJson = boardJson.replace("\"pieceType\"", "\"type\"")
+                .replace("\"colour\"", "\"color\"")
+            val raw = Json.decodeFromString<Board>(alteredJson)
+            val flippedSquares = Array<Piece?>(64) { i -> raw.squares[i xor 56] }
+            val board = raw.copy(
+                squares = flippedSquares,
+                enPassantSquare = raw.enPassantSquare?.let { it xor 56 },
+            ) //deserialize the board from sent from the frontend
 
             // Step 1: Transcribe audio to text
             val transcript = openAiService.transcribe(audio)
