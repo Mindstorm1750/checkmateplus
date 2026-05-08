@@ -187,7 +187,7 @@ stockfishengine:
     SERVER_PORT: "8085"
     GRPC_PORT: "9093"
     STOCKFISH_THREADS: "1"
-    STOCKFISH_HASH_MB: "512"
+    STOCKFISH_HASH_MB: "256"
   resources:
     requests:
       cpu: 200m
