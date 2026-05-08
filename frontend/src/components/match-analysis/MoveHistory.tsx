@@ -72,9 +72,23 @@ const MoveHistory = ({
   const scrollRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    if (selectedIndex !== null) return
-    const el = scrollRef.current
-    if (el) el.scrollTop = el.scrollHeight
+    const container = scrollRef.current
+    if (!container) return
+    if (selectedIndex === null) {
+      container.scrollTop = container.scrollHeight
+      return
+    }
+    const cell = container.querySelector<HTMLElement>(
+      `[data-move-index="${selectedIndex}"]`
+    )
+    if (!cell) return
+    const containerRect = container.getBoundingClientRect()
+    const cellRect = cell.getBoundingClientRect()
+    if (cellRect.top < containerRect.top) {
+      container.scrollTop -= containerRect.top - cellRect.top
+    } else if (cellRect.bottom > containerRect.bottom) {
+      container.scrollTop += cellRect.bottom - containerRect.bottom
+    }
   }, [moves.length, selectedIndex])
 
   useEffect(() => {
@@ -148,6 +162,7 @@ const MoveHistory = ({
       <TableCell
         role="button"
         tabIndex={0}
+        data-move-index={index}
         onClick={() => onSelect(index)}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -171,7 +186,7 @@ const MoveHistory = ({
   return (
     <div
       ref={scrollRef}
-      className={cn("max-h-[60vh] overflow-y-auto", className)}
+      className={cn("max-h-72 overflow-y-auto", className)}
     >
       <Table>
         <TableBody>
