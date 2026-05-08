@@ -115,7 +115,7 @@ playerservice:
   enabled: true
   image:
     repository: git.cs.kent.ac.uk:5050/jhl28/checkmate/playerservice
-    tag: 2.2.0
+    tag: 2.2.1
   replicaCount: 1
   service:
     httpPort: 8095
@@ -128,6 +128,8 @@ playerservice:
     POSTGRES_DB: "checkmate"
     SPRING_DATA_REDIS_HOST: "{{ .Release.Name }}-redis-master"
     SPRING_DATA_REDIS_PORT: "6379"
+    GAMESERVERMANAGER_HOST: "{{ .Release.Name }}-gameservermanager"
+    GAMESERVERMANAGER_PORT: "9090"
   secretName: checkmateplus-playerservice-secret
   resources:
     requests:
