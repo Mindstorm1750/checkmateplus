@@ -1,26 +1,19 @@
 package org.checkmateplus.gameserver.controllers
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
+import org.checkmateplus.chessLibrary.botEngine.MoveTimeModelFeatures
 import org.checkmateplus.chessLibrary.botEngine.calculateMoveTimeDelayMs
 import org.checkmateplus.chessLibrary.chessEngine.Colour.BLACK
 import org.checkmateplus.chessLibrary.chessEngine.Colour.WHITE
 import org.checkmateplus.chessLibrary.chessEngine.toAlgebraic
 import org.checkmateplus.chessLibrary.chessEngine.toSquare
 import org.checkmateplus.chessLibrary.playerModels.MatchType
-import org.checkmateplus.chessLibrary.botEngine.MoveTimeModelFeatures
-import org.checkmateplus.chessLibrary.playerModels.MatchStatus
 import org.checkmateplus.chessLibrary.playerModels.Player
 import org.checkmateplus.chessLibrary.playerModels.history.MatchOutcome
-import org.checkmateplus.chessLibrary.playerModels.history.MatchRecord
 import org.checkmateplus.gameserver.models.MatchState
 import org.checkmateplus.gameserver.models.messages.*
 import org.checkmateplus.gameserver.service.GameServerService
+import org.checkmateplus.gameserver.service.MatchReporterService
 import org.checkmateplus.gameserver.service.MatchService
 import org.slf4j.LoggerFactory
 import org.springframework.aot.hint.annotation.RegisterReflectionForBinding
@@ -31,7 +24,9 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.stereotype.Controller
 import java.security.Principal
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.ExperimentalTime
 
 /**
  * WebSocket controller for handling real-time chess match interactions.
@@ -49,6 +44,7 @@ import kotlin.time.Duration.Companion.milliseconds
     MatchEventMessage::class,
     MatchEventType::class,
     MatchStateMessage::class,
+    MoveHistoryEntry::class,
     MoveMessage::class,
     MoveNotification::class,
     ResignMessage::class,
@@ -63,7 +59,8 @@ import kotlin.time.Duration.Companion.milliseconds
 class MatchWebSocketController(
     private val messagingTemplate: SimpMessagingTemplate,
     private val matchService: MatchService,
-    private val gameServerService: GameServerService
+    private val gameServerService: GameServerService,
+    private val matchReporterService: MatchReporterService,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
     //TODO: Need to add disconnect/reconnect support incase of connection drop
@@ -78,32 +75,31 @@ class MatchWebSocketController(
      */
     @MessageMapping("/match/{matchId}/move")
     fun makeMove(
-        @DestinationVariable matchId: String,
-        principal: Principal,
-        moveMessage: MoveMessage
+        @DestinationVariable matchId: String, principal: Principal, moveMessage: MoveMessage
     ) {
         try {
             val match = matchService.getMatch(matchId)
             val securePlayerId = (principal as JwtAuthenticationToken).token.subject
             if (moveMessage.playerId != securePlayerId) throw IllegalAccessException("Player mismatch")
             // these are for if the match is PVE (a bot match) and the bot is using the realistic move time feature
-            val timePlayerTook = match!!.activePlayerTimeAtTurnStart - (if(match.activeTurn == WHITE) match.whitePlayerTime else match.blackPlayerTime)
-            val wasCapture = match.board?.squares?.get(moveMessage.to.toSquare() ?: throw IllegalArgumentException("moveMessage has no 'to' square")) != null
+            val timePlayerTook =
+                match!!.activePlayerTimeAtTurnStart - (if (match.activeTurn == WHITE) match.whitePlayerTime else match.blackPlayerTime)
+            val wasCapture = match.board?.squares?.get(
+                moveMessage.to.toSquare() ?: throw IllegalArgumentException("moveMessage has no 'to' square")
+            ) != null
 
             // Process the move
             val matchState = matchService.processMove(matchId, moveMessage)
 
             // Broadcast updated state to all players
             messagingTemplate.convertAndSend(
-                "/topic/match/$matchId/state",
-                matchState
+                "/topic/match/$matchId/state", matchState
             )
 
             // Send the specific move notification
             matchState.lastMove?.let { lastMove ->
                 messagingTemplate.convertAndSend(
-                    "/topic/match/$matchId/moves",
-                    lastMove
+                    "/topic/match/$matchId/moves", lastMove
                 )
             }
             // Handle game end conditions
@@ -129,14 +125,19 @@ class MatchWebSocketController(
                                 matchService.calculateMove(match.board!!, match.botConfiguration.botModelType)
                             }
                             val delayDeferred = async {
-                                delay(calculateMoveTimeDelayMs(match.botConfiguration.botMoveTimeModelType, moveTimeModelFeatures).milliseconds)
+                                delay(
+                                    calculateMoveTimeDelayMs(
+                                        match.botConfiguration.botMoveTimeModelType, moveTimeModelFeatures
+                                    ).milliseconds
+                                )
                             }
                             awaitAll(moveDeferred, delayDeferred)
                             moveDeferred.await()
                         }
 
-                        val botClock = if(botColour == WHITE) match.whitePlayerTime else match.blackPlayerTime
+                        val botClock = if (botColour == WHITE) match.whitePlayerTime else match.blackPlayerTime
                         if (botClock <= 0) return@launch
+                        if (matchService.getMatch(matchId) === null) return@launch
 
                         val botMoveMessage = MoveMessage(
                             matchId,
@@ -149,15 +150,13 @@ class MatchWebSocketController(
 
                         // Broadcast updated state to all players
                         messagingTemplate.convertAndSend(
-                            "/topic/match/$matchId/state",
-                            botMatchStateMessage
+                            "/topic/match/$matchId/state", botMatchStateMessage
                         )
 
                         // Send the specific move notification
                         matchState.lastMove?.let { lastMove ->
                             messagingTemplate.convertAndSend(
-                                "/topic/match/$matchId/moves",
-                                botMatchStateMessage
+                                "/topic/match/$matchId/moves", lastMove
                             )
                         }
                         handleGameEndConditions(matchId, botMatchStateMessage)
@@ -167,18 +166,14 @@ class MatchWebSocketController(
         } catch (e: IllegalArgumentException) {
             // Send error to the player who made the invalid move
             messagingTemplate.convertAndSendToUser(
-                principal.name,
-                "/queue/errors",
-                mapOf(
-                    "error" to (e.message ?: "Invalid move"),
-                    "matchId" to matchId
+                principal.name, "/queue/errors", mapOf(
+                    "error" to (e.message ?: "Invalid move"), "matchId" to matchId
                 )
             )
 
             // Also send an event to all players
             messagingTemplate.convertAndSend(
-                "/topic/match/$matchId/events",
-                MatchEventMessage(
+                "/topic/match/$matchId/events", MatchEventMessage(
                     matchId = matchId,
                     eventType = MatchEventType.ILLEGAL_MOVE,
                     message = "Illegal move attempted",
@@ -188,9 +183,9 @@ class MatchWebSocketController(
         }
     }
 
-    @OptIn(kotlin.time.ExperimentalTime::class)
+    @OptIn(ExperimentalTime::class)
     private fun notifyMatchCompleted(match: MatchState, winnerId: String, reason: String) {
-        val durationSeconds = (kotlin.time.Clock.System.now() - match.createdAt).inWholeSeconds.toInt()
+        val durationSeconds = (Clock.System.now() - match.createdAt).inWholeSeconds.toInt()
         gameServerService.reportMatchCompleted(
             matchId = match.matchId,
             winnerId = winnerId,
@@ -198,6 +193,7 @@ class MatchWebSocketController(
             totalMoves = match.turnHistory.size,
             durationSeconds = durationSeconds
         )
+        matchReporterService.reportCompleted(match, winnerId, reason)
         matchService.removeMatch(match.matchId)
     }
 
@@ -208,6 +204,47 @@ class MatchWebSocketController(
      * @param matchState The current state of the match.
      */
     private fun handleGameEndConditions(matchId: String, matchState: MatchStateMessage): Boolean {
+
+        //EVALUATE FEN FOR 50 MOVE RULE
+        //strip fen for half clock count
+        val match = matchService.getMatch(matchId)
+        if (match?.board?.halfMoveClock!! >= 100) {
+            messagingTemplate.convertAndSend(
+                "/topic/match/$matchId/events", MatchEventMessage(
+                    matchId = matchId,
+                    eventType = MatchEventType.MATCH_ENDED,
+                    message = "Draw by 50 move rule.",
+                    data = mapOf("result" to "draw")
+                )
+            )
+            matchService.stopTimer(matchId)
+            val match = matchService.getMatch(matchId)
+            matchService.addMatchRecord(match!!.toMatchRecord(MatchOutcome.DRAW))
+            notifyMatchCompleted(match, winnerId = "", reason = "draw")
+            return true
+        }
+        //Next check 3-fold repetition rule
+        val fenRegex = Regex(
+            """^([rnbqkpRNBQKP1-8]+(?:/[rnbqkpRNBQKP1-8]+){7})\s([wb])\s(-|[KQkq]+)\s(-|[a-h][36])"""
+        ) //strips out the clocks, keeping board, side to move, castling, en passant
+        val strippedFen = match.turnHistory.mapNotNull { fenRegex.find(it.fen)?.value }
+        val current = fenRegex.find(matchState.fen)?.value // most current fen isn't directly contained in the turnHistory
+        val occurrences = strippedFen.count { it == current }
+        if (occurrences >= 2) { // only 2 other occurrences are needed for 3-fold repetition as the current position counts
+            messagingTemplate.convertAndSend(
+                "/topic/match/$matchId/events", MatchEventMessage(
+                    matchId = matchId,
+                    eventType = MatchEventType.MATCH_ENDED,
+                    message = "Draw by 3-fold repetition.",
+                    data = mapOf("result" to "draw")
+                )
+            )
+            matchService.stopTimer(matchId)
+            matchService.addMatchRecord(match.toMatchRecord(MatchOutcome.DRAW))
+            notifyMatchCompleted(match, winnerId = "", reason = "draw")
+            return true
+        }
+
         when {
             matchState.isCheckmate -> {
                 val match = matchService.getMatch(matchId)
@@ -216,42 +253,24 @@ class MatchWebSocketController(
                 val outcome = if (losingPlayer == WHITE) MatchOutcome.BLACK_WINS else MatchOutcome.WHITE_WINS
                 val winnerName = winner!!.displayName
                 messagingTemplate.convertAndSend(
-                    "/topic/match/$matchId/events",
-                    MatchEventMessage(
+                    "/topic/match/$matchId/events", MatchEventMessage(
                         matchId = matchId,
                         eventType = MatchEventType.MATCH_ENDED,
                         message = "Checkmate! $winnerName wins!",
                         data = mapOf(
-                            "result" to "checkmate",
-                            "winner" to winnerName
+                            "result" to "checkmate", "winner" to winnerName
                         )
                     )
                 )
                 matchService.stopTimer(matchId)
-                matchService.addMatchRecord(MatchRecord(
-                    board = match?.board!!,
-                    players = match.players,
-                    matchId = match.matchId,
-                    timeControl = match.timeControl,
-                    matchType = match.matchType,
-                    botConfiguration = match.botConfiguration,
-                    matchOutcome = outcome,
-                    whitePlayer = match.whitePlayer!!,
-                    blackPlayer = match.blackPlayer!!,
-                    remainingWhitePlayerTime = match.whitePlayerTime,
-                    remainingBlackPlayerTime = match.blackPlayerTime,
-                    matchStatus = MatchStatus.COMPLETED,
-                    history = match.turnHistory,
-                    matchCreationTime = match.createdAt
-                ))
+                matchService.addMatchRecord(match!!.toMatchRecord(outcome))
                 notifyMatchCompleted(match, winner.playerId, "checkmate")
                 return true
             }
 
             matchState.isStalemate -> {
                 messagingTemplate.convertAndSend(
-                    "/topic/match/$matchId/events",
-                    MatchEventMessage(
+                    "/topic/match/$matchId/events", MatchEventMessage(
                         matchId = matchId,
                         eventType = MatchEventType.MATCH_ENDED,
                         message = "Stalemate! The game is a draw.",
@@ -260,30 +279,14 @@ class MatchWebSocketController(
                 )
                 matchService.stopTimer(matchId)
                 val match = matchService.getMatch(matchId)
-                matchService.addMatchRecord(MatchRecord(
-                    board = match?.board!!,
-                    players = match.players,
-                    matchId = match.matchId,
-                    timeControl = match.timeControl,
-                    matchType = match.matchType,
-                    botConfiguration = match.botConfiguration,
-                    matchOutcome = MatchOutcome.DRAW,
-                    whitePlayer = match.whitePlayer!!,
-                    blackPlayer = match.blackPlayer!!,
-                    remainingWhitePlayerTime = match.whitePlayerTime,
-                    remainingBlackPlayerTime = match.blackPlayerTime,
-                    matchStatus = MatchStatus.COMPLETED,
-                    history = match.turnHistory,
-                    matchCreationTime = match.createdAt
-                ))
+                matchService.addMatchRecord(match!!.toMatchRecord(MatchOutcome.DRAW))
                 notifyMatchCompleted(match, winnerId = "", reason = "stalemate")
                 return true
             }
 
             matchState.isDraw -> {
                 messagingTemplate.convertAndSend(
-                    "/topic/match/$matchId/events",
-                    MatchEventMessage(
+                    "/topic/match/$matchId/events", MatchEventMessage(
                         matchId = matchId,
                         eventType = MatchEventType.MATCH_ENDED,
                         message = "Draw by repetition or insufficient material.",
@@ -292,22 +295,7 @@ class MatchWebSocketController(
                 )
                 matchService.stopTimer(matchId)
                 val match = matchService.getMatch(matchId)
-                matchService.addMatchRecord(MatchRecord(
-                    board = match?.board!!,
-                    players = match.players,
-                    matchId = match.matchId,
-                    timeControl = match.timeControl,
-                    matchType = match.matchType,
-                    botConfiguration = match.botConfiguration,
-                    matchOutcome = MatchOutcome.DRAW,
-                    whitePlayer = match.whitePlayer!!,
-                    blackPlayer = match.blackPlayer!!,
-                    remainingWhitePlayerTime = match.whitePlayerTime,
-                    remainingBlackPlayerTime = match.blackPlayerTime,
-                    matchStatus = MatchStatus.COMPLETED,
-                    history = match.turnHistory,
-                    matchCreationTime = match.createdAt
-                ))
+                matchService.addMatchRecord(match!!.toMatchRecord(MatchOutcome.DRAW))
                 notifyMatchCompleted(match, winnerId = "", reason = "draw")
                 return true
             }
@@ -324,9 +312,7 @@ class MatchWebSocketController(
     @OptIn(ExperimentalAtomicApi::class)
     @MessageMapping("/match/{matchId}/join")
     fun joinMatch(
-        @DestinationVariable matchId: String,
-        principal: Principal,
-        joinMessage: JoinMatchMessage
+        @DestinationVariable matchId: String, principal: Principal, joinMessage: JoinMatchMessage
     ) {
         logger.info(joinMessage.toString())
         val securePlayerId = (principal as JwtAuthenticationToken).token.subject
@@ -338,13 +324,10 @@ class MatchWebSocketController(
             return
         }
         if (match.matchType == MatchType.PVE) {
-            match.players
-                .filterIsInstance<Player.Bot>()
-                .forEach { match.connectedPlayers.add(it.playerId) }
+            match.players.filterIsInstance<Player.Bot>().forEach { match.connectedPlayers.add(it.playerId) }
         }
         messagingTemplate.convertAndSend(
-            "/topic/match/$matchId/events",
-            MatchEventMessage(
+            "/topic/match/$matchId/events", MatchEventMessage(
                 matchId = matchId,
                 eventType = MatchEventType.PLAYER_JOINED,
                 message = "${joinMessage.playerName} joined the match"
@@ -364,21 +347,16 @@ class MatchWebSocketController(
         }
         val matchState = matchService.createMatchStateMessage(match)
         messagingTemplate.convertAndSendToUser(
-            joinMessage.playerId,
-            "/queue/match/$matchId/state",
-            matchState
+            joinMessage.playerId, "/queue/match/$matchId/state", matchState
         )
 
         //when both players are connected start the match
-        if (match.connectedPlayers.size == 2 && match.matchStarted.compareAndSet(expectedValue = false, newValue = true)) {
-            startMatch(matchId)
-            val matchState = matchService.createMatchStateMessage(match)
-            messagingTemplate.convertAndSend(
-                "/topic/match/$matchId/state",
-                matchState
+        if (match.connectedPlayers.size == 2 && match.matchStarted.compareAndSet(
+                expectedValue = false, newValue = true
             )
+        ) {
+            startMatch(matchId)
         }
-
     }
 
     /**
@@ -388,62 +366,37 @@ class MatchWebSocketController(
      */
     //@MessageMapping("/match/{matchId}/start") disabled not used!!!
     fun startMatch(@DestinationVariable matchId: String) {
-        matchService.startTimer(
-            matchId,
-            onTimeUpdate = { timeUpdate ->
-                messagingTemplate.convertAndSend(
-                    "/topic/match/$matchId/time",
-                    timeUpdate
-                )
-            },
-            onTimeExpired = { losingColor ->
-                messagingTemplate.convertAndSend(
-                    "/topic/match/$matchId/events",
-                    MatchEventMessage(
-                        matchId = matchId,
-                        eventType = MatchEventType.TIME_EXPIRED,
-                        message = "$losingColor ran out of time!",
-                        data = mapOf(
-                            "loser" to losingColor,
-                            "winner" to if (losingColor == "WHITE") "BLACK" else "WHITE"
-                        )
+        matchService.startTimer(matchId, onTimeUpdate = { timeUpdate ->
+            messagingTemplate.convertAndSend(
+                "/topic/match/$matchId/time", timeUpdate
+            )
+        }, onTimeExpired = { losingColor ->
+            messagingTemplate.convertAndSend(
+                "/topic/match/$matchId/events", MatchEventMessage(
+                    matchId = matchId,
+                    eventType = MatchEventType.TIME_EXPIRED,
+                    message = "$losingColor ran out of time!",
+                    data = mapOf(
+                        "loser" to losingColor, "winner" to if (losingColor == "WHITE") "BLACK" else "WHITE"
                     )
                 )
-                val winner = if (losingColor == "WHITE") MatchOutcome.BLACK_WINS else MatchOutcome.WHITE_WINS
-                val match = matchService.getMatch(matchId)
-                matchService.addMatchRecord(MatchRecord(
-                    board = match?.board!!,
-                    players = match.players,
-                    matchId = match.matchId,
-                    timeControl = match.timeControl,
-                    matchType = match.matchType,
-                    botConfiguration = match.botConfiguration,
-                    matchOutcome = winner,
-                    whitePlayer = match.whitePlayer!!,
-                    blackPlayer = match.blackPlayer!!,
-                    remainingWhitePlayerTime = match.whitePlayerTime,
-                    remainingBlackPlayerTime = match.blackPlayerTime,
-                    matchStatus = MatchStatus.COMPLETED,
-                    history = match.turnHistory,
-                    matchCreationTime = match.createdAt
-                ))
-                val winnerPlayer = if (losingColor == "WHITE") match.blackPlayer else match.whitePlayer
-                notifyMatchCompleted(match, winnerPlayer?.playerId ?: "", "timeout")
-            }
-        )
+            )
+            val winner = if (losingColor == "WHITE") MatchOutcome.BLACK_WINS else MatchOutcome.WHITE_WINS
+            val match = matchService.getMatch(matchId)
+            matchService.addMatchRecord(match!!.toMatchRecord(winner))
+            val winnerPlayer = if (losingColor == "WHITE") match.blackPlayer else match.whitePlayer
+            notifyMatchCompleted(match, winnerPlayer?.playerId ?: "", "timeout")
+        })
 
         messagingTemplate.convertAndSend(
-            "/topic/match/$matchId/events",
-            MatchEventMessage(
-                matchId = matchId,
-                eventType = MatchEventType.MATCH_STARTED,
-                message = "Match started!"
+            "/topic/match/$matchId/events", MatchEventMessage(
+                matchId = matchId, eventType = MatchEventType.MATCH_STARTED, message = "Match started!"
             )
         )
         val match = matchService.getMatch(matchId)!!
         val activeTurn = match.activeTurn
-        val botSide = if(match.whitePlayer is Player.Bot) WHITE else BLACK
-        if (activeTurn == WHITE && botSide == WHITE ) {
+        val botSide = if (match.whitePlayer is Player.Bot) WHITE else BLACK
+        if (activeTurn == WHITE && botSide == WHITE) {
             val botMove = matchService.calculateMove(match.board!!, match.botConfiguration?.botModelType!!)
             val botMoveMessage = MoveMessage(
                 matchId,
@@ -453,30 +406,22 @@ class MatchWebSocketController(
                 promotion = botMove.promotion,
             )
             val botMatchStateMessage = matchService.processMove(matchId, botMoveMessage)
-            val botMoveNotification = MoveNotification(
-                matchId,
-                botMoveMessage.from,
-                botMoveMessage.to,
-                botMoveMessage.promotion,
-                botMoveMessage.playerId
-            )
-            val botStateMessage = matchService.createMatchStateMessage(match, botMoveNotification)
 
             // Broadcast updated state to all players
             messagingTemplate.convertAndSend(
-                "/topic/match/$matchId/state",
-                botStateMessage
+                "/topic/match/$matchId/state", botMatchStateMessage
             )
 
             // Send the specific move notification
             botMatchStateMessage.lastMove?.let { lastMove ->
                 messagingTemplate.convertAndSend(
-                    "/topic/match/$matchId/moves",
-                    botMoveNotification
+                    "/topic/match/$matchId/moves", lastMove
                 )
             }
+        } else {
+            val matchState = matchService.createMatchStateMessage(match)
+            messagingTemplate.convertAndSend("/topic/match/$matchId/state", matchState)
         }
-
     }
 
     /**
@@ -487,15 +432,12 @@ class MatchWebSocketController(
      */
     @MessageMapping("/match/{matchId}/draw/offer")
     fun offerDraw(
-        @DestinationVariable matchId: String,
-        drawOffer: DrawOfferMessage,
-        principal: Principal
+        @DestinationVariable matchId: String, drawOffer: DrawOfferMessage, principal: Principal
     ) {
         val securePlayerId = (principal as JwtAuthenticationToken).token.subject
         if (drawOffer.offeredBy != securePlayerId) throw IllegalAccessException("Player mismatch")
         messagingTemplate.convertAndSend(
-            "/topic/match/$matchId/draw-offer",
-            drawOffer
+            "/topic/match/$matchId/draw-offer", drawOffer
         )
     }
 
@@ -507,17 +449,17 @@ class MatchWebSocketController(
      */
     @MessageMapping("/match/{matchId}/draw/respond")
     fun respondToDraw(
-        @DestinationVariable matchId: String,
-        response: DrawResponseMessage,
-        principal: Principal
+        @DestinationVariable matchId: String, response: DrawResponseMessage, principal: Principal
     ) {
         val securePlayerId = (principal as JwtAuthenticationToken).token.subject
         if (response.playerId != securePlayerId) throw IllegalAccessException("Player mismatch")
         if (response.accepted) {
             matchService.acceptDraw(matchId)
+            val match = matchService.getMatch(matchId)
+            matchService.addMatchRecord(match!!.toMatchRecord(MatchOutcome.DRAW))
+            notifyMatchCompleted(match, winnerId = "", reason = "draw agreed")
             messagingTemplate.convertAndSend(
-                "/topic/match/$matchId/events",
-                MatchEventMessage(
+                "/topic/match/$matchId/events", MatchEventMessage(
                     matchId = matchId,
                     eventType = MatchEventType.DRAW_ACCEPTED,
                     message = "Draw accepted. Match ended in a draw.",
@@ -526,11 +468,8 @@ class MatchWebSocketController(
             )
         } else {
             messagingTemplate.convertAndSend(
-                "/topic/match/$matchId/events",
-                MatchEventMessage(
-                    matchId = matchId,
-                    eventType = MatchEventType.DRAW_DECLINED,
-                    message = "Draw offer declined"
+                "/topic/match/$matchId/events", MatchEventMessage(
+                    matchId = matchId, eventType = MatchEventType.DRAW_DECLINED, message = "Draw offer declined"
                 )
             )
         }
@@ -544,25 +483,59 @@ class MatchWebSocketController(
      */
     @MessageMapping("/match/{matchId}/resign")
     fun resign(
-        @DestinationVariable matchId: String,
-        resignMessage: ResignMessage,
-        principal: Principal
+        @DestinationVariable matchId: String, resignMessage: ResignMessage, principal: Principal
     ) {
+        val match = matchService.getMatch(matchId)
         val securePlayerId = (principal as JwtAuthenticationToken).token.subject
         if (resignMessage.playerId != securePlayerId) throw IllegalAccessException("Player mismatch")
-        val winner = matchService.resign(matchId, resignMessage.playerId)
+        val winningPlayer = matchService.resign(matchId, resignMessage.playerId)
+        val resigningPlayerName =
+            (match?.players?.find { it.playerId == resignMessage.playerId }?.displayName) ?: "Player"
 
         messagingTemplate.convertAndSend(
-            "/topic/match/$matchId/events",
-            MatchEventMessage(
+            "/topic/match/$matchId/events", MatchEventMessage(
                 matchId = matchId,
                 eventType = MatchEventType.PLAYER_RESIGNED,
-                message = "Player resigned. $winner wins!",
+                message = "$resigningPlayerName resigned. ${winningPlayer.displayName} wins!",
                 data = mapOf(
-                    "winner" to winner,
-                    "resignedPlayer" to resignMessage.playerId
+                    "winner" to winningPlayer.displayName, "resignedPlayer" to resignMessage.playerId
                 )
             )
+        )
+
+        val outcome =
+            if (match?.whitePlayer?.playerId == resignMessage.playerId) MatchOutcome.BLACK_WINS else MatchOutcome.WHITE_WINS
+
+        matchService.addMatchRecord(match!!.toMatchRecord(outcome))
+        notifyMatchCompleted(match, winningPlayer.playerId, "resignation")
+    }
+
+    /**
+     * Handles a spectator subscribing to a live match. Sends the current match state
+     * to the spectator's user-queue without joining as a player or starting timers.
+     *
+     * @param matchId The unique identifier of the match.
+     * @param principal The authenticated spectator.
+     */
+    @MessageMapping("/match/{matchId}/spectate")
+    fun spectate(
+        @DestinationVariable matchId: String, principal: Principal
+    ) {
+        val match = matchService.getMatch(matchId)
+        if (match == null) {
+            messagingTemplate.convertAndSendToUser(
+                principal.name, "/queue/errors", mapOf("error" to "Match not found", "matchId" to matchId)
+            )
+            return
+        }
+        val securePlayerId = (principal as JwtAuthenticationToken).token.subject
+        if (match.players.any { it.playerId == securePlayerId }) {
+            // participants must use /join — silently ignore here
+            return
+        }
+        val matchState = matchService.createMatchStateMessage(match)
+        messagingTemplate.convertAndSendToUser(
+            principal.name, "/queue/match/$matchId/state", matchState
         )
     }
 

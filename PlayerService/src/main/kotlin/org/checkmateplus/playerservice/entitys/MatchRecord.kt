@@ -10,6 +10,7 @@ import org.checkmateplus.chessLibrary.playerModels.MatchStatus
 import org.checkmateplus.chessLibrary.playerModels.MatchType
 import org.checkmateplus.chessLibrary.playerModels.TimeControl
 import org.checkmateplus.chessLibrary.playerModels.history.MatchOutcome
+import org.checkmateplus.chessLibrary.playerModels.history.Turn
 import org.checkmateplus.playerservice.entitys.players.PlayerEntity
 import org.checkmateplus.playerservice.models.MatchResult
 import org.checkmateplus.playerservice.models.MatchSummary
@@ -53,10 +54,10 @@ class MatchRecordEntity(
     @JoinColumn(name = "black_player_id", nullable = false)
     var blackPlayer: PlayerEntity,
 
-    @Column(name = "remaining_white_time_ms", nullable = false)
+    @Column(name = "remaining_white_time", nullable = false)
     var remainingWhitePlayerTime: Long,
 
-    @Column(name = "remaining_black_time_ms", nullable = false)
+    @Column(name = "remaining_black_time", nullable = false)
     var remainingBlackPlayerTime: Long,
 
     @Enumerated(EnumType.STRING)
@@ -68,7 +69,15 @@ class MatchRecordEntity(
     var historyJson: String = "[]",
 
     @Column(name = "createdAtEpochMs", nullable = false)
-    var createdAtEpochMs: Long
+    var createdAtEpochMs: Long,
+
+    @Column(name = "analysis_json")
+    @JdbcTypeCode(SqlTypes.JSON)
+    var analysisJson: String? = null,
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "analysis_status", nullable = false)
+    var analysisStatus: AnalysisStatus = AnalysisStatus.PENDING
 ) {
     @get:Transient
     val board: Board get() = Json.decodeFromString(boardJson)
@@ -105,7 +114,8 @@ class MatchRecordEntity(
             val timeControlSeconds = timeControl.minutes * 60L
             val timeUsedByWhite = timeControlSeconds - remainingWhitePlayerTime
             val timeUsedByBlack = timeControlSeconds - remainingBlackPlayerTime
-            return (timeUsedByWhite + timeUsedByBlack) * 1000L
+            val timeNegatedByIncrement = history.size * timeControl.increment
+            return (timeUsedByWhite + timeUsedByBlack + timeNegatedByIncrement) * 1000L
         }
 
     @get:Transient
@@ -129,4 +139,8 @@ class MatchRecordEntity(
     @get:Transient
     val isDraw: Boolean
         get() = matchOutcome == MatchOutcome.DRAW
+
+    @get:Transient
+    val history: List<Turn>
+        get() = Json.decodeFromString(historyJson)
 }

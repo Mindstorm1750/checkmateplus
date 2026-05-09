@@ -36,7 +36,6 @@ dependencies {
     implementation("org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j")
     //implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
     implementation("tools.jackson.module:jackson-module-kotlin")
-    implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-websocket")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springframework.boot:spring-boot-starter-cache")

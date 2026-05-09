@@ -44,3 +44,9 @@ spec:
     playerservice:
       imagePullSecrets:
         - name: gitlab-registry
+    stockfishengine:
+      imagePullSecrets:
+        - name: gitlab-registry
+    voicecommandservice:
+      imagePullSecrets:
+        - name: gitlab-registry

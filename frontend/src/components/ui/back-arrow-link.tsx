@@ -1,10 +1,12 @@
 import { ArrowLeft } from "lucide-react"
-import { Link } from "react-router"
+import { useNavigate } from "react-router"
 
 export const BackArrowLink = () => {
+  const navigate = useNavigate()
   return (
-    <Link to="/">
-      <ArrowLeft className="mt-4" />
-    </Link>
+    <ArrowLeft
+      className="mt-4 cursor-pointer hover:[animation:wiggle_1s_ease-in-out_0.2s_1_forwards]"
+      onClick={() => navigate(-1)}
+    />
   )
 }

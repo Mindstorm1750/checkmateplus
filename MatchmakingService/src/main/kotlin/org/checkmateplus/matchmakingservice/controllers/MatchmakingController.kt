@@ -13,8 +13,6 @@ import org.springframework.messaging.handler.annotation.MessageMapping
 import org.springframework.messaging.handler.annotation.Payload
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.scheduling.annotation.Scheduled
-import org.springframework.security.core.annotation.AuthenticationPrincipal
-import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.stereotype.Controller
 import java.security.Principal
@@ -65,8 +63,9 @@ class MatchmakingController(
             )
         } else {
             Player.Registered(
+                playerId = securePlayerId,
                 displayName = displayName,
-                playerId = securePlayerId
+                // skillRating = TODO GET SKILLRATING FROM DATABASE
             )
         }
         logger.info("${player.javaClass.name} $securePlayerId (${player.displayName}) joining queue")
@@ -171,6 +170,7 @@ class MatchmakingController(
                     websocketUrl = allocation.websocketUrl,
                     opponentName = opponent.displayName,
                     playerId = player.playerId,
+                    matchType = match.matchType,
                 )
             )
         }

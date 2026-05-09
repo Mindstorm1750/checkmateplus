@@ -14,6 +14,8 @@ service MatchManager {
   rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
   rpc ReportMatchCompleted(MatchCompletedReport) returns (MatchCompletedResponse);
   rpc UnregisterServer(UnRegisterServerRequest) returns (UnRegisterServerResponse);
+  rpc ReportMatchUpdate(MatchUpdate) returns (MatchUpdateResponse);
+  rpc ListLiveMatches(ListLiveMatchesRequest) returns (ListLiveMatchesResponse);
 }
 //Service for matchmaker to the manager
 service ServerAllocator {
@@ -31,6 +33,22 @@ enum BotMoveTimeModelType {
   REALISTIC = 2;
 }
 
+enum MatchType {
+  MATCH_TYPE_CASUAL_PVP = 0;
+  MATCH_TYPE_PVE = 1;
+  MATCH_TYPE_COMPETITIVE_PVP = 2;
+}
+
+enum TimeControl {
+  TIME_CONTROL_BULLET_1_0 = 0;
+  TIME_CONTROL_BULLET_2_1 = 1;
+  TIME_CONTROL_BLITZ_3_0 = 2;
+  TIME_CONTROL_BLITZ_5_0 = 3;
+  TIME_CONTROL_RAPID_10_0 = 4;
+  TIME_CONTROL_RAPID_15_10 = 5;
+  TIME_CONTROL_CLASSICAL_30_0 = 6;
+}
+
 message BotConfiguration {
   BotModelType bot_model_type = 1;
   BotMoveTimeModelType bot_move_time_model_type = 2;
@@ -40,14 +58,15 @@ message ServerRequest {
   string match_id = 1;
   string white_player_id = 2;
   string white_player_name = 3;
-  // int32 white_player_rating = 4;
-  string black_player_id = 5;
-  string black_player_name = 6;
-  // int32 black_player_rating = 7;
-  int32 initial_time_minutes = 8;
-  int32 increment_seconds = 9;
-  string matchType = 10;
-  optional BotConfiguration bot_configuration = 11;
+  string black_player_id = 4;
+  string black_player_name = 5;
+  optional TimeControl time_control = 6;
+  string matchType = 7;
+  optional BotConfiguration bot_configuration = 8;
+  optional int32 white_skill_rating = 9;
+  optional int32 black_skill_rating = 10;
+  bool white_player_registered = 11;
+  bool black_player_registered = 12;
 }
 
 message ServerResponse {
@@ -62,7 +81,6 @@ message AllocatedServer {
   string websocket_url = 3;
   int32 estimated_wait_seconds = 4;
 }
-
 // Ask gameserver to create a match
 message AllocateMatchRequest {
   string match_id = 1;
@@ -72,10 +90,11 @@ message AllocateMatchRequest {
   string black_player_id = 5;
   string black_player_name = 6;
   bool black_player_registered = 7;
-  int32 initial_time_seconds = 8;
-  int32 increment_seconds = 9;
-  string matchType = 10;
-  optional BotConfiguration bot_configuration = 11;
+  optional TimeControl time_control = 8;
+  string matchType = 9;
+  optional BotConfiguration bot_configuration = 10;
+  optional int32 white_skill_rating = 11;
+  optional int32 black_skill_rating = 12;
 }
 ///Server shutting down remove from pool
 message UnRegisterServerRequest {
@@ -137,4 +156,72 @@ message MatchCompletedReport {
 
 message MatchCompletedResponse {
   bool acknowledged = 1;
+}
+enum MatchStatus {
+  MATCH_STATUS_PENDING = 0;
+  MATCH_STATUS_ASSIGNED = 1;
+  MATCH_STATUS_ACTIVE = 2;
+  MATCH_STATUS_COMPLETED = 3;
+  MATCH_STATUS_CANCELLED = 4;
+  MATCH_STATUS_ABANDONED = 5;
+}
+
+message MatchUpdate {
+  string match_id = 1;
+  string server_id = 2;            // empty for PENDING/CANCELLED before allocation
+  MatchStatus status = 3;
+  string white_player_id = 4;
+  string white_player_name = 5;
+  int32  white_player_rating = 6;
+  string black_player_id = 7;
+  string black_player_name = 8;
+  int32  black_player_rating = 9;
+  string last_fen = 10;
+  int32  white_time_seconds = 11;
+  int32  black_time_seconds = 12;
+  string active_color = 13;        // "WHITE" | "BLACK"
+  int32  move_number = 14;
+  string winner_id = 15;           // empty for draw
+  string reason = 16;              // checkmate|resignation|timeout|draw|abandoned|alloc_failed|queue_cancel
+  bool white_player_registered = 17;
+  bool black_player_registered = 18;
+  optional BotConfiguration bot_configuration = 19; // present iff a bot is in the match
+  optional MatchType match_type = 20;
+  optional TimeControl time_control = 21;
+}
+
+message MatchUpdateResponse {
+  bool acknowledged = 1;
+}
+
+message ListLiveMatchesRequest {}
+
+message ListLiveMatchesResponse {
+  repeated LiveMatch matches = 1;
+}
+
+message LiveMatch {
+  string match_id = 1;
+  string server_id = 2;
+  MatchStatus status = 3;
+  string white_player_id = 4;
+  string white_player_name = 5;
+  int32 white_player_rating = 6;
+  bool white_player_registered = 7;
+  string black_player_id = 8;
+  string black_player_name = 9;
+  int32 black_player_rating = 10;
+  bool black_player_registered = 11;
+  optional BotConfiguration bot_configuration = 12;
+  string last_fen = 13;
+  int32 white_time_seconds = 14;
+  int32 black_time_seconds = 15;
+  string active_color = 16;
+  int32 move_number = 17;
+  string winner_id = 18;
+  string reason = 19;
+  int64 updated_at = 20;
+  optional MatchType match_type = 21;
+  optional TimeControl time_control = 22;
+  string websocket_url = 23;
 }

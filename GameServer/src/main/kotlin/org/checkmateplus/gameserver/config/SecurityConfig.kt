@@ -24,6 +24,7 @@ class SecurityConfig(@Value("\${jwt.secret}") private val jwtSecret: String) {
             .authorizeHttpRequests { auth ->
                 auth.requestMatchers("/actuator/health/**").permitAll()
                 auth.requestMatchers("/match/**").permitAll() // Handled by WS security
+                auth.requestMatchers("/api/**").permitAll()
                 auth.anyRequest().authenticated()
             }
             .oauth2ResourceServer { oauth2 ->

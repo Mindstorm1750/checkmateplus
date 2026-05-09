@@ -254,3 +254,42 @@ export type Move = {
   to: Square
   promotion?: PieceType
 }
+
+export type PieceCountsType = {
+  [C in Colour]: {
+    [P in Exclude<PieceType, "KING">]: number
+  }
+}
+
+export const EMPTY_PIECE_COUNTS: PieceCountsType = {
+  WHITE: {
+    PAWN: 0,
+    KNIGHT: 0,
+    BISHOP: 0,
+    ROOK: 0,
+    QUEEN: 0,
+  },
+  BLACK: {
+    PAWN: 0,
+    KNIGHT: 0,
+    BISHOP: 0,
+    ROOK: 0,
+    QUEEN: 0,
+  },
+}
+
+export const STARTING_PIECE_COUNTS: {
+  [P in Exclude<PieceType, "KING">]: number
+} = {
+  PAWN: 8,
+  KNIGHT: 2,
+  BISHOP: 2,
+  ROOK: 2,
+  QUEEN: 1,
+}
+
+export type VoiceMove = {
+  from: string | null
+  to: string | null
+  promotion: string | null
+}

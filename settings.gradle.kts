@@ -5,5 +5,7 @@ include(
     "MatchmakingService",
     "GameServer",
     "GameServerManager",
-    "PlayerService"
+    "PlayerService",
+    "VoiceCommandService",
+    "StockfishEngine"
 )

@@ -5,9 +5,11 @@ import org.checkmateplus.chessLibrary.botEngine.BotEngine
 import org.checkmateplus.chessLibrary.botEngine.BotModelType
 import org.checkmateplus.chessLibrary.chessEngine.Board
 import org.checkmateplus.chessLibrary.chessEngine.BoardState
+import org.checkmateplus.chessLibrary.chessEngine.Colour
 import org.checkmateplus.chessLibrary.chessEngine.Colour.BLACK
 import org.checkmateplus.chessLibrary.chessEngine.Colour.WHITE
 import org.checkmateplus.chessLibrary.chessEngine.Move
+import org.checkmateplus.chessLibrary.chessEngine.toAlgebraic
 import org.checkmateplus.chessLibrary.chessEngine.toSquare
 import org.checkmateplus.chessLibrary.playerModels.MatchType
 import org.checkmateplus.chessLibrary.playerModels.Player
@@ -16,9 +18,11 @@ import org.checkmateplus.chessLibrary.playerModels.history.MatchRecord
 import org.checkmateplus.chessLibrary.playerModels.history.Turn
 import org.checkmateplus.gameserver.models.MatchState
 import org.checkmateplus.gameserver.models.messages.MatchStateMessage
+import org.checkmateplus.gameserver.models.messages.MoveHistoryEntry
 import org.checkmateplus.gameserver.models.messages.MoveMessage
 import org.checkmateplus.gameserver.models.messages.MoveNotification
 import org.checkmateplus.gameserver.models.messages.TimeUpdateMessage
+import org.checkmateplus.chessLibrary.chessEngine.SanFormatter
 import org.springframework.stereotype.Service
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -29,7 +33,8 @@ import java.util.concurrent.ConcurrentLinkedQueue
  */
 @Service
 class MatchService(
-    private val accountsService: AccountsService
+    private val accountsService: AccountsService,
+    private val matchReporterService: MatchReporterService,
 ) {
     private val matches = ConcurrentHashMap<String, MatchState>()
     private val timers = ConcurrentHashMap<String, Timer>()
@@ -102,6 +107,12 @@ class MatchService(
             timeTaken = timeTaken
         )
         match.turnHistory.add(turn)
+        // Push status snapshot to GSM. First move = ACTIVE transition, subsequent = MOVE refresh.
+        if (match.turnHistory.size == 1) {
+            matchReporterService.reportActive(match)
+        } else {
+            matchReporterService.reportMove(match)
+        }
         // Create move notification
         val moveNotification = MoveNotification(
             matchId = matchId,
@@ -217,18 +228,20 @@ class MatchService(
         startTimer(matchId, onTimeUpdate, onTimeExpired)
     }
 
-    fun resign(matchId: String, playerId: String): String {
+    /**
+     * Returns the winning player
+     */
+    fun resign(matchId: String, playerId: String): Player {
         val match = matches[matchId] ?: throw IllegalArgumentException("Match not found")
         stopTimer(matchId)
 
         val resigningPlayer = match.players.find { it.playerId == playerId }
         return if (resigningPlayer == match.players[0]) {
-            match.players[1].displayName
+            match.players[1]
 
         } else {
-            match.players[0].displayName
+            match.players[0]
         }
-
     }
 
     fun acceptDraw(matchId: String): Boolean {
@@ -251,20 +264,29 @@ class MatchService(
         match?.board ?: throw IllegalStateException("Board not initialized")
         val boardState = match.board!!.getBoardState()
         var isCheckmate = false
-        var isCheck = false
+        val isCheck = match.board!!.isInCheck(match.activeTurn)
         var isStalemate = false
         var isDraw = false
         if (boardState == BoardState.CHECKMATE) {
             isCheckmate = true
-            isCheck = true
             isStalemate = false
             isDraw = false
         }
         if (boardState == BoardState.STALEMATE) {
             isCheckmate = false
-            isCheck = false
             isStalemate = true
             isDraw = true
+        }
+        val moveHistory = match.turnHistory.mapIndexed { i, turn ->
+            val postBoard = match.turnHistory.getOrNull(i + 1)?.board ?: match.board!!
+            MoveHistoryEntry(
+                san = SanFormatter.toSan(turn.board, turn.move, postBoard),
+                from = turn.move.from.toAlgebraic(),
+                to = turn.move.to.toAlgebraic(),
+                fenAfter = postBoard.toFen(),
+                colour = if (i % 2 == 0) WHITE else BLACK,
+                playerId = turn.player.playerId
+            )
         }
         return MatchStateMessage(
             matchId = match.matchId,
@@ -277,7 +299,8 @@ class MatchService(
             isDraw = isDraw,
             lastMove = lastMove,
             whitePlayer = match.players.getOrNull(0),
-            blackPlayer = match.players.getOrNull(1)
+            blackPlayer = match.players.getOrNull(1),
+            moveHistory = moveHistory
         )
     }
 
@@ -299,6 +322,7 @@ class MatchService(
     fun addMatchRecord(record: MatchRecord) {
         matchRecords.add(record)
         flushMatchRecords()
+        removeMatch(record.matchId)
     }
 
     fun flushMatchRecords() {

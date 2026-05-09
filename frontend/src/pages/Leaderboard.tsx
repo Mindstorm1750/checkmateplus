@@ -2,9 +2,19 @@ import { useLeaderboard } from "@/hooks/useLeaderboard"
 import { Spinner } from "@/components/ui/spinner"
 import Layout from "@/components/Layout"
 import { BackArrowLink } from "@/components/ui/back-arrow-link.tsx"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table.tsx"
+import { useNavigate } from "react-router"
 
 export default function Leaderboard() {
   const { data, isLoading, isError } = useLeaderboard(25)
+  const navigate = useNavigate()
 
   return (
     <Layout>
@@ -14,26 +24,29 @@ export default function Leaderboard() {
         <p className="text-destructive">Failed to load leaderboard.</p>
       )}
       {data && (
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b text-left text-muted-foreground">
-              <th className="w-12 pb-2">#</th>
-              <th className="pb-2">Player</th>
-              <th className="pb-2 text-right">Rating</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>#</TableHead>
+              <TableHead>Player</TableHead>
+              <TableHead>Rating</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {data.map((entry) => (
-              <tr key={entry.playerId} className="border-b last:border-0">
-                <td className="py-2 text-muted-foreground">{entry.rank}</td>
-                <td className="py-2 font-medium">{entry.displayName}</td>
-                <td className="py-2 text-right tabular-nums">
-                  {entry.skillRating}
-                </td>
-              </tr>
+              <TableRow key={entry.playerId}>
+                <TableCell>{entry.rank}</TableCell>
+                <TableCell
+                  className="cursor-pointer hover:underline"
+                  onClick={() => navigate(`/profile/${entry.playerId}`)}
+                >
+                  {entry.displayName}
+                </TableCell>
+                <TableCell>{entry.skillRating}</TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       )}
       <BackArrowLink />
     </Layout>

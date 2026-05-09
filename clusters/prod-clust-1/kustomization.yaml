@@ -11,3 +11,4 @@ resources:
   - gitlab-registry-sealed-secret.yaml
   - cloudflared-sealed-secret.yaml
   - playerservice-sealed-secret.yaml
+  - voicecommandservice-sealed-secret.yaml

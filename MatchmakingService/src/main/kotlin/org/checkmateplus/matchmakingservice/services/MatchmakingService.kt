@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
-import kotlin.time.Instant
 
 /**
  * Service responsible for player matchmaking and match state management.
@@ -36,7 +35,8 @@ class MatchmakingService(
     private val redisTemplate: RedisTemplate<String, String>,
     @Value("\${gameservermanager.host}") private val managerHost: String,
     @Value("\${gameservermanager.port}") private val managerPort: Int,
-    private val json: Json
+    private val json: Json,
+    private val matchTrackingService: MatchTrackingService,
 ) {
 
     companion object {
@@ -263,6 +263,9 @@ class MatchmakingService(
         // Store match in Redis
         redisTemplate.opsForHash<String, String>().put(ACTIVE_MATCHES, match.matchId, serializeMatch(match))
 
+        // Notify GSM observability hub of the new PENDING match
+        matchTrackingService.reportPending(match.matchId, players[0], players[1], botConfiguration)
+
         return match
     }
 
@@ -314,9 +317,9 @@ class MatchmakingService(
                 calculateMmrRange(candidate.player)
             )
             candidate.player.playerId != currentEntry.player.playerId &&
-                candidate.matchType == currentEntry.matchType &&
-                isTimeControlCompatible(currentEntry.timeControl, candidate.timeControl) &&
-                abs(playerMmr - candidateMmr) <= effectiveRange
+                    candidate.matchType == currentEntry.matchType &&
+                    isTimeControlCompatible(currentEntry.timeControl, candidate.timeControl) &&
+                    abs(playerMmr - candidateMmr) <= effectiveRange
         } ?: return null
 
         hashOps.delete(PLAYER_QUEUE_MAP, currentEntry.player.playerId)
@@ -402,8 +405,11 @@ class MatchmakingService(
             val request =
                 GameServerProto.ServerRequest.newBuilder().setMatchId(matchId).setWhitePlayerId(whitePlayer.playerId)
                     .setWhitePlayerName(whitePlayer.displayName).setBlackPlayerId(blackPlayer.playerId)
-                    .setBlackPlayerName(blackPlayer.displayName).setInitialTimeMinutes(timeControl.minutes)
-                    .setIncrementSeconds(timeControl.increment).setMatchType(matchType.toString())
+                    .setBlackPlayerName(blackPlayer.displayName)
+                    .setWhitePlayerRegistered(whitePlayer is Player.Registered)
+                    .setBlackPlayerRegistered(blackPlayer is Player.Registered)
+                    .setTimeControl(GameServerProto.TimeControl.valueOf("TIME_CONTROL_${timeControl.name}"))
+                    .setMatchType(matchType.toString())
                     .apply {
                         botConfiguration?.let {
                             setBotConfiguration(
@@ -412,6 +418,16 @@ class MatchmakingService(
                                     .setBotMoveTimeModelType(GameServerProto.BotMoveTimeModelType.valueOf(it.botMoveTimeModelType.name))
                                     .build()
                             )
+                        }
+                    }
+                    .apply {
+                        whitePlayer.skillRating?.let {
+                            setWhiteSkillRating(whitePlayer.skillRating!!)
+                        }
+                    }
+                    .apply {
+                        blackPlayer.skillRating?.let {
+                            setBlackSkillRating(blackPlayer.skillRating!!)
                         }
                     }.build()
 
@@ -433,6 +449,7 @@ class MatchmakingService(
                 )
             } else {
                 logger.error("Server allocation failed: ${response.message}")
+                matchTrackingService.reportCancelled(matchId, whitePlayer, blackPlayer, "alloc_failed", botConfiguration)
                 return ServerAllocationResult(
                     success = false, message = response.message
                 )
@@ -440,6 +457,7 @@ class MatchmakingService(
 
         } catch (e: Exception) {
             logger.error("Failed to request server", e)
+            matchTrackingService.reportCancelled(matchId, whitePlayer, blackPlayer, "alloc_error", botConfiguration)
             return ServerAllocationResult(
                 success = false, message = "Failed to communicate with manager: ${e.message}"
             )

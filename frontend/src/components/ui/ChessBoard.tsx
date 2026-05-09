@@ -1,6 +1,14 @@
 import { isMoveInMoves, legalMoves, pieceToSvg } from "@/lib/chess.helpers"
-import type { Board, Move, Square } from "@/types/Chess.type"
-import { useState } from "react"
+import {
+  type Board,
+  EMPTY_PIECE_COUNTS,
+  type Move,
+  type PieceCountsType,
+  type PieceType,
+  type Square,
+  STARTING_PIECE_COUNTS,
+} from "@/types/Chess.type"
+import { useMemo, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { usePreferences } from "@/lib/PreferencesProvider"
 import { BOARD_THEMES } from "@/lib/board.theme"
@@ -15,9 +23,21 @@ export type ChessBoardProps = {
   whitePerspective?: boolean
   isPlayersTurn: boolean // used for stopping the player from making moves when it isn't their turn
   isGameOver: boolean // used for clocks and also stopping player from making moves
+  isCheck: boolean // used to highlight a King in check with a red glow
   clockState?: Pick<MatchStateMessage, "whitePlayerTime" | "blackPlayerTime">
   pieceOrigins: Map<Square, Square>
+  readOnly?: boolean // disables interaction; active-clock highlight derives from boardState.sideToMove
+  lastMove?: Move // used to highlight the most recent move played
+  playerLabels?: PlayerLabelsType
+  hideClocks?: boolean
 }
+
+export type PlayerLabelsType = {
+  whitePlayerLabel: string
+  blackPlayerLabel: string
+}
+
+const FILE_LABELS = ["a", "b", "c", "d", "e", "f", "g", "h"] as const
 
 const ChessBoard = ({
   moveCallback,
@@ -25,23 +45,140 @@ const ChessBoard = ({
   whitePerspective = true,
   isPlayersTurn,
   isGameOver,
+  isCheck,
   clockState = { whitePlayerTime: 0, blackPlayerTime: 0 },
   pieceOrigins,
-}: ChessBoardProps) => {
+  readOnly = false,
+  lastMove,
+  playerLabels,
+  hideClocks = false,
+  children,
+}: React.PropsWithChildren<ChessBoardProps>) => {
   const [squareClicked, setSquareClicked] = useState<Square | null>()
   const [askForPromotion, setAskForPromotion] = useState<boolean>(false)
   const [promotionSquare, setPromotionSquare] = useState<Square | null>()
 
   const { preferences } = usePreferences()
-  const { lightSquare, lightSquareSelected, darkSquare, darkSquareSelected } =
-    BOARD_THEMES[preferences.boardColour]
+  const {
+    lightSquare,
+    lightSquareHighlighted,
+    darkSquare,
+    darkSquareHighlighted,
+  } = BOARD_THEMES[preferences.boardColour]
 
   const squaresView = whitePerspective
     ? boardState.squares
     : boardState.squares.toReversed()
   const moves = legalMoves(boardState)
 
-  const isInteractable = isPlayersTurn && !isGameOver
+  const isInteractable = isPlayersTurn && !isGameOver && !readOnly
+
+  // For spectators, derive active clock from board side-to-move rather than isPlayersTurn.
+  const topPlayerColour = whitePerspective ? "BLACK" : "WHITE"
+  const bottomPlayerColour = whitePerspective ? "WHITE" : "BLACK"
+  const topClockActive = readOnly
+    ? boardState.sideToMove === topPlayerColour
+    : !isPlayersTurn
+  const bottomClockActive = readOnly
+    ? boardState.sideToMove === bottomPlayerColour
+    : isPlayersTurn
+
+  const pieceCounts: PieceCountsType = useMemo(
+    () =>
+      boardState.squares.reduce((counts, square) => {
+        const pieceType = square?.pieceType
+        const pieceColour = square?.colour
+        if (pieceType && pieceColour && pieceType !== "KING") {
+          counts[pieceColour][pieceType] += 1
+        }
+        return counts
+      }, structuredClone(EMPTY_PIECE_COUNTS)),
+    [boardState]
+  )
+
+  const piecesCaptured = useMemo(
+    () =>
+      (
+        Object.entries(STARTING_PIECE_COUNTS) as [
+          Exclude<PieceType, "KING">,
+          number,
+        ][]
+      ).reduce((counts, entry) => {
+        const [pieceType, startingCount] = entry
+        counts.WHITE[pieceType] = startingCount - pieceCounts.BLACK[pieceType] // Pieces that WHITE have captured are whatever black pieces are missing from starting count
+        counts.BLACK[pieceType] = startingCount - pieceCounts.WHITE[pieceType] // vice versa
+        return counts
+      }, structuredClone(EMPTY_PIECE_COUNTS)),
+    [boardState]
+  )
+
+  const piecesWhiteCaptured = useMemo(
+    () =>
+      (
+        Object.entries(piecesCaptured["WHITE"]) as [
+          Exclude<PieceType, "KING">,
+          number,
+        ][]
+      ).map((entry) => {
+        const [pieceType, count] = entry
+        return (
+          count > 0 && (
+            <div className="flex items-center gap-0" key={`black ${pieceType}`}>
+              <span className="text-sm text-black">{count}</span>
+              <img
+                src={pieceToSvg({
+                  pieceType,
+                  colour: "BLACK",
+                })} // The pieces that the White player captures are Black in colour
+                id={`${count}x black ${pieceType}`}
+                alt={`${count}x black ${pieceType}s captured`}
+                className="size-5 -translate-y-0.5"
+              />
+            </div>
+          )
+        )
+      }),
+    [boardState]
+  )
+
+  const piecesBlackCaptured = useMemo(
+    () =>
+      (
+        Object.entries(piecesCaptured["BLACK"]) as [
+          Exclude<PieceType, "KING">,
+          number,
+        ][]
+      ).map((entry) => {
+        const [pieceType, count] = entry
+        return (
+          count > 0 && (
+            <div className="flex items-center gap-0" key={`white ${pieceType}`}>
+              <span className="text-sm text-black">{count}</span>
+              <img
+                src={pieceToSvg({
+                  pieceType,
+                  colour: "WHITE",
+                })} // The pieces that the Black player captures are White in colour
+                id={`${count}x white ${pieceType}`}
+                alt={`${count}x white ${pieceType}s captured`}
+                className="size-5 -translate-y-0.5"
+              />
+            </div>
+          )
+        )
+      }),
+    [boardState]
+  )
+
+  // Used to conditionally render the material count element. Basically, not to render an empty white square div if nothing has been captured
+  const hasWhiteCaptured = useMemo(
+    () => Object.values(piecesCaptured["WHITE"]).some((count) => count > 0),
+    [boardState]
+  )
+  const hasBlackCaptured = useMemo(
+    () => Object.values(piecesCaptured["BLACK"]).some((count) => count > 0),
+    [boardState]
+  )
 
   const handleClick = (square: Square) => {
     if (!isInteractable) {
@@ -82,16 +219,32 @@ const ChessBoard = ({
   return (
     <Dialog open={askForPromotion}>
       <div className="flex w-full flex-col">
-        <Clock
-          topClock={true}
-          time={
-            whitePerspective
-              ? clockState.blackPlayerTime
-              : clockState.whitePlayerTime
-          }
-          isActiveClock={!isPlayersTurn}
-          isGameOver={isGameOver}
-        />
+        <div className="flex flex-row items-center gap-3">
+          {!hideClocks && (
+            <Clock
+              topClock={true}
+              time={
+                whitePerspective
+                  ? clockState.blackPlayerTime
+                  : clockState.whitePlayerTime
+              }
+              isActiveClock={topClockActive}
+              isGameOver={isGameOver}
+            />
+          )}
+          {playerLabels && (
+            <p className="p-2">
+              {whitePerspective
+                ? playerLabels.blackPlayerLabel
+                : playerLabels.whitePlayerLabel}
+            </p>
+          )}
+          {(whitePerspective ? hasBlackCaptured : hasWhiteCaptured) && (
+            <div className="ml-auto flex gap-2 rounded bg-zinc-200 p-2">
+              {whitePerspective ? piecesBlackCaptured : piecesWhiteCaptured}
+            </div>
+          )}
+        </div>
         <div className="relative aspect-square w-full">
           {/* Just the squares */}
           <div className="absolute inset-0 grid aspect-square w-full grid-cols-8 grid-rows-8">
@@ -102,13 +255,28 @@ const ChessBoard = ({
               const column = index % 8
               const isLightSquare = (row + column) % 2 === 0
               const isClickedSquare = squareClicked === square
-              const squareColourTheme = isClickedSquare
-                ? isLightSquare
-                  ? lightSquareSelected
-                  : darkSquareSelected
-                : isLightSquare
-                  ? lightSquare
-                  : darkSquare
+              const isLastMoveSquare =
+                lastMove && (square === lastMove.from || square === lastMove.to)
+              const squareColourTheme =
+                isClickedSquare || isLastMoveSquare
+                  ? isLightSquare
+                    ? lightSquareHighlighted
+                    : darkSquareHighlighted
+                  : isLightSquare
+                    ? lightSquare
+                    : darkSquare
+              const showRankLabel = column === 0
+              const showFileLabel = row === 7
+              const rankLabel = whitePerspective
+                ? (8 - row).toString()
+                : (row + 1).toString()
+              const fileLabel = whitePerspective
+                ? FILE_LABELS[column]
+                : FILE_LABELS[7 - column]
+              const labelColour = isLightSquare
+                ? "text-black/60"
+                : "text-white/75"
+
               // canMoveHere is used for the "dots" showing where a selected piece can move.
               const canMoveHere = moves
                 .filter((move) => move.from === squareClicked)
@@ -120,9 +288,24 @@ const ChessBoard = ({
                   className={`select-none ${squareColourTheme} relative flex items-center justify-center`}
                   onClick={() => handleClick(square as Square)}
                 >
+                  {showRankLabel && (
+                    <span
+                      className={`pointer-events-none absolute top-1 left-1 text-[10px] font-bold ${labelColour}`}
+                    >
+                      {rankLabel}
+                    </span>
+                  )}
+
+                  {showFileLabel && (
+                    <span
+                      className={`pointer-events-none absolute right-1 bottom-1 text-[10px] font-bold ${labelColour}`}
+                    >
+                      {fileLabel}
+                    </span>
+                  )}
                   {canMoveHere && (
                     <div
-                      className={`aspect-square w-1/3 rounded-full ${isLightSquare ? lightSquareSelected : darkSquareSelected}`}
+                      className={`aspect-square w-1/3 rounded-full ${isLightSquare ? lightSquareHighlighted : darkSquareHighlighted}`}
                     />
                   )}
                 </div>
@@ -141,12 +324,25 @@ const ChessBoard = ({
               const randomX = Math.cos(randomAngle) * 333
               const randomY = Math.sin(randomAngle) * 333
               // 333 is arbitrary. It's just a decent looking distance for the pieces to fly away
+              const checkHighlight =
+                isCheck &&
+                piece?.pieceType === "KING" &&
+                piece.colour === boardState.sideToMove
 
               return (
                 <div
                   key={`piece-${square}`}
                   className="relative flex items-center justify-center"
                 >
+                  {checkHighlight && (
+                    <div
+                      className="pointer-events-none absolute inset-0 z-0"
+                      style={{
+                        background:
+                          "radial-gradient(circle, rgba(231,0,11,1) 0%, rgba(231,0,11,0) 100%)",
+                      }}
+                    />
+                  )}
                   <AnimatePresence>
                     {piece && (
                       <motion.img
@@ -181,16 +377,35 @@ const ChessBoard = ({
             })}
           </div>
         </div>
-        <Clock
-          topClock={false}
-          time={
-            whitePerspective
-              ? clockState.whitePlayerTime
-              : clockState.blackPlayerTime
-          }
-          isActiveClock={isPlayersTurn}
-          isGameOver={isGameOver}
-        />
+        <div className="flex-col">
+          <div className="flex items-center gap-3">
+            {!hideClocks && (
+              <Clock
+                topClock={false}
+                time={
+                  whitePerspective
+                    ? clockState.whitePlayerTime
+                    : clockState.blackPlayerTime
+                }
+                isActiveClock={bottomClockActive}
+                isGameOver={isGameOver}
+              />
+            )}
+            {playerLabels && (
+              <p className="p-2">
+                {whitePerspective
+                  ? playerLabels.whitePlayerLabel
+                  : playerLabels.blackPlayerLabel}
+              </p>
+            )}
+            {(whitePerspective ? hasWhiteCaptured : hasBlackCaptured) && (
+              <div className="ml-auto flex gap-2 rounded bg-zinc-200 p-2">
+                {whitePerspective ? piecesWhiteCaptured : piecesBlackCaptured}
+              </div>
+            )}
+          </div>
+          <div className="flex w-full pt-2">{children}</div>
+        </div>
       </div>
       <DialogContent showCloseButton={false}>
         <DialogHeader>
@@ -215,6 +430,7 @@ const ChessBoard = ({
                     }}
                   >
                     <img
+                      alt={pieceType}
                       src={pieceToSvg({
                         pieceType,
                         colour:
@@ -252,7 +468,7 @@ const Clock = ({
 
   return (
     <div
-      className={`${topClock ? "rounded-t-lg" : "rounded-b-lg"} ${isActiveClock && !isGameOver && "bg-green-900"} ${isGameOver && time <= 0 && "bg-red-900"} border-outline flex w-[25%] items-center justify-center border-2 p-2 text-center text-3xl`}
+      className={`${topClock ? "rounded-t-lg" : "rounded-b-lg"} ${isActiveClock && !isGameOver && "bg-green-300 dark:bg-green-900"} ${isGameOver && time <= 0 && "bg-red-300 dark:bg-red-900"} flex w-1/4 items-center justify-center border-2 p-2 text-center text-2xl lg:text-3xl`}
     >{`${minutes}:${seconds}`}</div>
   )
 }

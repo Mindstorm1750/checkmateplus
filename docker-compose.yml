@@ -49,6 +49,23 @@ services:
       - POSTGRES_DB=checkmate
       - postgresUser=checkmate
       - postgresPassword=checkmate
+      - STOCKFISHENGINE_HOST=stockfishengine
+      - STOCKFISHENGINE_PORT=9093
+    networks:
+      - game-network
+    restart: unless-stopped
+    depends_on:
+      - stockfishengine
+
+  stockfishengine:
+    image: git.cs.kent.ac.uk:5050/jhl28/checkmate/stockfishengine:0.0.1-SNAPSHOT
+    container_name: stockfishengine
+    ports:
+      - "9093:9093"
+      - "8085:8085"
+    environment:
+      - GRPC_PORT=9093
+      - SERVER_PORT=8085
     networks:
       - game-network
     restart: unless-stopped
@@ -67,6 +84,19 @@ services:
     networks:
       - game-network
     restart: unless-stopped
+
+  voicecommandservice:
+    image: git.cs.kent.ac.uk:5050/jhl28/checkmate/voicecommandservice:latest
+    container_name: voicecommandservice
+    ports:
+      - "9100:9100"
+
+    networks:
+      - game-network
+    restart: unless-stopped
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - jwt.secret=MtBTjKZfckEP9if9FdwmggOtf2Geh9YQXBxLmNxEnR0=
 
   redis:
     image: redis:8.6.0-alpine

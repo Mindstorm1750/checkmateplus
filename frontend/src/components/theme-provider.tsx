@@ -4,7 +4,7 @@ import {
   setLocalStorage,
 } from "@/lib/local-storage.helpers.ts"
 
-type Theme = "dark" | "light" | "system"
+export type Theme = "dark" | "light" | "system"
 
 type ThemeProviderProps = {
   children: React.ReactNode
@@ -61,7 +61,7 @@ export function ThemeProvider({
 
   return (
     <ThemeProviderContext.Provider {...props} value={value}>
-      {children}
+      <div className="brand-gradient min-h-screen">{children}</div>
     </ThemeProviderContext.Provider>
   )
 }

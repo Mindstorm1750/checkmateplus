@@ -13,7 +13,6 @@ import { useJwt } from "@/lib/JwtProvider"
 import { Link, useNavigate } from "react-router"
 import { useState } from "react"
 import { Card, CardContent } from "./ui/card"
-import GoogleIcon from "@/assets/icons/google.svg?react"
 
 const REGISTER_WITH_USERNAME = `
   mutation Register($username: String!) {
@@ -24,6 +23,7 @@ const REGISTER_WITH_USERNAME = `
     }
   }
 `
+
 export function SignupForm({
   className,
   ...props
@@ -33,6 +33,7 @@ export function SignupForm({
   const [username, setUsername] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
@@ -51,6 +52,7 @@ export function SignupForm({
       setLoading(false)
     }
   }
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -82,21 +84,16 @@ export function SignupForm({
                   Create Account
                 </Button>
               </Field>
-              <Field className="grid gap-4 sm:grid-cols-1">
-                <Button variant="outline" type="button">
-                  <GoogleIcon />
-                  Continue with Google
-                </Button>
-              </Field>
+              {/*<Field className="grid gap-4 sm:grid-cols-1">*/}
+              {/*  <Button variant="outline" type="button">*/}
+              {/*    <GoogleIcon />*/}
+              {/*    Continue with Google*/}
+              {/*  </Button>*/}
+              {/*</Field>*/}
             </FieldGroup>
           </form>
         </CardContent>
       </Card>
-
-      <FieldDescription className="px-6 text-center">
-        By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-        and <a href="#">Privacy Policy</a>.
-      </FieldDescription>
     </div>
   )
 }

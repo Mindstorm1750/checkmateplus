@@ -12,9 +12,11 @@ class RedisConfig {
 
     @Bean
     fun json(): Json = Json {
+        prettyPrint = false
         isLenient = true
         ignoreUnknownKeys = true
         encodeDefaults = true
+        classDiscriminator = "type"
     }
 
     @Bean

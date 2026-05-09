@@ -33,6 +33,7 @@ import kotlin.time.ExperimentalTime
 @GrpcService
 class GameServerService(
     private val matchService: MatchService,
+    private val matchReporterService: MatchReporterService,
     @Value("\${gameservermanager.host}") private val managerHost: String,
     @Value("\${gameservermanager.port}") private val managerPort: Int,
     @Value("\${gameserver.advertise.host}") private val advertiseHost: String,
@@ -153,30 +154,40 @@ class GameServerService(
             } else null
             if (botConfiguration != null) {
                 val bot = Player.Bot(botConfiguration = botConfiguration)
-                val human = Player.Anonymous(
-                    displayName = request.whitePlayerName, playerId = request.whitePlayerId
-                )
+                val human = if (request.whitePlayerRegistered || request.blackPlayerRegistered) {
+                    Player.Registered(
+                        displayName = request.whitePlayerName, playerId = request.whitePlayerId, skillRating = request.whiteSkillRating,
+                    )
+                } else {
+                    Player.Anonymous(
+                        displayName = request.whitePlayerName, playerId = request.whitePlayerId
+                    )
+                }
                 val botSide = if (Random.nextBoolean()) Colour.WHITE else Colour.BLACK
                 whitePlayer = if (botSide == Colour.WHITE) bot else human
                 blackPlayer = if (botSide == Colour.WHITE) human else bot
             } else {
                 whitePlayer = if (request.whitePlayerRegistered) {
-                    Player.Anonymous(
-                        displayName = request.whitePlayerName, playerId = request.whitePlayerId
+                    Player.Registered(
+                        playerId = request.whitePlayerId,
+                        displayName = request.whitePlayerName,
+                        skillRating = request.whiteSkillRating,
                     )
                 } else {
-                    Player.Anonymous(  //this needs to be "registered" when accounts are implemented!!!!
+                    Player.Anonymous(
                         displayName = request.whitePlayerName, playerId = request.whitePlayerId
                     )
                 }
 
                 blackPlayer = if (request.blackPlayerRegistered) {
-                    Player.Anonymous(
-                        displayName = request.blackPlayerName, playerId = request.blackPlayerId
+                    Player.Registered(
+                        playerId = request.blackPlayerId,
+                        displayName = request.blackPlayerName,
+                        skillRating = request.blackSkillRating
                     )
                 } else {
                     Player.Anonymous(
-                        displayName = request.blackPlayerName, //this needs to be "registered" when accounts are implemented!!!!
+                        displayName = request.blackPlayerName,
                         playerId = request.blackPlayerId
                     )
                 }
@@ -184,13 +195,14 @@ class GameServerService(
 
 
             // Create time control
-            val timeControl: TimeControl = TimeControl.fromMinutesAndIncrement(
-                minutes = request.initialTimeSeconds / 60, increment = request.incrementSeconds
-            )
-                ?: throw IllegalArgumentException("Invalid time control: ${request.initialTimeSeconds / 60}+${request.incrementSeconds}")
+            if (!request.hasTimeControl()) {
+                throw IllegalArgumentException("AllocateMatchRequest missing time_control for match ${request.matchId}")
+            }
+            val timeControl: TimeControl =
+                TimeControl.valueOf(request.timeControl.name.removePrefix("TIME_CONTROL_"))
 
             // Create match
-            matchService.createMatch(
+            val matchState = matchService.createMatch(
                 matchId = request.matchId,
                 players = listOf(whitePlayer, blackPlayer),
                 timeControl = timeControl,
@@ -198,6 +210,7 @@ class GameServerService(
                 botConfiguration = botConfiguration
             )
             logger.info("Created match: ${request.matchId} with players $whitePlayer & $blackPlayer of type ${request.matchType}")
+            matchReporterService.reportAssigned(matchState)
             val response =
                 GameServerProto.AllocateMatchResponse.newBuilder().setSuccess(true).setMessage("Match created").build()
 

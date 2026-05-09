@@ -1,29 +1,39 @@
 import type { PieceType } from "@/types/Chess.type"
 
 export type MatchStateMessage = {
-  matchId: String
-  fen: String
+  matchId: string
+  fen: string
   whitePlayerTime: number
   blackPlayerTime: number
-  isCheck: Boolean
-  isCheckmate: Boolean
-  isStalemate: Boolean
-  isDraw: Boolean
+  isCheck: boolean
+  isCheckmate: boolean
+  isStalemate: boolean
+  isDraw: boolean
   lastMove?: MoveNotification
   whitePlayer?: Player
   blackPlayer?: Player
+  moveHistory: MoveHistoryEntry[]
+}
+
+export type MoveHistoryEntry = {
+  san: string
+  from: string
+  to: string
+  fenAfter: string
+  colour: "WHITE" | "BLACK"
+  playerId: string
 }
 
 export type MoveNotification = {
-  matchId: String
-  from: String
-  to: String
+  matchId: string
+  from: string
+  to: string
   promotion?: PieceType
-  movedBy: String
+  movedBy: string
 }
 
 export type Player = {
-  displayName: String
-  playerId: String
+  displayName: string
+  playerId: string
   skillRating?: number
 }

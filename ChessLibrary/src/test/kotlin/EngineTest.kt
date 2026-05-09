@@ -435,7 +435,7 @@ class EngineTest {
      */
     @Test
     fun testFindBestMoveBackrankMateInTwos() {
-        val boardQe2toQe8 = FenToBoard("r5k1/5ppp/8/8/2q5/8/4QPPP/4R1K1 w - - 0 1");
+        val boardQe2toQe8 = FenToBoard("r5k1/5ppp/8/8/2q5/8/4QPPP/4R1K1 w - - 0 1")
         val boardQe5toQe1 = FenToBoard("r3r1k1/5ppp/3R4/4q3/8/8/1Q3PPP/B1R3K1 b - - 0 1")
         assertEquals(Move("e2".toSquare()!!, "e8".toSquare()!!), boardQe2toQe8.findBestMoves(3))
         assertEquals(Move("e2".toSquare()!!, "e8".toSquare()!!), boardQe2toQe8.findBestMoves(4))

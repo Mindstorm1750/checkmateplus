@@ -1,8 +1,11 @@
 import { useQuery } from "@tanstack/react-query"
-import { gql } from "@/lib/graphql"
-import type { PlayerStats } from "@/lib/playerServiceTypes/PlayerStats"
+import { gqlNoJwt } from "@/lib/graphql"
+import type {
+  PlayerRating,
+  PlayerStats,
+} from "@/lib/playerServiceTypes/PlayerStats"
 
-const PLAYER_STATS_QUERY = `
+const DEFAULT_PLAYER_STATS_QUERY = `
     query PlayerStats($playerId: String!) {
       playerStats(playerId: $playerId) {
         playerId
@@ -17,15 +20,55 @@ const PLAYER_STATS_QUERY = `
         longestWinStreak
         favouriteTimeControl
         memberSinceEpochMs
+        winsAsWhite
+        winsAsBlack
       }
     }
   `
 
-export function usePlayerStats(playerId: string | null) {
+const PLAYER_RATING_QUERY = `
+    query PlayerStats($playerId: String!) {
+      playerStats(playerId: $playerId) {
+        playerId
+        skillRating
+        displayName
+      }
+    }
+  `
+
+const PLAYER_NAME_QUERY = `
+    query PlayerStats($playerId: String!) {
+      playerStats(playerId: $playerId) {
+        playerId
+        displayName
+      }
+    }
+  `
+
+export function usePlayerRating(playerId: string | null | undefined) {
+  const isPlayerRegistered = playerId
+    ? playerId.split("-")[0] == "RUser"
+    : false
+  return usePlayerStats<PlayerRating>(
+    isPlayerRegistered ? playerId : null,
+    PLAYER_RATING_QUERY,
+    "playerRating"
+  )
+}
+
+export function usePlayerName(playerId: string | null | undefined) {
+  return usePlayerStats<PlayerRating>(playerId, PLAYER_NAME_QUERY, "playerName")
+}
+
+export function usePlayerStats<QueryReturnType = PlayerStats>(
+  playerId: string | null | undefined,
+  query: string = DEFAULT_PLAYER_STATS_QUERY,
+  queryKey: string = "playerStats"
+) {
   return useQuery({
-    queryKey: ["playerStats", playerId],
+    queryKey: [queryKey, playerId],
     queryFn: () =>
-      gql<{ playerStats: PlayerStats }>(PLAYER_STATS_QUERY, { playerId }).then(
+      gqlNoJwt<{ playerStats: QueryReturnType }>(query, { playerId }).then(
         (d) => d.playerStats
       ),
     enabled: !!playerId, // won't run if no playerId

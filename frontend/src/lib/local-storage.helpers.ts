@@ -3,6 +3,7 @@
  */
 export type LocalStorageKeys =
   | "jwt"
+  | "refreshToken"
   | "playerId"
   | "displayName"
   | "isGuest"
@@ -18,4 +19,8 @@ export const setLocalStorage = (key: LocalStorageKeys, value: string): void => {
 
 export const getLocalStorage = (key: LocalStorageKeys): string | null => {
   return localStorage.getItem(key)
+}
+
+export const removeLocalStorage = (key: LocalStorageKeys): void => {
+  localStorage.removeItem(key)
 }

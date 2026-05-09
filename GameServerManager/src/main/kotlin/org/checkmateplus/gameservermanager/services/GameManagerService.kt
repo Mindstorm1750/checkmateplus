@@ -4,6 +4,7 @@ package org.checkmateplus.gameservermanager.services
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import io.grpc.stub.StreamObserver
+import org.checkmateplus.chessLibrary.playerModels.Player
 import org.checkmateplus.gameserver.proto.GameServerGrpc
 import org.checkmateplus.gameserver.proto.GameServerProto
 import org.checkmateplus.gameserver.proto.MatchManagerGrpc
@@ -23,7 +24,8 @@ import java.util.concurrent.ConcurrentHashMap
 @Service
 @GrpcService
 class GameManagerService(
-    private val redisTemplate: RedisTemplate<String, String>
+    private val redisTemplate: RedisTemplate<String, String>,
+    private val matchTrackingService: MatchTrackingService,
 ) : MatchManagerGrpc.MatchManagerImplBase() {
     private var registeredInstances: ConcurrentHashMap<String, GameServerInstance> = ConcurrentHashMap()
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -166,12 +168,15 @@ class GameManagerService(
                 .setMatchId(request.matchId)
                 .setWhitePlayerId(request.whitePlayerId)
                 .setWhitePlayerName(request.whitePlayerName)
+                .setWhitePlayerRegistered(request.whitePlayerRegistered)
                 .setBlackPlayerId(request.blackPlayerId)
                 .setBlackPlayerName(request.blackPlayerName)
-                .setInitialTimeSeconds(request.initialTimeMinutes * 60)
-                .setIncrementSeconds(request.incrementSeconds)
+                .setBlackPlayerRegistered(request.blackPlayerRegistered)
+                .apply { if (request.hasTimeControl()) setTimeControl(request.timeControl) }
                 .setBotConfiguration(request.botConfiguration)
                 .setMatchType(request.matchType)
+                .setWhiteSkillRating(request.whiteSkillRating)
+                .setBlackSkillRating(request.blackSkillRating)
                 .build()
 
             val stub = serverStubs[server.value.serverId]
@@ -277,6 +282,90 @@ class GameManagerService(
             )
             responseObserver.onCompleted()
         }
+    }
+
+    /**
+     * Records a per-match status / FEN / clock snapshot pushed from MatchmakingService
+     * (PENDING/CANCELLED) or GameServer (ASSIGNED/ACTIVE/COMPLETED/ABANDONED).
+     */
+    override fun reportMatchUpdate(
+        request: GameServerProto.MatchUpdate,
+        responseObserver: StreamObserver<GameServerProto.MatchUpdateResponse>
+    ) {
+        try {
+            matchTrackingService.recordUpdate(request)
+            responseObserver.onNext(
+                GameServerProto.MatchUpdateResponse.newBuilder().setAcknowledged(true).build()
+            )
+            responseObserver.onCompleted()
+        } catch (e: Exception) {
+            logger.error("Failed to record match update for ${request.matchId}", e)
+            responseObserver.onNext(
+                GameServerProto.MatchUpdateResponse.newBuilder().setAcknowledged(false).build()
+            )
+            responseObserver.onCompleted()
+        }
+    }
+
+    /**
+     * Returns a snapshot of every match currently tracked in the GSM.
+     * Includes PENDING/ASSIGNED/ACTIVE plus recently-ended entries within their TTL window.
+     */
+    override fun listLiveMatches(
+        request: GameServerProto.ListLiveMatchesRequest,
+        responseObserver: StreamObserver<GameServerProto.ListLiveMatchesResponse>
+    ) {
+        try {
+            val tracked = matchTrackingService.listLiveMatches()
+            val response = GameServerProto.ListLiveMatchesResponse.newBuilder()
+                .apply { tracked.forEach { addMatches(toLiveMatch(it)) } }
+                .build()
+            responseObserver.onNext(response)
+            responseObserver.onCompleted()
+        } catch (e: Exception) {
+            logger.error("Failed to list live matches", e)
+            responseObserver.onError(e)
+        }
+    }
+
+    private fun toLiveMatch(match: org.checkmateplus.gameservermanager.models.TrackedMatch): GameServerProto.LiveMatch {
+        val websocketUrl = match.serverId?.let { registeredInstances[it]?.websocketUrl } ?: ""
+        val builder = GameServerProto.LiveMatch.newBuilder()
+            .setMatchId(match.matchId)
+            .setServerId(match.serverId ?: "")
+            .setWebsocketUrl(websocketUrl)
+            .setStatus(GameServerProto.MatchStatus.valueOf("MATCH_STATUS_${match.status}"))
+            .setLastFen(match.lastFen ?: "")
+            .setWhiteTimeSeconds(match.whiteTimeSeconds ?: 0)
+            .setBlackTimeSeconds(match.blackTimeSeconds ?: 0)
+            .setActiveColor(match.activeColor ?: "")
+            .setMoveNumber(match.moveNumber ?: 0)
+            .setWinnerId(match.winnerId ?: "")
+            .setReason(match.reason ?: "")
+            .setUpdatedAt(match.updatedAt)
+            .apply { match.timeControl?.let { setTimeControl(GameServerProto.TimeControl.valueOf("TIME_CONTROL_${it.name}")) } }
+            .apply { match.matchType?.let { setMatchType(GameServerProto.MatchType.valueOf("MATCH_TYPE_$it")) } }
+        match.whitePlayer?.let {
+            builder.whitePlayerId = it.playerId
+            builder.whitePlayerName = it.displayName
+            builder.whitePlayerRating = it.skillRating ?: 0
+            builder.whitePlayerRegistered = it is Player.Registered
+        }
+        match.blackPlayer?.let {
+            builder.blackPlayerId = it.playerId
+            builder.blackPlayerName = it.displayName
+            builder.blackPlayerRating = it.skillRating ?: 0
+            builder.blackPlayerRegistered = it is Player.Registered
+        }
+        val bot = match.whitePlayer as? Player.Bot
+            ?: match.blackPlayer as? Player.Bot
+        bot?.let {
+            builder.botConfiguration = GameServerProto.BotConfiguration.newBuilder()
+                .setBotModelType(GameServerProto.BotModelType.valueOf(it.botConfiguration.botModelType.name))
+                .setBotMoveTimeModelType(GameServerProto.BotMoveTimeModelType.valueOf(it.botConfiguration.botMoveTimeModelType.name))
+                .build()
+        }
+        return builder.build()
     }
 
     /**
