@@ -31,7 +31,8 @@ export default function Layout({ children }: { children: ReactNode }) {
     setSigningOut(true)
     try {
       await signOut()
-      navigate("/")
+      navigate("/", { replace: true })
+      navigate(0)
     } finally {
       setSigningOut(false)
     }
