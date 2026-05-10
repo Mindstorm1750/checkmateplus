@@ -205,16 +205,12 @@ function SpectateMatch() {
     : pieceOrigins
 
   useEffect(() => {
-    if (previewIndex == null) {
-      setLastMove(undefined)
-    }
-    if (previewIndex !== null && moveHistory[previewIndex]) {
-      const move = moveHistory[previewIndex]
+    const move = moveHistory[previewIndex ?? moveHistory.length - 1]
+    move &&
       setLastMove({
         from: algebraicToSquare(move.from),
         to: algebraicToSquare(move.to),
       })
-    }
     const liveIdx = moveHistory.length - 1
     const priorRaw = priorDisplayedIndexRef.current
     const priorIdx = priorRaw ?? liveIdx

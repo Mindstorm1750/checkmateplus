@@ -9,9 +9,18 @@ import { useMatchAnalysis } from "@/hooks/useMatchAnalysis"
 import { useMatchMoveHistory } from "@/hooks/useMatchMoveHistory"
 import { useRequestMatchAnalysis } from "@/hooks/useRequestMatchAnalysis"
 import { algebraicToSquare, fenToBoard } from "@/lib/chess.helpers"
-import { EMPTY_BOARD, EMPTY_PIECE_ORIGINS, type Move } from "@/types/Chess.type"
-import { useEffect, useMemo, useState } from "react"
+import {
+  EMPTY_BOARD,
+  EMPTY_PIECE_ORIGINS,
+  type Move,
+  type Square,
+} from "@/types/Chess.type"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useParams } from "react-router"
+import {
+  applyBackwardStep,
+  applyForwardStep,
+} from "@/lib/pieceOrigins.helpers.ts"
 
 const outcomeLabel: Record<string, string> = {
   WHITE_WINS: "White wins",
@@ -32,8 +41,12 @@ export default function MatchReview() {
     useRequestMatchAnalysis()
 
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
+  const priorPreviewIndex = useRef<number>(
+    (history?.moves.length && history.moves.length - 1) ?? 0
+  )
   const [lastMove, setLastMove] = useState<Move>()
-
+  const [pieceOrigins, setPieceOrigins] =
+    useState<Map<Square, Square>>(EMPTY_PIECE_ORIGINS)
   const analysisMap = useMemo(() => {
     const map = new Map<number, MoveAnalysis>()
     analysis?.moves.forEach((m) => map.set(m.ply, m))
@@ -50,22 +63,28 @@ export default function MatchReview() {
 
   useEffect(() => {
     if (moves) {
-      if (isPreviewing) {
-        const moveHistoryEntry = moves[previewIndex]
-        const move: Move = {
-          from: algebraicToSquare(moveHistoryEntry.from),
-          to: algebraicToSquare(moveHistoryEntry.to),
-        }
-        setLastMove(move)
-      } else {
-        const finalMove = moves.at(-1)
-        setLastMove(
-          finalMove && {
-            from: algebraicToSquare(finalMove.from),
-            to: algebraicToSquare(finalMove.to),
-          }
-        )
+      const actualPreviewIndex = isPreviewing ? previewIndex : moves.length - 1
+      // !isPreviewing means previewIndex is null which means the last move of the game is being shown
+
+      const moveHistoryEntry = moves[actualPreviewIndex]
+      const move: Move = {
+        from: algebraicToSquare(moveHistoryEntry.from),
+        to: algebraicToSquare(moveHistoryEntry.to),
       }
+      setLastMove(move)
+      if (actualPreviewIndex == priorPreviewIndex.current + 1) {
+        setPieceOrigins(applyForwardStep(pieceOrigins, move))
+      } else if (actualPreviewIndex == priorPreviewIndex.current - 1) {
+        const entryToAnimate = moves[priorPreviewIndex.current]
+        const moveToAnimate: Move = {
+          from: algebraicToSquare(entryToAnimate.from),
+          to: algebraicToSquare(entryToAnimate.to),
+        }
+        setPieceOrigins(applyBackwardStep(pieceOrigins, moveToAnimate))
+      } else {
+        setPieceOrigins(EMPTY_PIECE_ORIGINS)
+      }
+      priorPreviewIndex.current = actualPreviewIndex
     }
   }, [previewIndex])
 
@@ -153,7 +172,7 @@ export default function MatchReview() {
               boardState={displayedBoard}
               moveCallback={() => {}}
               whitePerspective
-              pieceOrigins={EMPTY_PIECE_ORIGINS}
+              pieceOrigins={pieceOrigins}
               playerLabels={playerLabels}
               hideClocks={true}
               lastMove={lastMove}
