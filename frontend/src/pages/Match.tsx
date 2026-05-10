@@ -21,7 +21,7 @@ import type {
   MoveHistoryEntry,
   Player,
 } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchStateMessage"
-import { applyBackwardStep, applyForwardStep } from "@/lib/pieceOrigins.helpers"
+import { applyForwardStep } from "@/lib/pieceOrigins.helpers"
 import MatchAnalysisPanel from "@/components/match-analysis/MatchAnalysisPanel"
 import type { MoveMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MoveMessage"
 import type { TimeUpdateMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/TimeUpdateMessage"
@@ -58,6 +58,7 @@ import type { ResignMessage } from "@/lib/stompMessageTypes/GameServer/models/me
 import { usePlayerRating } from "@/hooks/usePlayerStats.ts"
 import { VoiceMoveButton } from "@/components/ui/VoiceMoveButton.tsx"
 import { QueueButton } from "@/components/QueueButton.tsx"
+import { usePreviewNavigation } from "@/hooks/usePreviewNavigation.ts"
 
 function Match() {
   const navigate = useNavigate()
@@ -84,7 +85,6 @@ function MatchInner({ state }: { state: MatchRedirectType }) {
   const { matchFoundEvent, joinRequest } = state
   const { matchId, websocketUrl, playerId, matchType } = matchFoundEvent
   const [boardState, setBoardState] = useState<Board>(EMPTY_BOARD)
-  const [lastMove, setLastMove] = useState<Move>()
   const [isCheck, setIsCheck] = useState<boolean>(false)
   /**
    * pieceOrigins is used in ChessBoard to animate pieces via framer motion's layoutId.
@@ -93,10 +93,13 @@ function MatchInner({ state }: { state: MatchRedirectType }) {
   const [pieceOrigins, setPieceOrigins] =
     useState<Map<Square, Square>>(EMPTY_PIECE_ORIGINS)
   const [moveHistory, setMoveHistory] = useState<MoveHistoryEntry[]>([])
-  const [previewIndex, setPreviewIndex] = useState<number | null>(null)
-  const [previewPieceOrigins, setPreviewPieceOrigins] =
-    useState<Map<Square, Square>>(EMPTY_PIECE_ORIGINS)
-  const priorDisplayedIndexRef = useRef<number | null>(null)
+  const {
+    previewIndex,
+    displayedPieceOrigins,
+    lastMove,
+    setLastMove,
+    handleSelect,
+  } = usePreviewNavigation(moveHistory, pieceOrigins)
   const [clockState, setClockState] = useState<ChessBoardProps["clockState"]>()
   const [isPlayersTurn, setIsPlayersTurn] = useState<boolean>(false)
   const [isPlayerWhite, setIsPlayerWhite] = useState<boolean>(true)
@@ -380,49 +383,6 @@ function MatchInner({ state }: { state: MatchRedirectType }) {
     isPreviewing && moveHistory[previewIndex!]
       ? fenToBoard(moveHistory[previewIndex!].fenAfter)
       : boardState
-  const displayedPieceOrigins = isPreviewing
-    ? previewPieceOrigins
-    : pieceOrigins
-
-  useEffect(() => {
-    const move = moveHistory[previewIndex ?? moveHistory.length - 1]
-    move &&
-      setLastMove({
-        from: algebraicToSquare(move.from),
-        to: algebraicToSquare(move.to),
-      })
-    const liveIdx = moveHistory.length - 1
-    const priorRaw = priorDisplayedIndexRef.current
-    const priorIdx = priorRaw ?? liveIdx
-    const nextIdx = previewIndex ?? liveIdx
-
-    priorDisplayedIndexRef.current = previewIndex
-
-    if (nextIdx === priorIdx) return
-
-    const baseMap = priorRaw === null ? pieceOrigins : previewPieceOrigins
-
-    if (nextIdx === priorIdx + 1 && moveHistory[nextIdx]) {
-      const move = moveHistory[nextIdx]
-      setPreviewPieceOrigins(
-        applyForwardStep(baseMap, {
-          from: algebraicToSquare(move.from),
-          to: algebraicToSquare(move.to),
-        })
-      )
-    } else if (nextIdx === priorIdx - 1 && moveHistory[priorIdx]) {
-      const move = moveHistory[priorIdx]
-      setPreviewPieceOrigins(
-        applyBackwardStep(baseMap, {
-          from: algebraicToSquare(move.from),
-          to: algebraicToSquare(move.to),
-        })
-      )
-    } else {
-      setPreviewPieceOrigins(EMPTY_PIECE_ORIGINS)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [previewIndex])
 
   return (
     <Layout>
@@ -490,7 +450,7 @@ function MatchInner({ state }: { state: MatchRedirectType }) {
               <MatchAnalysisPanel
                 moves={moveHistory}
                 selectedIndex={previewIndex}
-                onSelect={setPreviewIndex}
+                onSelect={handleSelect}
               />
             </div>
           </div>
