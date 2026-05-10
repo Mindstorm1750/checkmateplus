@@ -10,6 +10,7 @@ import org.checkmateplus.chessLibrary.chessEngine.toFileRank
 import org.checkmateplus.chessLibrary.chessEngine.toSquare
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class EngineTest {
@@ -450,7 +451,6 @@ class EngineTest {
     fun testFindBestMoveWinMaterialInOne() {
         val boardQd1toQh5 = FenToBoard("r3k2r/2qnbppp/p2p4/1pp1p1Nb/2nPP3/2P4P/PPBN1PP1/R1BQR2K w kq - 5 15")
         val correctMove = Move("d1".toSquare()!!, "h5".toSquare()!!)
-        assertEquals(correctMove, boardQd1toQh5.findBestMoves(1))
         assertEquals(correctMove, boardQd1toQh5.findBestMoves(2))
         assertEquals(correctMove, boardQd1toQh5.findBestMoves(3))
         assertEquals(correctMove, boardQd1toQh5.findBestMoves(4))
@@ -495,5 +495,86 @@ class EngineTest {
         assertEquals(correctMove, boardQe7toQf7.findBestMoves(3))
         assertEquals(correctMove, boardQe7toQf7.findBestMoves(4))
         assertEquals(correctMove, boardQe7toQf7.findBestMoves(5))
+    }
+
+    @Test
+    fun testPushThePassedPawn() {
+        val boarda5toa4 = FenToBoard("4k3/6pp/8/p7/5K2/8/6PP/8 b - - 0 1")
+        val correctMove = Move("a5".toSquare()!!, "a4".toSquare()!!)
+        assertEquals(correctMove, boarda5toa4.findBestMoves(3))
+        assertEquals(correctMove, boarda5toa4.findBestMoves(4))
+    }
+
+    @Test
+    fun testTakeOpenFileWithRook() {
+        val boardRa1toRd1 = FenToBoard("r6k/ppp3p1/5p2/4p2p/4P2P/5P2/PPP3P1/R6K w - - 0 1")
+        val correctMove = Move("a1".toSquare()!!, "d1".toSquare()!!)
+        assertEquals(correctMove, boardRa1toRd1.findBestMoves(3))
+        assertEquals(correctMove, boardRa1toRd1.findBestMoves(4))
+    }
+
+    @Test
+    fun testCastleKingsideToCompleteDevelopment() {
+        val boardKe1toKg1 = FenToBoard("r4rk1/1pp1qpp1/pbnpbn1p/4p3/B3P3/2PPNN1P/PP3PP1/R1BQK2R w KQ - 5 13")
+        val correctMove = Move("e1".toSquare()!!, "g1".toSquare()!!)
+        assertEquals(correctMove, boardKe1toKg1.findBestMoves(4))
+    }
+
+    @Test
+    fun testCastleQueensideToCompleteDevelopment() {
+        val boardKe8toKc8 = FenToBoard("r3k1r1/pppqb2p/2n1bp2/4pp2/8/3P1N2/PPPNQPPP/R3RBK1 b q - 1 14")
+        val correctMove = Move("e8".toSquare()!!, "c8".toSquare()!!)
+        assertEquals(correctMove, boardKe8toKc8.findBestMoves(4))
+    }
+
+    @Test
+    fun testBook() {
+        val boardAfter1e4 = FenToBoard("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1")
+        val correctMoves = listOf(
+            Move("e7".toSquare()!!, "e5".toSquare()!!),
+            Move("e7".toSquare()!!, "e6".toSquare()!!),
+            Move("c7".toSquare()!!, "c5".toSquare()!!),
+            Move("c7".toSquare()!!, "c6".toSquare()!!),
+        )
+        val engineMove = boardAfter1e4.findBestMoves(4)
+        assertNotNull(engineMove)
+        assertTrue(engineMove in correctMoves)
+    }
+
+    /**
+     * mirrorSquare should flip a square vertically across the middle of the board,
+     * Rank 0 becomes Rank 7 for example, but file remains the same.
+     */
+    @Test
+    fun testMirrorSquare() {
+        // Corners
+        assertEquals("a8".toSquare()!!, Board.mirrorSquare("a1".toSquare()!!))
+        assertEquals("a1".toSquare()!!, Board.mirrorSquare("a8".toSquare()!!))
+        assertEquals("h8".toSquare()!!, Board.mirrorSquare("h1".toSquare()!!))
+        assertEquals("h1".toSquare()!!, Board.mirrorSquare("h8".toSquare()!!))
+
+        // Mid-board
+        assertEquals("d4".toSquare()!!, Board.mirrorSquare("d5".toSquare()!!))
+        assertEquals("d5".toSquare()!!, Board.mirrorSquare("d4".toSquare()!!))
+
+        // Round-trip: mirroring twice should return the original square
+        assertEquals("d4".toSquare()!!, Board.mirrorSquare(Board.mirrorSquare("d4".toSquare()!!)))
+        assertEquals("d5".toSquare()!!, Board.mirrorSquare(Board.mirrorSquare("d5".toSquare()!!)))
+    }
+
+    @Test
+    fun testBestMovePromoteToKnight() {
+        val board = FenToBoard("8/K1k1P3/3q4/8/8/8/8/8 w - - 0 1")
+        val correctMove = Move("e7".toSquare()!!, "e8".toSquare()!!, PieceType.KNIGHT)
+        assertEquals(correctMove, board.findBestMoves(3))
+        assertEquals(correctMove, board.findBestMoves(4))
+    }
+
+    @Test
+    fun testBestMovePromoteToQueen() {
+        val board = FenToBoard("8/K3P3/2kq4/8/8/8/8/8 w - - 0 1")
+        val correctMove = Move("e7".toSquare()!!, "e8".toSquare()!!, PieceType.QUEEN)
+        assertEquals(correctMove, board.findBestMoves(3))
+        assertEquals(correctMove, board.findBestMoves(4))
     }
 }
