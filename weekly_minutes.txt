@@ -314,3 +314,33 @@ Can forget about the post-game survey and instead just ask for feedback conversa
 
 2 weeks to finalise things, then get a playtest with the chess club.
 
+
+# 8-5-2026 meeting
+
+## Write down future development
+
+Concretely list out future development ideas that you know you can implement. Vague notions don't count.
+
+## Make backups
+
+Make backup before adding new features.
+
+Make new backup every new feature.
+
+## Documentation
+
+Make proper documentation for what already exists before going ahead with even more undocumented features.
+
+## The video deliverable
+
+David suggests recording a split-screen video where one half shows the frontend and the other shows the backend working (logs).
+
+## Viva
+
+We *will* be asked to explain 2 or 3 functions that we've written.
+
+## Deadline
+
+Aim to have everything done by 22nd May.
+
+
