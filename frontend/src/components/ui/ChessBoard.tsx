@@ -64,6 +64,8 @@ const ChessBoard = ({
     lightSquareHighlighted,
     darkSquare,
     darkSquareHighlighted,
+    lightSquareDot,
+    darkSquareDot,
   } = BOARD_THEMES[preferences.boardColour]
 
   const squaresView = whitePerspective
@@ -305,7 +307,7 @@ const ChessBoard = ({
                   )}
                   {canMoveHere && (
                     <div
-                      className={`aspect-square w-1/3 rounded-full ${isLightSquare ? lightSquareHighlighted : darkSquareHighlighted}`}
+                      className={`aspect-square ${!squaresView[index] ? "w-1/3" : "w-full"} rounded-full ${isLightSquare ? lightSquareDot : darkSquareDot}`}
                     />
                   )}
                 </div>
