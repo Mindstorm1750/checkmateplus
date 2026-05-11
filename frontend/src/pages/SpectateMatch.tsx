@@ -59,7 +59,6 @@ function SpectateMatch() {
   const websocketUrl = matchSummary?.websocketUrl
 
   const [boardState, setBoardState] = useState<Board>(EMPTY_BOARD)
-  const [isCheck, setIsCheck] = useState<boolean>(false)
   const [pieceOrigins, setPieceOrigins] =
     useState<Map<Square, Square>>(EMPTY_PIECE_ORIGINS)
   const [moveHistory, setMoveHistory] = useState<MoveHistoryEntry[]>([])
@@ -69,7 +68,8 @@ function SpectateMatch() {
     lastMove,
     setLastMove,
     handleSelect,
-  } = usePreviewNavigation(moveHistory, pieceOrigins)
+    isCheck,
+  } = usePreviewNavigation(moveHistory, pieceOrigins, boardState)
   const [clockState, setClockState] = useState<ChessBoardProps["clockState"]>({
     whitePlayerTime: matchSummary?.whiteTimeSeconds ?? 0,
     blackPlayerTime: matchSummary?.blackTimeSeconds ?? 0,
@@ -137,7 +137,6 @@ function SpectateMatch() {
           (message: IMessage) => {
             const match: MatchStateMessage = JSON.parse(message.body)
             const newBoard = fenToBoard(match.fen as string)
-            setIsCheck(match.isCheck)
             setBoardState(newBoard)
             if (match.lastMove) {
               const move = {

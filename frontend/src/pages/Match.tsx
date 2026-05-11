@@ -85,7 +85,6 @@ function MatchInner({ state }: { state: MatchRedirectType }) {
   const { matchFoundEvent, joinRequest } = state
   const { matchId, websocketUrl, playerId, matchType } = matchFoundEvent
   const [boardState, setBoardState] = useState<Board>(EMPTY_BOARD)
-  const [isCheck, setIsCheck] = useState<boolean>(false)
   /**
    * pieceOrigins is used in ChessBoard to animate pieces via framer motion's layoutId.
    * Identifies pieces as they move from boardState to boardState.
@@ -99,7 +98,8 @@ function MatchInner({ state }: { state: MatchRedirectType }) {
     lastMove,
     setLastMove,
     handleSelect,
-  } = usePreviewNavigation(moveHistory, pieceOrigins)
+    isCheck,
+  } = usePreviewNavigation(moveHistory, pieceOrigins, boardState)
   const [clockState, setClockState] = useState<ChessBoardProps["clockState"]>()
   const [isPlayersTurn, setIsPlayersTurn] = useState<boolean>(false)
   const [isPlayerWhite, setIsPlayerWhite] = useState<boolean>(true)
@@ -241,7 +241,6 @@ function MatchInner({ state }: { state: MatchRedirectType }) {
               setIsPlayersTurn(true)
             }
             setBoardState(newBoard)
-            setIsCheck(match.isCheck)
             setLastMove(
               match.lastMove && {
                 from: algebraicToSquare(match.lastMove.from),

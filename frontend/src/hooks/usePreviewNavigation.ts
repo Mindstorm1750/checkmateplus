@@ -1,13 +1,19 @@
 // hooks/usePreviewNavigation.ts
 import { useRef, useState } from "react"
-import { algebraicToSquare } from "@/lib/chess.helpers"
+import { algebraicToSquare, fenToBoard, isInCheck } from "@/lib/chess.helpers"
 import { applyForwardStep, applyBackwardStep } from "@/lib/pieceOrigins.helpers"
-import { EMPTY_PIECE_ORIGINS, type Square, type Move } from "@/types/Chess.type"
+import {
+  EMPTY_PIECE_ORIGINS,
+  type Square,
+  type Move,
+  type Board,
+} from "@/types/Chess.type"
 import type { MoveHistoryEntry } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchStateMessage"
 
 export function usePreviewNavigation(
   moveHistory: MoveHistoryEntry[],
-  livePieceOrigins: Map<Square, Square>
+  livePieceOrigins: Map<Square, Square>,
+  liveBoard?: Board | null
 ) {
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
   const [previewPieceOrigins, setPreviewPieceOrigins] =
@@ -66,11 +72,22 @@ export function usePreviewNavigation(
     ? previewPieceOrigins
     : livePieceOrigins
 
+  const isCheck =
+    isPreviewing && moveHistory[previewIndex]
+      ? (() => {
+          const previewBoard = fenToBoard(moveHistory[previewIndex].fenAfter)
+          return isInCheck(previewBoard, previewBoard.sideToMove)
+        })()
+      : liveBoard
+        ? isInCheck(liveBoard, liveBoard.sideToMove)
+        : false
+
   return {
     previewIndex,
     displayedPieceOrigins,
     lastMove,
     setLastMove,
     handleSelect,
+    isCheck,
   }
 }

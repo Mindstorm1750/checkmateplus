@@ -32,8 +32,17 @@ export default function MatchReview() {
   const { mutate: requestAnalysis, isPending: requestPending } =
     useRequestMatchAnalysis()
 
-  const { previewIndex, displayedPieceOrigins, lastMove, handleSelect } =
-    usePreviewNavigation(history?.moves ?? [], EMPTY_PIECE_ORIGINS)
+  const {
+    previewIndex,
+    displayedPieceOrigins,
+    lastMove,
+    handleSelect,
+    isCheck,
+  } = usePreviewNavigation(
+    history?.moves ?? [],
+    EMPTY_PIECE_ORIGINS,
+    history && fenToBoard(history.finalFen)
+  )
   const analysisMap = useMemo(() => {
     const map = new Map<number, MoveAnalysis>()
     analysis?.moves.forEach((m) => map.set(m.ply, m))
@@ -128,7 +137,7 @@ export default function MatchReview() {
               readOnly
               isPlayersTurn={false}
               isGameOver
-              isCheck={false}
+              isCheck={isCheck}
               boardState={displayedBoard}
               moveCallback={() => {}}
               whitePerspective

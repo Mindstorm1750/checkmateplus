@@ -668,7 +668,7 @@ function isSquareAttacked(
 }
 
 // Check if a given color's king is in check
-function isInCheck(board: Board, colour: Colour): boolean {
+export function isInCheck(board: Board, colour: Colour): boolean {
   const kingSquare = board.squares.findIndex(
     (piece) => piece?.pieceType === "KING" && piece.colour === colour
   )
