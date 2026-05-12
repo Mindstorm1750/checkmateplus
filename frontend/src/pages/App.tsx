@@ -50,7 +50,10 @@ import type {
   SpectatePlayer,
 } from "@/lib/playerServiceTypes/SpectateMatch"
 import { QueueButton } from "@/components/QueueButton.tsx"
-import { spectateMatchFilter } from "@/lib/spectate-match-filter.ts"
+import {
+  findPlayerActiveMatch,
+  spectateMatchFilter,
+} from "@/lib/spectate-match-filter.ts"
 import { useLeaderboard } from "@/hooks/useLeaderboard"
 import { Spinner } from "@/components/ui/spinner"
 
@@ -68,10 +71,13 @@ function App() {
   const playerId = getLocalStorage("playerId")
   const displayName = getLocalStorage("displayName") ?? "friend"
   const { data: stats } = usePlayerStats(isGuest ? null : playerId)
-  const { data: liveData, isLoading: liveLoading } = useLiveMatches(1)
-  const topMatch: SpectateMatch | undefined =
-    liveData?.pages[0]?.matches &&
-    spectateMatchFilter(liveData.pages[0].matches, playerId)[0]
+  const { data: liveData, isLoading: liveLoading } = useLiveMatches(20)
+  const liveMatches = liveData?.pages[0]?.matches ?? []
+  const myActiveMatch = findPlayerActiveMatch(liveMatches, playerId)
+  const topMatch: SpectateMatch | undefined = spectateMatchFilter(
+    liveMatches,
+    playerId
+  )[0]
   const showLive = !liveLoading && Boolean(topMatch)
 
   return (
@@ -117,56 +123,68 @@ function App() {
             )}
           </div>
 
-          <PlayHumanButton
-            trigger={
-              <Button className="min-h-12">
-                <Play className="size-5 fill-current" />
-                Play against humans
-              </Button>
-            }
-          />
-
-          <div className="grid grid-cols-2 gap-3">
-            <PlayComputerButton
-              trigger={
-                <Button variant="outline">
-                  <Bot className="size-4" />
-                  Play computer
-                </Button>
-              }
-            />
-            <Button onClick={() => navigate("/spectate")} variant="outline">
-              <Eye className="size-4" />
-              Spectate
+          {myActiveMatch ? (
+            <Button
+              className="min-h-12"
+              onClick={() => navigate(`/match/${myActiveMatch.matchId}`)}
+            >
+              <Play className="size-5 fill-current" />
+              Rejoin match
             </Button>
-          </div>
+          ) : (
+            <>
+              <PlayHumanButton
+                trigger={
+                  <Button className="min-h-12">
+                    <Play className="size-5 fill-current" />
+                    Play against humans
+                  </Button>
+                }
+              />
 
-          <div>
-            <div className="mb-2.5 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-              Quick play · time control
-            </div>
-            <div className="grid grid-cols-4 gap-2">
-              {QUICK_TIME_CONTROLS.map((tc) => (
-                <PlayHumanButton
-                  key={tc.tc}
-                  initialTimeControl={tc.tc}
+              <div className="grid grid-cols-2 gap-3">
+                <PlayComputerButton
                   trigger={
-                    <button
-                      type="button"
-                      className="flex cursor-pointer flex-col items-start gap-0.5 rounded-lg border border-border bg-foreground/3 px-3 py-3.5 text-left transition-all hover:bg-foreground/6"
-                    >
-                      <span className="text-[11px] font-medium text-muted-foreground">
-                        {tc.name}
-                      </span>
-                      <span className="text-lg font-bold text-foreground tabular-nums">
-                        {tc.label}
-                      </span>
-                    </button>
+                    <Button variant="outline">
+                      <Bot className="size-4" />
+                      Play computer
+                    </Button>
                   }
                 />
-              ))}
-            </div>
-          </div>
+                <Button onClick={() => navigate("/spectate")} variant="outline">
+                  <Eye className="size-4" />
+                  Spectate
+                </Button>
+              </div>
+
+              <div>
+                <div className="mb-2.5 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+                  Quick play · time control
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {QUICK_TIME_CONTROLS.map((tc) => (
+                    <PlayHumanButton
+                      key={tc.tc}
+                      initialTimeControl={tc.tc}
+                      trigger={
+                        <button
+                          type="button"
+                          className="flex cursor-pointer flex-col items-start gap-0.5 rounded-lg border border-border bg-foreground/3 px-3 py-3.5 text-left transition-all hover:bg-foreground/6"
+                        >
+                          <span className="text-[11px] font-medium text-muted-foreground">
+                            {tc.name}
+                          </span>
+                          <span className="text-lg font-bold text-foreground tabular-nums">
+                            {tc.label}
+                          </span>
+                        </button>
+                      }
+                    />
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </div>
         {!liveLoading &&
           (topMatch ? (

@@ -85,7 +85,7 @@ export function QueueButton({
           onQueueChange && onQueueChange(false)
           stopQueueTimer()
           onMatchFound?.()
-          navigate("/match", { state: matchRedirectState })
+          navigate(`/match/${match.matchId}`, { state: matchRedirectState })
         })
         joinQueue(client)
       },

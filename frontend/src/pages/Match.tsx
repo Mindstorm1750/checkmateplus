@@ -98,6 +98,11 @@ function Match() {
       ourPlayerId == queriedMatch?.blackPlayer?.playerId
     ) // if we aren't a player involved in the match
   ) {
+    console.log(
+      state?.matchFoundEvent.playerId,
+      queriedMatch?.whitePlayer?.playerId,
+      queriedMatch?.blackPlayer?.playerId
+    )
     return (
       <Layout>
         <p className="text-destructive">Invalid matchId in URL.</p>

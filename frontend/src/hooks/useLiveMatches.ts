@@ -40,7 +40,7 @@ export function useLiveMatches(pageSize = 20) {
       }).then((d) => d.liveMatches),
     initialPageParam: null as string | null,
     getNextPageParam: (page) => (page.hasMore ? page.nextCursor : undefined),
-    refetchInterval: 5_000,
+    refetchInterval: 1_000,
     refetchIntervalInBackground: false,
   })
 }

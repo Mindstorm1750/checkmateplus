@@ -23,7 +23,7 @@ class SpectateService(
     private val logger = LoggerFactory.getLogger(javaClass)
     private val latest = AtomicReference<List<GameServerProto.LiveMatch>>(emptyList())
 
-    @Scheduled(fixedRate = 5_000L)
+    @Scheduled(fixedRate = 1_000L)
     @CacheEvict(value = ["spectate_match"], allEntries = true)
     fun poll() {
         try {
