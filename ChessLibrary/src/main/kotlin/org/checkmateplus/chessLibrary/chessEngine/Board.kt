@@ -815,6 +815,20 @@ data class Board(
                 Move("c7".toSquare()!!, "c6".toSquare()!!),
                 Move("e7".toSquare()!!, "e6".toSquare()!!),
             ),
+            //Reply to 1. c4 with a mainline or move that transposes to a mainline: c5, Nf6, e6, e5
+            "rnbqkbnr/pppppppp/8/8/2P5/8/PP1PPPPP/RNBQKBNR b KQkq c3" to listOf(
+                Move("c7".toSquare()!!, "c5".toSquare()!!),
+                Move("g8".toSquare()!!, "f6".toSquare()!!),
+                Move("e7".toSquare()!!, "e6".toSquare()!!),
+                Move("e7".toSquare()!!, "e5".toSquare()!!),
+            ),
+            //Reply to 1. Nf3 with a mainline or move that transposes to a mainline: d5, Nf6, c5, or g6
+            "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq -" to listOf(
+                Move("d7".toSquare()!!, "d5".toSquare()!!),
+                Move("g8".toSquare()!!, "f6".toSquare()!!),
+                Move("c7".toSquare()!!, "c5".toSquare()!!),
+                Move("g7".toSquare()!!, "g6".toSquare()!!),
+            ),
             //Reply to 1. e4 e5 with one of 5 common moves: Nf3, d4, Bc4, Nc3, and f4
             "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6" to listOf(
                 Move("g1".toSquare()!!, "f3".toSquare()!!),
@@ -829,6 +843,50 @@ data class Board(
                 Move("g1".toSquare()!!, "f3".toSquare()!!),
                 Move("g2".toSquare()!!, "g3".toSquare()!!),
                 Move("c1".toSquare()!!, "f4".toSquare()!!),
+            ),
+            //Reply to 1. e4 c5 with one of 3 common moves: Nf3, d4, Nc3
+            "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6" to listOf(
+                Move("g1".toSquare()!!, "f3".toSquare()!!),
+                Move("d2".toSquare()!!, "d4".toSquare()!!),
+                Move("b1".toSquare()!!, "c3".toSquare()!!),
+            ),
+            //Reply to 1. d4 Nf6 with one of 4 common moves: c4, Nf3, Bf4, g3
+            "rnbqkb1r/pppppppp/5n2/8/3P4/8/PPP1PPPP/RNBQKBNR w KQkq -" to listOf(
+                Move("c2".toSquare()!!, "c4".toSquare()!!),
+                Move("g1".toSquare()!!, "f3".toSquare()!!),
+                Move("g2".toSquare()!!, "g3".toSquare()!!),
+                Move("c1".toSquare()!!, "f4".toSquare()!!),
+            ),
+            //Reply to 1. e4 c6 with either d4 or Nf3
+            "rnbqkbnr/pp1ppppp/2p5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -" to listOf(
+                Move("g1".toSquare()!!, "f3".toSquare()!!),
+                Move("d2".toSquare()!!, "d4".toSquare()!!),
+            ),
+            //Reply to 1. e4 e6 with either d4 or Nf3
+            "rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -" to listOf(
+                Move("g1".toSquare()!!, "f3".toSquare()!!),
+                Move("d2".toSquare()!!, "d4".toSquare()!!),
+            ),
+            //Reply to 1. e4 c5 2. Nf3 with either Nc6, d6, e6, or g6
+            "rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq -" to listOf(
+                Move("b8".toSquare()!!, "c6".toSquare()!!),
+                Move("d7".toSquare()!!, "d6".toSquare()!!),
+                Move("e7".toSquare()!!, "e6".toSquare()!!),
+                Move("g7".toSquare()!!, "g6".toSquare()!!),
+            ),
+            //Reply to 1. e4 e5 2. Nf3 with either Nc6, Nf6, or d6
+            "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq -" to listOf(
+                Move("b8".toSquare()!!, "c6".toSquare()!!),
+                Move("g8".toSquare()!!, "f6".toSquare()!!),
+                Move("d7".toSquare()!!, "d6".toSquare()!!),
+            ),
+            //Reply to 1. e4 e6 2. d4 with d5
+            "rnbqkbnr/pppp1ppp/4p3/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq d3" to listOf(
+                Move("d7".toSquare()!!, "d5".toSquare()!!),
+            ),
+            //Reply to 1. e4 c6 2. d4 with d5
+            "rnbqkbnr/pp1ppppp/2p5/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq d3" to listOf(
+                Move("d7".toSquare()!!, "d5".toSquare()!!),
             ),
         )
 
