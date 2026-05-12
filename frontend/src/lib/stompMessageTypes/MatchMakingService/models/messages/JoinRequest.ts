@@ -8,7 +8,7 @@ import type { TimeControl } from "@/lib/stompMessageTypes/ChessLibrary/PlayerMod
  * @property displayName The name the player wish to display during the match.
  */
 export type JoinRequest = {
-  displayName: String
+  displayName: string
   matchType: MatchType
   timeControl?: TimeControl
   botConfiguration?: BotConfiguration

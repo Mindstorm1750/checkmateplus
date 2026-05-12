@@ -55,21 +55,22 @@ import type { DrawOfferMessage } from "@/lib/stompMessageTypes/GameServer/models
 import type { DrawOfferState, MatchRedirectType } from "@/types/Match.type.ts"
 import type { DrawResponseMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/DrawResponseMessage.ts"
 import type { ResignMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/ResignMessage.ts"
-import { usePlayerRating } from "@/hooks/usePlayerStats.ts"
+import { usePlayerName, usePlayerRating } from "@/hooks/usePlayerStats.ts"
 import { VoiceMoveButton } from "@/components/ui/VoiceMoveButton.tsx"
 import { QueueButton } from "@/components/QueueButton.tsx"
 import { usePreviewNavigation } from "@/hooks/usePreviewNavigation.ts"
 import { useSpectateMatch } from "@/hooks/useSpectateMatch.ts"
-import type { MatchFoundEvent } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/MatchFoundEvent.ts"
 import type { JoinRequest } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/JoinRequest.ts"
 import type { MatchType } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/MatchType.ts"
 import { Spinner } from "@/components/ui/spinner.tsx"
+import type { BotConfiguration } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/BotConfiguration.ts"
 
 function Match() {
   const navigate = useNavigate()
   const { state }: { state: MatchRedirectType | null } = useLocation()
   const { matchId } = useParams<{ matchId: string }>()
   const ourPlayerId = getLocalStorage("playerId")
+  const { data: playerRating } = usePlayerName(ourPlayerId)
   const {
     data: queriedMatch,
     isPending: queryPending,
@@ -92,7 +93,7 @@ function Match() {
 
   if (
     !(
-      ourPlayerId == state?.matchFoundEvent.websocketUrl ||
+      ourPlayerId == state?.matchFoundEvent.playerId ||
       ourPlayerId == queriedMatch?.whitePlayer?.playerId ||
       ourPlayerId == queriedMatch?.blackPlayer?.playerId
     ) // if we aren't a player involved in the match
@@ -122,6 +123,28 @@ function Match() {
     )
   }
 
+  const timeControl = queriedMatch?.timeControl
+  const botConfiguration = queriedMatch?.botConfiguration
+  const displayName = playerRating?.displayName
+
+  if (
+    !state?.joinRequest &&
+    !(displayName && matchType && timeControl && botConfiguration)
+  ) {
+    return (
+      <Layout>
+        <Spinner />
+      </Layout>
+    )
+  }
+
+  const joinRequest: JoinRequest = state?.joinRequest ?? {
+    displayName: displayName ?? "",
+    matchType: matchType ?? "CASUAL_PVP",
+    timeControl,
+    botConfiguration: botConfiguration as BotConfiguration,
+  }
+
   // The point of doing this wrapping is to reload the page when using the "New game" button when a game ends and new matchId is given
   return (
     websocketUrl &&
@@ -131,7 +154,7 @@ function Match() {
         websocketUrl={websocketUrl}
         playerId={ourPlayerId}
         matchType={matchType}
-        joinRequest={state?.joinRequest}
+        joinRequest={joinRequest}
       />
     )
   )
@@ -144,7 +167,7 @@ function MatchInner({
   playerId,
   matchType,
 }: {
-  joinRequest?: JoinRequest // we'll only know the joinRequest if we are sent to this page via QueueButton
+  joinRequest: JoinRequest // we'll only know the joinRequest if we are sent to this page via QueueButton
   matchId: string
   websocketUrl: string
   playerId: string
