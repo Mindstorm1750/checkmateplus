@@ -36,7 +36,7 @@ import {
 } from "@/types/Chess.type"
 import { Client, type IMessage } from "@stomp/stompjs"
 import { useEffect, useRef, useState } from "react"
-import { useLocation, useNavigate } from "react-router"
+import { useLocation, useNavigate, useParams } from "react-router"
 import SockJS from "sockjs-client/dist/sockjs"
 import { useJwt } from "@/lib/JwtProvider"
 import { ensureFreshJwt } from "@/lib/auth"
@@ -59,31 +59,97 @@ import { usePlayerRating } from "@/hooks/usePlayerStats.ts"
 import { VoiceMoveButton } from "@/components/ui/VoiceMoveButton.tsx"
 import { QueueButton } from "@/components/QueueButton.tsx"
 import { usePreviewNavigation } from "@/hooks/usePreviewNavigation.ts"
+import { useSpectateMatch } from "@/hooks/useSpectateMatch.ts"
+import type { MatchFoundEvent } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/MatchFoundEvent.ts"
+import type { JoinRequest } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/JoinRequest.ts"
+import type { MatchType } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/MatchType.ts"
+import { Spinner } from "@/components/ui/spinner.tsx"
 
 function Match() {
   const navigate = useNavigate()
-  /**
-   * using browser History state property to store the match information.
-   * Might be a temporary solution OR copy this data to a more persistent form like localStorage.
-   */
-  const { state }: { state: MatchRedirectType } = useLocation()
+  const { state }: { state: MatchRedirectType | null } = useLocation()
+  const { matchId } = useParams<{ matchId: string }>()
+  const ourPlayerId = getLocalStorage("playerId")
+  const {
+    data: queriedMatch,
+    isPending: queryPending,
+    isError: queryError,
+  } = useSpectateMatch(matchId, !!state?.matchFoundEvent.websocketUrl)
+
+  const websocketUrl =
+    state?.matchFoundEvent.websocketUrl ?? queriedMatch?.websocketUrl
+  const matchType = state?.matchFoundEvent.matchType ?? queriedMatch?.matchType
+
   useEffect(() => {
-    if (!state) {
-      // redirect to main page if we've visited this page directly instead of going through matchmaking
+    if (!matchId) {
+      // redirect to main page if we haven't got a matchId in the url
       navigate("/")
     }
   }, [])
-  if (!state) {
-    return null // don't continue rendering if we haven't been redirected to this match page from matchmaking
+  if (!matchId) {
+    return null // don't continue rendering if we haven't got a matchId in the url
+  }
+
+  if (
+    !(
+      ourPlayerId == state?.matchFoundEvent.websocketUrl ||
+      ourPlayerId == queriedMatch?.whitePlayer?.playerId ||
+      ourPlayerId == queriedMatch?.blackPlayer?.playerId
+    ) // if we aren't a player involved in the match
+  ) {
+    return (
+      <Layout>
+        <p className="text-destructive">Invalid matchId in URL.</p>
+        <BackArrowLink />
+      </Layout>
+    )
+  }
+
+  if (!state && queryPending) {
+    return (
+      <Layout>
+        <Spinner />
+      </Layout>
+    )
+  }
+
+  if (!state && (queryError || !queriedMatch)) {
+    return (
+      <Layout>
+        <p className="text-destructive">Match not found or no longer live.</p>
+        <BackArrowLink />
+      </Layout>
+    )
   }
 
   // The point of doing this wrapping is to reload the page when using the "New game" button when a game ends and new matchId is given
-  return <MatchInner key={state.matchFoundEvent.matchId} state={state} />
+  return (
+    websocketUrl &&
+    matchType && (
+      <MatchInner
+        matchId={matchId}
+        websocketUrl={websocketUrl}
+        playerId={ourPlayerId}
+        matchType={matchType}
+        joinRequest={state?.joinRequest}
+      />
+    )
+  )
 }
 
-function MatchInner({ state }: { state: MatchRedirectType }) {
-  const { matchFoundEvent, joinRequest } = state
-  const { matchId, websocketUrl, playerId, matchType } = matchFoundEvent
+function MatchInner({
+  joinRequest,
+  matchId,
+  websocketUrl,
+  playerId,
+  matchType,
+}: {
+  joinRequest?: JoinRequest // we'll only know the joinRequest if we are sent to this page via QueueButton
+  matchId: string
+  websocketUrl: string
+  playerId: string
+  matchType: MatchType
+}) {
   const [boardState, setBoardState] = useState<Board>(EMPTY_BOARD)
   /**
    * pieceOrigins is used in ChessBoard to animate pieces via framer motion's layoutId.
