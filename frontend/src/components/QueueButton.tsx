@@ -1,4 +1,10 @@
-import { type ReactNode, useRef, useState } from "react"
+import {
+  type ReactNode,
+  type RefObject,
+  useEffect,
+  useRef,
+  useState,
+} from "react"
 import { useNavigate } from "react-router"
 import { Spinner } from "@/components/ui/spinner.tsx"
 import { formatQueueTime } from "@/lib/formatting.helpers.ts"
@@ -18,6 +24,7 @@ interface QueueButtonProps {
   cancelTrigger?: (cancel: () => void) => ReactNode
   buttonText: string
   onQueueChange?: (inQueue: boolean) => void
+  cancelRef?: RefObject<(() => void) | null> // to allow parents of QueueButton to cancel queues
 }
 
 export function QueueButton({
@@ -26,6 +33,7 @@ export function QueueButton({
   cancelTrigger,
   buttonText,
   onQueueChange,
+  cancelRef,
 }: QueueButtonProps) {
   const navigate = useNavigate()
   const { jwt, isPending: jwtIsPending } = useJwt()
@@ -101,6 +109,12 @@ export function QueueButton({
     onQueueChange && onQueueChange(false)
     stopQueueTimer()
   }
+
+  useEffect(() => {
+    if (cancelRef) {
+      cancelRef.current = cancel
+    }
+  })
 
   return (
     <>

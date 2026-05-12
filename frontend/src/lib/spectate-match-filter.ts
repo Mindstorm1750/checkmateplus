@@ -26,7 +26,7 @@ export function findPlayerActiveMatch(
   if (!playerId) return undefined
   return spectateMatches.find(
     (match) =>
-      (match.status === "ACTIVE" || match.status === "ASSIGNED") &&
+      match.status === "ACTIVE" &&
       (match.whitePlayer?.playerId === playerId ||
         match.blackPlayer?.playerId === playerId)
   )

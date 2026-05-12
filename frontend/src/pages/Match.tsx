@@ -75,7 +75,7 @@ function Match() {
     data: queriedMatch,
     isPending: queryPending,
     isError: queryError,
-  } = useSpectateMatch(matchId, !!state?.matchFoundEvent.websocketUrl)
+  } = useSpectateMatch(matchId, !state?.matchFoundEvent.websocketUrl)
 
   const websocketUrl =
     state?.matchFoundEvent.websocketUrl ?? queriedMatch?.websocketUrl
@@ -92,17 +92,13 @@ function Match() {
   }
 
   if (
+    !queryPending &&
     !(
       ourPlayerId == state?.matchFoundEvent.playerId ||
       ourPlayerId == queriedMatch?.whitePlayer?.playerId ||
       ourPlayerId == queriedMatch?.blackPlayer?.playerId
     ) // if we aren't a player involved in the match
   ) {
-    console.log(
-      state?.matchFoundEvent.playerId,
-      queriedMatch?.whitePlayer?.playerId,
-      queriedMatch?.blackPlayer?.playerId
-    )
     return (
       <Layout>
         <p className="text-destructive">Invalid matchId in URL.</p>
@@ -132,13 +128,20 @@ function Match() {
   const botConfiguration = queriedMatch?.botConfiguration
   const displayName = playerRating?.displayName
 
-  if (
-    !state?.joinRequest &&
-    !(displayName && matchType && timeControl && botConfiguration)
-  ) {
+  if (!state?.joinRequest && !(displayName && matchType && timeControl)) {
     return (
       <Layout>
         <Spinner />
+      </Layout>
+    )
+  }
+
+  if (!ourPlayerId) {
+    return (
+      <Layout>
+        <p className="text-destructive">
+          You don't have a playerId! Please refresh the page or log-in
+        </p>
       </Layout>
     )
   }
@@ -195,7 +198,7 @@ function MatchInner({
     isCheck,
   } = usePreviewNavigation(moveHistory, pieceOrigins, boardState)
   const [clockState, setClockState] = useState<ChessBoardProps["clockState"]>()
-  const [isPlayersTurn, setIsPlayersTurn] = useState<boolean>(false)
+  const [isPlayersTurn, setIsPlayersTurn] = useState<boolean>()
   const [isPlayerWhite, setIsPlayerWhite] = useState<boolean>(true)
   const [isGameOver, setIsGameOver] = useState<boolean>(false)
   const [gameOverMessage, setGameOverMessage] = useState<String>()
@@ -219,6 +222,8 @@ function MatchInner({
   const { data: blackPlayerRatingData } = usePlayerRating(
     players?.blackPlayer.playerId ?? null
   )
+  const cancelRef = useRef<() => void | null>(null)
+  // so that closing out of the game over dialog cancels the queue from queue button
 
   const playerLabels: PlayerLabelsType | undefined = players
     ? {
@@ -504,7 +509,7 @@ function MatchInner({
                         moveCallback={handleVoiceMove}
                         boardState={boardState}
                         whitePerspective={isPlayerWhite}
-                        isInteractable={isPlayersTurn && !isGameOver}
+                        isInteractable={!!isPlayersTurn && !isGameOver}
                       />
                     </div>
                     <div className="ml-auto flex items-start gap-2">
@@ -578,7 +583,12 @@ function MatchInner({
       </Dialog>
       <Dialog
         open={gameOverDialogOpen}
-        onOpenChange={(open) => !open && setGameOverDialogOpen(false)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setGameOverDialogOpen(false)
+            cancelRef.current?.()
+          }
+        }}
       >
         <DialogContent>
           <DialogHeader>
@@ -591,7 +601,10 @@ function MatchInner({
             <QueueButton
               joinRequest={joinRequest}
               buttonText="New game"
-              onMatchFound={() => setIsGameOver(false)}
+              onMatchFound={() => {
+                setIsGameOver(false)
+                setGameOverDialogOpen(false)
+              }}
               cancelTrigger={(onClick) => (
                 <DialogClose asChild>
                   <Button onClick={onClick} variant="outline">
@@ -599,6 +612,7 @@ function MatchInner({
                   </Button>
                 </DialogClose>
               )}
+              cancelRef={cancelRef}
             />
           </DialogFooter>
         </DialogContent>

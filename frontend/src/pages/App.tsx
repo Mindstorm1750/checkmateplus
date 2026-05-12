@@ -16,6 +16,7 @@ import {
   type Dispatch,
   type ReactNode,
   type SetStateAction,
+  useRef,
 } from "react"
 import { useNavigate } from "react-router"
 import type { JoinRequest } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/JoinRequest"
@@ -361,6 +362,7 @@ const PlayHumanButton = ({
     isGuest ? "CASUAL_PVP" : "COMPETITIVE_PVP"
   )
   const [inQueue, setInQueue] = useState(false)
+  const cancelRef = useRef<() => void | null>(null)
   const titleText = "Play against humans"
   const descriptionText = "Get matched with other players"
   const joinRequest: JoinRequest = {
@@ -370,7 +372,11 @@ const PlayHumanButton = ({
   }
 
   return (
-    <Dialog>
+    <Dialog
+      onOpenChange={(open) => {
+        if (!open) cancelRef.current?.()
+      }}
+    >
       <DialogTrigger asChild>
         {trigger ?? <Button {...buttonProps}>{titleText}</Button>}
       </DialogTrigger>
@@ -435,6 +441,7 @@ const PlayHumanButton = ({
                 </Button>
               </DialogClose>
             )}
+            cancelRef={cancelRef}
           />
         </DialogFooter>
       </DialogContent>
@@ -463,9 +470,14 @@ const PlayComputerButton = ({
     },
     timeControl: timeControl == "ANY" ? undefined : timeControl,
   }
+  const cancelRef = useRef<() => void | null>(null)
 
   return (
-    <Dialog>
+    <Dialog
+      onOpenChange={(open) => {
+        if (!open) cancelRef.current?.()
+      }}
+    >
       <DialogTrigger asChild>
         {trigger ?? <Button {...buttonProps}>{titleText}</Button>}
       </DialogTrigger>
@@ -491,6 +503,7 @@ const PlayComputerButton = ({
                 </Button>
               </DialogClose>
             )}
+            cancelRef={cancelRef}
           />
         </DialogFooter>
       </DialogContent>

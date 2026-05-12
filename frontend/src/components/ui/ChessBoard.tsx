@@ -21,7 +21,7 @@ export type ChessBoardProps = {
   moveCallback: (move: Move) => void
   boardState: Board
   whitePerspective?: boolean
-  isPlayersTurn: boolean // used for stopping the player from making moves when it isn't their turn
+  isPlayersTurn?: boolean // used for stopping the player from making moves when it isn't their turn
   isGameOver: boolean // used for clocks and also stopping player from making moves
   isCheck: boolean // used to highlight a King in check with a red glow
   clockState?: Pick<MatchStateMessage, "whitePlayerTime" | "blackPlayerTime">
@@ -73,18 +73,22 @@ const ChessBoard = ({
     : boardState.squares.toReversed()
   const moves = legalMoves(boardState)
 
-  const isInteractable = isPlayersTurn && !isGameOver && !readOnly
-
   // For spectators, derive active clock from board side-to-move rather than isPlayersTurn.
   const topPlayerColour = whitePerspective ? "BLACK" : "WHITE"
   const bottomPlayerColour = whitePerspective ? "WHITE" : "BLACK"
+  const ourTurn = boardState.sideToMove === bottomPlayerColour
   const topClockActive = readOnly
     ? boardState.sideToMove === topPlayerColour
-    : !isPlayersTurn
+    : isPlayersTurn == undefined
+      ? !ourTurn
+      : !isPlayersTurn
   const bottomClockActive = readOnly
-    ? boardState.sideToMove === bottomPlayerColour
-    : isPlayersTurn
+    ? ourTurn
+    : isPlayersTurn == undefined
+      ? ourTurn
+      : isPlayersTurn
 
+  const isInteractable = ourTurn && !isGameOver && !readOnly
   const pieceCounts: PieceCountsType = useMemo(
     () =>
       boardState.squares.reduce((counts, square) => {
