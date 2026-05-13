@@ -16,6 +16,7 @@ import {
   type Dispatch,
   type ReactNode,
   type SetStateAction,
+  useRef,
 } from "react"
 import { useNavigate } from "react-router"
 import type { JoinRequest } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/JoinRequest"
@@ -50,9 +51,15 @@ import type {
   SpectatePlayer,
 } from "@/lib/playerServiceTypes/SpectateMatch"
 import { QueueButton } from "@/components/QueueButton.tsx"
-import { spectateMatchFilter } from "@/lib/spectate-match-filter.ts"
+import {
+  findPlayerActiveMatch,
+  spectateMatchFilter,
+} from "@/lib/spectate-match-filter.ts"
 import { useLeaderboard } from "@/hooks/useLeaderboard"
 import { Spinner } from "@/components/ui/spinner"
+import { WelcomeGuestCard } from "@/components/WelcomeGuestCard"
+
+const GUEST_WELCOME_DISMISSED_KEY = "guestWelcomeDismissed"
 
 const QUICK_TIME_CONTROLS: { name: string; tc: TimeControl; label: string }[] =
   [
@@ -68,105 +75,149 @@ function App() {
   const playerId = getLocalStorage("playerId")
   const displayName = getLocalStorage("displayName") ?? "friend"
   const { data: stats } = usePlayerStats(isGuest ? null : playerId)
-  const { data: liveData, isLoading: liveLoading } = useLiveMatches(1)
-  const topMatch: SpectateMatch | undefined =
-    liveData?.pages[0]?.matches &&
-    spectateMatchFilter(liveData.pages[0].matches, playerId)[0]
+  const { data: liveData, isLoading: liveLoading } = useLiveMatches(20)
+  const liveMatches = liveData?.pages[0]?.matches ?? []
+  const myActiveMatch = findPlayerActiveMatch(liveMatches, playerId)
+  const topMatch: SpectateMatch | undefined = spectateMatchFilter(
+    liveMatches,
+    playerId
+  )[0]
   const showLive = !liveLoading && Boolean(topMatch)
+
+  const [welcomeDismissed, setWelcomeDismissed] = useState(
+    () => sessionStorage.getItem(GUEST_WELCOME_DISMISSED_KEY) === "true"
+  )
+  const showWelcomeCard = isGuest && !welcomeDismissed
+  const dismissWelcome = () => {
+    sessionStorage.setItem(GUEST_WELCOME_DISMISSED_KEY, "true")
+    setWelcomeDismissed(true)
+  }
 
   return (
     <Layout>
       <div className="lg:flex lg:items-start lg:gap-12">
-        <div className="flex flex-col gap-7 lg:max-w-md lg:flex-1">
-          {stats && stats.currentStreak >= 2 && (
-            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-foreground/4 px-3 py-1.5 text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
-              <Flame className="size-3 text-brand-accent" />
-              You're on a {stats.currentStreak}-game win streak
-            </div>
-          )}
-
-          <div>
-            <h1 className="font-serif text-5xl leading-[1.02] tracking-tight md:text-6xl">
-              <b>{isGuest ? "Welcome," : "Welcome back,"}</b>
-              <br />
-              <span className="truncate text-muted-foreground italic">
-                {displayName}.
-              </span>
-            </h1>
-            {!isGuest && stats && (
-              <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-                Rating{" "}
-                <span className="font-semibold text-foreground">
-                  {stats.skillRating ?? "—"}
-                </span>{" "}
-                ·{" "}
-                <span className="font-semibold text-foreground">
-                  {stats.totalGames}
-                </span>{" "}
-                games played
-                {stats.totalGames > 0 && (
-                  <>
-                    {" · "}
-                    <span className="font-semibold text-foreground">
-                      {Math.round(stats.winRate)}%
-                    </span>{" "}
-                    win rate
-                  </>
-                )}
-              </p>
+        <div className="relative lg:max-w-md lg:flex-1">
+          <div
+            className="flex flex-col gap-7"
+            inert={showWelcomeCard}
+            aria-hidden={showWelcomeCard}
+          >
+            {stats && stats.currentStreak >= 2 && (
+              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-foreground/4 px-3 py-1.5 text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
+                <Flame className="size-3 text-brand-accent" />
+                You're on a {stats.currentStreak}-game win streak
+              </div>
             )}
-          </div>
 
-          <PlayHumanButton
-            trigger={
-              <Button className="min-h-12">
-                <Play className="size-5 fill-current" />
-                Play against humans
-              </Button>
-            }
-          />
-
-          <div className="grid grid-cols-2 gap-3">
-            <PlayComputerButton
-              trigger={
-                <Button variant="outline">
-                  <Bot className="size-4" />
-                  Play computer
-                </Button>
-              }
-            />
-            <Button onClick={() => navigate("/spectate")} variant="outline">
-              <Eye className="size-4" />
-              Spectate
-            </Button>
-          </div>
-
-          <div>
-            <div className="mb-2.5 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-              Quick play · time control
+            <div>
+              <h1 className="font-serif text-5xl leading-[1.02] tracking-tight md:text-6xl">
+                <b>{isGuest ? "Welcome," : "Welcome back,"}</b>
+                <br />
+                <span className="truncate text-muted-foreground italic">
+                  {displayName}.
+                </span>
+              </h1>
+              {!isGuest && stats && (
+                <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                  Rating{" "}
+                  <span className="font-semibold text-foreground">
+                    {stats.skillRating ?? "—"}
+                  </span>{" "}
+                  ·{" "}
+                  <span className="font-semibold text-foreground">
+                    {stats.totalGames}
+                  </span>{" "}
+                  games played
+                  {stats.totalGames > 0 && (
+                    <>
+                      {" · "}
+                      <span className="font-semibold text-foreground">
+                        {Math.round(stats.winRate)}%
+                      </span>{" "}
+                      win rate
+                    </>
+                  )}
+                </p>
+              )}
             </div>
-            <div className="grid grid-cols-4 gap-2">
-              {QUICK_TIME_CONTROLS.map((tc) => (
+
+            {myActiveMatch ? (
+              <Button
+                className="min-h-12"
+                onClick={() => navigate(`/match/${myActiveMatch.matchId}`)}
+              >
+                <Play className="size-5 fill-current" />
+                Rejoin match
+              </Button>
+            ) : (
+              <>
                 <PlayHumanButton
-                  key={tc.tc}
-                  initialTimeControl={tc.tc}
                   trigger={
-                    <button
-                      type="button"
-                      className="flex cursor-pointer flex-col items-start gap-0.5 rounded-lg border border-border bg-foreground/3 px-3 py-3.5 text-left transition-all hover:bg-foreground/6"
-                    >
-                      <span className="text-[11px] font-medium text-muted-foreground">
-                        {tc.name}
-                      </span>
-                      <span className="text-lg font-bold text-foreground tabular-nums">
-                        {tc.label}
-                      </span>
-                    </button>
+                    <Button className="min-h-12">
+                      <Play className="size-5 fill-current" />
+                      Play against humans
+                    </Button>
                   }
                 />
-              ))}
-            </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <PlayComputerButton
+                    trigger={
+                      <Button variant="outline">
+                        <Bot className="size-4" />
+                        Play computer
+                      </Button>
+                    }
+                  />
+                  <Button
+                    onClick={() => navigate("/spectate")}
+                    variant="outline"
+                  >
+                    <Eye className="size-4" />
+                    Spectate
+                  </Button>
+                </div>
+
+                <div>
+                  <div className="mb-2.5 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+                    Quick play · time control
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
+                    {QUICK_TIME_CONTROLS.map((tc) => (
+                      <PlayHumanButton
+                        key={tc.tc}
+                        initialTimeControl={tc.tc}
+                        trigger={
+                          <button
+                            type="button"
+                            className="flex cursor-pointer flex-col items-start gap-0.5 rounded-lg border border-border bg-foreground/3 px-3 py-3.5 text-left transition-all hover:bg-foreground/6"
+                          >
+                            <span className="text-[11px] font-medium text-muted-foreground">
+                              {tc.name}
+                            </span>
+                            <span className="text-lg font-bold text-foreground tabular-nums">
+                              {tc.label}
+                            </span>
+                          </button>
+                        }
+                      />
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
+          {isGuest && (
+            <div
+              className={`absolute inset-0 transition-all duration-500 ease-out ${
+                welcomeDismissed
+                  ? "pointer-events-none -translate-x-[110%] opacity-0"
+                  : "translate-x-0 opacity-100"
+              }`}
+            >
+              <WelcomeGuestCard onContinueAsGuest={dismissWelcome} />
+            </div>
+          )}
         </div>
         {!liveLoading &&
           (topMatch ? (
@@ -343,6 +394,7 @@ const PlayHumanButton = ({
     isGuest ? "CASUAL_PVP" : "COMPETITIVE_PVP"
   )
   const [inQueue, setInQueue] = useState(false)
+  const cancelRef = useRef<() => void | null>(null)
   const titleText = "Play against humans"
   const descriptionText = "Get matched with other players"
   const joinRequest: JoinRequest = {
@@ -352,7 +404,11 @@ const PlayHumanButton = ({
   }
 
   return (
-    <Dialog>
+    <Dialog
+      onOpenChange={(open) => {
+        if (!open) cancelRef.current?.()
+      }}
+    >
       <DialogTrigger asChild>
         {trigger ?? <Button {...buttonProps}>{titleText}</Button>}
       </DialogTrigger>
@@ -417,6 +473,7 @@ const PlayHumanButton = ({
                 </Button>
               </DialogClose>
             )}
+            cancelRef={cancelRef}
           />
         </DialogFooter>
       </DialogContent>
@@ -445,9 +502,14 @@ const PlayComputerButton = ({
     },
     timeControl: timeControl == "ANY" ? undefined : timeControl,
   }
+  const cancelRef = useRef<() => void | null>(null)
 
   return (
-    <Dialog>
+    <Dialog
+      onOpenChange={(open) => {
+        if (!open) cancelRef.current?.()
+      }}
+    >
       <DialogTrigger asChild>
         {trigger ?? <Button {...buttonProps}>{titleText}</Button>}
       </DialogTrigger>
@@ -473,6 +535,7 @@ const PlayComputerButton = ({
                 </Button>
               </DialogClose>
             )}
+            cancelRef={cancelRef}
           />
         </DialogFooter>
       </DialogContent>

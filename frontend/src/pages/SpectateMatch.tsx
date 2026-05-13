@@ -16,14 +16,13 @@ import type {
   MoveHistoryEntry,
 } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchStateMessage"
 import type { TimeUpdateMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/TimeUpdateMessage"
-import { applyBackwardStep, applyForwardStep } from "@/lib/pieceOrigins.helpers"
+import { applyForwardStep } from "@/lib/pieceOrigins.helpers"
 import MatchAnalysisPanel from "@/components/match-analysis/MatchAnalysisPanel"
 import {
   EMPTY_BOARD,
   EMPTY_PIECE_ORIGINS,
   type Board,
   type Square,
-  type Move,
 } from "@/types/Chess.type"
 import { useSpectateMatch } from "@/hooks/useSpectateMatch"
 import { Client, type IMessage } from "@stomp/stompjs"
@@ -40,6 +39,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog.tsx"
 import { Button } from "@/components/ui/button.tsx"
+import { usePreviewNavigation } from "@/hooks/usePreviewNavigation.ts"
 
 function SpectateMatch() {
   const { matchId } = useParams<{ matchId: string }>()
@@ -59,15 +59,17 @@ function SpectateMatch() {
   const websocketUrl = matchSummary?.websocketUrl
 
   const [boardState, setBoardState] = useState<Board>(EMPTY_BOARD)
-  const [isCheck, setIsCheck] = useState<boolean>(false)
   const [pieceOrigins, setPieceOrigins] =
     useState<Map<Square, Square>>(EMPTY_PIECE_ORIGINS)
   const [moveHistory, setMoveHistory] = useState<MoveHistoryEntry[]>([])
-  const [lastMove, setLastMove] = useState<Move>()
-  const [previewIndex, setPreviewIndex] = useState<number | null>(null)
-  const [previewPieceOrigins, setPreviewPieceOrigins] =
-    useState<Map<Square, Square>>(EMPTY_PIECE_ORIGINS)
-  const priorDisplayedIndexRef = useRef<number | null>(null)
+  const {
+    previewIndex,
+    displayedPieceOrigins,
+    lastMove,
+    setLastMove,
+    handleSelect,
+    isCheck,
+  } = usePreviewNavigation(moveHistory, pieceOrigins, boardState)
   const [clockState, setClockState] = useState<ChessBoardProps["clockState"]>({
     whitePlayerTime: matchSummary?.whiteTimeSeconds ?? 0,
     blackPlayerTime: matchSummary?.blackTimeSeconds ?? 0,
@@ -135,7 +137,6 @@ function SpectateMatch() {
           (message: IMessage) => {
             const match: MatchStateMessage = JSON.parse(message.body)
             const newBoard = fenToBoard(match.fen as string)
-            setIsCheck(match.isCheck)
             setBoardState(newBoard)
             if (match.lastMove) {
               const move = {
@@ -200,53 +201,6 @@ function SpectateMatch() {
     isPreviewing && moveHistory[previewIndex!]
       ? fenToBoard(moveHistory[previewIndex!].fenAfter)
       : boardState
-  const displayedPieceOrigins = isPreviewing
-    ? previewPieceOrigins
-    : pieceOrigins
-
-  useEffect(() => {
-    if (previewIndex == null) {
-      setLastMove(undefined)
-    }
-    if (previewIndex !== null && moveHistory[previewIndex]) {
-      const move = moveHistory[previewIndex]
-      setLastMove({
-        from: algebraicToSquare(move.from),
-        to: algebraicToSquare(move.to),
-      })
-    }
-    const liveIdx = moveHistory.length - 1
-    const priorRaw = priorDisplayedIndexRef.current
-    const priorIdx = priorRaw ?? liveIdx
-    const nextIdx = previewIndex ?? liveIdx
-
-    priorDisplayedIndexRef.current = previewIndex
-
-    if (nextIdx === priorIdx) return
-
-    const baseMap = priorRaw === null ? pieceOrigins : previewPieceOrigins
-
-    if (nextIdx === priorIdx + 1 && moveHistory[nextIdx]) {
-      const move = moveHistory[nextIdx]
-      setPreviewPieceOrigins(
-        applyForwardStep(baseMap, {
-          from: algebraicToSquare(move.from),
-          to: algebraicToSquare(move.to),
-        })
-      )
-    } else if (nextIdx === priorIdx - 1 && moveHistory[priorIdx]) {
-      const move = moveHistory[priorIdx]
-      setPreviewPieceOrigins(
-        applyBackwardStep(baseMap, {
-          from: algebraicToSquare(move.from),
-          to: algebraicToSquare(move.to),
-        })
-      )
-    } else {
-      setPreviewPieceOrigins(EMPTY_PIECE_ORIGINS)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [previewIndex])
 
   if (!matchId) {
     return (
@@ -297,7 +251,7 @@ function SpectateMatch() {
             <MatchAnalysisPanel
               moves={moveHistory}
               selectedIndex={previewIndex}
-              onSelect={setPreviewIndex}
+              onSelect={handleSelect}
             />
           </div>
         </div>

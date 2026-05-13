@@ -8,10 +8,11 @@ import { Spinner } from "@/components/ui/spinner"
 import { useMatchAnalysis } from "@/hooks/useMatchAnalysis"
 import { useMatchMoveHistory } from "@/hooks/useMatchMoveHistory"
 import { useRequestMatchAnalysis } from "@/hooks/useRequestMatchAnalysis"
-import { algebraicToSquare, fenToBoard } from "@/lib/chess.helpers"
-import { EMPTY_BOARD, EMPTY_PIECE_ORIGINS, type Move } from "@/types/Chess.type"
-import { useEffect, useMemo, useState } from "react"
+import { fenToBoard } from "@/lib/chess.helpers"
+import { EMPTY_BOARD, EMPTY_PIECE_ORIGINS } from "@/types/Chess.type"
+import { useMemo } from "react"
 import { useParams } from "react-router"
+import { usePreviewNavigation } from "@/hooks/usePreviewNavigation.ts"
 
 const outcomeLabel: Record<string, string> = {
   WHITE_WINS: "White wins",
@@ -31,9 +32,17 @@ export default function MatchReview() {
   const { mutate: requestAnalysis, isPending: requestPending } =
     useRequestMatchAnalysis()
 
-  const [previewIndex, setPreviewIndex] = useState<number | null>(null)
-  const [lastMove, setLastMove] = useState<Move>()
-
+  const {
+    previewIndex,
+    displayedPieceOrigins,
+    lastMove,
+    handleSelect,
+    isCheck,
+  } = usePreviewNavigation(
+    history?.moves ?? [],
+    EMPTY_PIECE_ORIGINS,
+    history && fenToBoard(history.finalFen)
+  )
   const analysisMap = useMemo(() => {
     const map = new Map<number, MoveAnalysis>()
     analysis?.moves.forEach((m) => map.set(m.ply, m))
@@ -47,27 +56,6 @@ export default function MatchReview() {
       ? moves[previewIndex!].fenAfter
       : history?.finalFen
   const displayedBoard = displayedFen ? fenToBoard(displayedFen) : EMPTY_BOARD
-
-  useEffect(() => {
-    if (moves) {
-      if (isPreviewing) {
-        const moveHistoryEntry = moves[previewIndex]
-        const move: Move = {
-          from: algebraicToSquare(moveHistoryEntry.from),
-          to: algebraicToSquare(moveHistoryEntry.to),
-        }
-        setLastMove(move)
-      } else {
-        const finalMove = moves.at(-1)
-        setLastMove(
-          finalMove && {
-            from: algebraicToSquare(finalMove.from),
-            to: algebraicToSquare(finalMove.to),
-          }
-        )
-      }
-    }
-  }, [previewIndex])
 
   if (!matchId) {
     return (
@@ -149,11 +137,11 @@ export default function MatchReview() {
               readOnly
               isPlayersTurn={false}
               isGameOver
-              isCheck={false}
+              isCheck={isCheck}
               boardState={displayedBoard}
               moveCallback={() => {}}
               whitePerspective
-              pieceOrigins={EMPTY_PIECE_ORIGINS}
+              pieceOrigins={displayedPieceOrigins}
               playerLabels={playerLabels}
               hideClocks={true}
               lastMove={lastMove}
@@ -164,7 +152,7 @@ export default function MatchReview() {
               <MatchAnalysisPanel
                 moves={moves}
                 selectedIndex={previewIndex}
-                onSelect={setPreviewIndex}
+                onSelect={handleSelect}
                 analyses={analysisMap}
               />
             )}

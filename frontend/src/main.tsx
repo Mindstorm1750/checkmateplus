@@ -31,7 +31,7 @@ createRoot(document.getElementById("root")!).render(
             <BrowserRouter>
               <Routes>
                 <Route path="/" element={<App />} />
-                <Route path="/match" element={<Match />} />
+                <Route path="/match/:matchId" element={<Match />} />
                 <Route path="/leaderboard" element={<Leaderboard />} />
                 <Route path="/spectate" element={<Spectate />} />
                 <Route path="/spectate/:matchId" element={<SpectateMatch />} />

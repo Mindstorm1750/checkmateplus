@@ -21,7 +21,7 @@ import type {
   MoveHistoryEntry,
   Player,
 } from "@/lib/stompMessageTypes/GameServer/models/messages/MatchStateMessage"
-import { applyBackwardStep, applyForwardStep } from "@/lib/pieceOrigins.helpers"
+import { applyForwardStep } from "@/lib/pieceOrigins.helpers"
 import MatchAnalysisPanel from "@/components/match-analysis/MatchAnalysisPanel"
 import type { MoveMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MoveMessage"
 import type { TimeUpdateMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/TimeUpdateMessage"
@@ -36,7 +36,7 @@ import {
 } from "@/types/Chess.type"
 import { Client, type IMessage } from "@stomp/stompjs"
 import { useEffect, useRef, useState } from "react"
-import { useLocation, useNavigate } from "react-router"
+import { useLocation, useNavigate, useParams } from "react-router"
 import SockJS from "sockjs-client/dist/sockjs"
 import { useJwt } from "@/lib/JwtProvider"
 import { ensureFreshJwt } from "@/lib/auth"
@@ -55,37 +55,133 @@ import type { DrawOfferMessage } from "@/lib/stompMessageTypes/GameServer/models
 import type { DrawOfferState, MatchRedirectType } from "@/types/Match.type.ts"
 import type { DrawResponseMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/DrawResponseMessage.ts"
 import type { ResignMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/ResignMessage.ts"
-import { usePlayerRating } from "@/hooks/usePlayerStats.ts"
+import { usePlayerName, usePlayerRating } from "@/hooks/usePlayerStats.ts"
 import { VoiceMoveButton } from "@/components/ui/VoiceMoveButton.tsx"
 import { QueueButton } from "@/components/QueueButton.tsx"
+import { usePreviewNavigation } from "@/hooks/usePreviewNavigation.ts"
+import { useSpectateMatch } from "@/hooks/useSpectateMatch.ts"
+import type { JoinRequest } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/JoinRequest.ts"
+import type { MatchType } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/MatchType.ts"
+import { Spinner } from "@/components/ui/spinner.tsx"
+import type { BotConfiguration } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/BotConfiguration.ts"
 
 function Match() {
   const navigate = useNavigate()
-  /**
-   * using browser History state property to store the match information.
-   * Might be a temporary solution OR copy this data to a more persistent form like localStorage.
-   */
-  const { state }: { state: MatchRedirectType } = useLocation()
+  const { state }: { state: MatchRedirectType | null } = useLocation()
+  const { matchId } = useParams<{ matchId: string }>()
+  const ourPlayerId = getLocalStorage("playerId")
+  const { data: playerRating } = usePlayerName(ourPlayerId)
+  const {
+    data: queriedMatch,
+    isPending: queryPending,
+    isError: queryError,
+  } = useSpectateMatch(matchId, !state?.matchFoundEvent.websocketUrl)
+
+  const websocketUrl =
+    state?.matchFoundEvent.websocketUrl ?? queriedMatch?.websocketUrl
+  const matchType = state?.matchFoundEvent.matchType ?? queriedMatch?.matchType
+
   useEffect(() => {
-    if (!state) {
-      // redirect to main page if we've visited this page directly instead of going through matchmaking
+    if (!matchId) {
+      // redirect to main page if we haven't got a matchId in the url
       navigate("/")
     }
   }, [])
-  if (!state) {
-    return null // don't continue rendering if we haven't been redirected to this match page from matchmaking
+  if (!matchId) {
+    return null // don't continue rendering if we haven't got a matchId in the url
+  }
+
+  if (
+    !queryPending &&
+    !(
+      ourPlayerId == state?.matchFoundEvent.playerId ||
+      ourPlayerId == queriedMatch?.whitePlayer?.playerId ||
+      ourPlayerId == queriedMatch?.blackPlayer?.playerId
+    ) // if we aren't a player involved in the match
+  ) {
+    return (
+      <Layout>
+        <p className="text-destructive">Invalid matchId in URL.</p>
+        <BackArrowLink />
+      </Layout>
+    )
+  }
+
+  if (!state && queryPending) {
+    return (
+      <Layout>
+        <Spinner />
+      </Layout>
+    )
+  }
+
+  if (!state && (queryError || !queriedMatch)) {
+    return (
+      <Layout>
+        <p className="text-destructive">Match not found or no longer live.</p>
+        <BackArrowLink />
+      </Layout>
+    )
+  }
+
+  const timeControl = queriedMatch?.timeControl
+  const botConfiguration = queriedMatch?.botConfiguration
+  const displayName = playerRating?.displayName
+
+  if (!state?.joinRequest && !(displayName && matchType && timeControl)) {
+    return (
+      <Layout>
+        <Spinner />
+      </Layout>
+    )
+  }
+
+  if (!ourPlayerId) {
+    return (
+      <Layout>
+        <p className="text-destructive">
+          You don't have a playerId! Please refresh the page or log-in
+        </p>
+      </Layout>
+    )
+  }
+
+  const joinRequest: JoinRequest = state?.joinRequest ?? {
+    displayName: displayName ?? "",
+    matchType: matchType ?? "CASUAL_PVP",
+    timeControl,
+    botConfiguration: botConfiguration as BotConfiguration,
   }
 
   // The point of doing this wrapping is to reload the page when using the "New game" button when a game ends and new matchId is given
-  return <MatchInner key={state.matchFoundEvent.matchId} state={state} />
+  return (
+    websocketUrl &&
+    matchType && (
+      <MatchInner
+        matchId={matchId}
+        websocketUrl={websocketUrl}
+        playerId={ourPlayerId}
+        matchType={matchType}
+        joinRequest={joinRequest}
+      />
+    )
+  )
 }
 
-function MatchInner({ state }: { state: MatchRedirectType }) {
-  const { matchFoundEvent, joinRequest } = state
-  const { matchId, websocketUrl, playerId, matchType } = matchFoundEvent
+function MatchInner({
+  joinRequest,
+  matchId,
+  websocketUrl,
+  playerId,
+  matchType,
+}: {
+  joinRequest: JoinRequest // we'll only know the joinRequest if we are sent to this page via QueueButton
+  matchId: string
+  websocketUrl: string
+  playerId: string
+  matchType: MatchType
+}) {
   const [boardState, setBoardState] = useState<Board>(EMPTY_BOARD)
-  const [lastMove, setLastMove] = useState<Move>()
-  const [isCheck, setIsCheck] = useState<boolean>(false)
   /**
    * pieceOrigins is used in ChessBoard to animate pieces via framer motion's layoutId.
    * Identifies pieces as they move from boardState to boardState.
@@ -93,12 +189,16 @@ function MatchInner({ state }: { state: MatchRedirectType }) {
   const [pieceOrigins, setPieceOrigins] =
     useState<Map<Square, Square>>(EMPTY_PIECE_ORIGINS)
   const [moveHistory, setMoveHistory] = useState<MoveHistoryEntry[]>([])
-  const [previewIndex, setPreviewIndex] = useState<number | null>(null)
-  const [previewPieceOrigins, setPreviewPieceOrigins] =
-    useState<Map<Square, Square>>(EMPTY_PIECE_ORIGINS)
-  const priorDisplayedIndexRef = useRef<number | null>(null)
+  const {
+    previewIndex,
+    displayedPieceOrigins,
+    lastMove,
+    setLastMove,
+    handleSelect,
+    isCheck,
+  } = usePreviewNavigation(moveHistory, pieceOrigins, boardState)
   const [clockState, setClockState] = useState<ChessBoardProps["clockState"]>()
-  const [isPlayersTurn, setIsPlayersTurn] = useState<boolean>(false)
+  const [isPlayersTurn, setIsPlayersTurn] = useState<boolean>()
   const [isPlayerWhite, setIsPlayerWhite] = useState<boolean>(true)
   const [isGameOver, setIsGameOver] = useState<boolean>(false)
   const [gameOverMessage, setGameOverMessage] = useState<String>()
@@ -122,6 +222,8 @@ function MatchInner({ state }: { state: MatchRedirectType }) {
   const { data: blackPlayerRatingData } = usePlayerRating(
     players?.blackPlayer.playerId ?? null
   )
+  const cancelRef = useRef<() => void | null>(null)
+  // so that closing out of the game over dialog cancels the queue from queue button
 
   const playerLabels: PlayerLabelsType | undefined = players
     ? {
@@ -238,7 +340,6 @@ function MatchInner({ state }: { state: MatchRedirectType }) {
               setIsPlayersTurn(true)
             }
             setBoardState(newBoard)
-            setIsCheck(match.isCheck)
             setLastMove(
               match.lastMove && {
                 from: algebraicToSquare(match.lastMove.from),
@@ -380,53 +481,6 @@ function MatchInner({ state }: { state: MatchRedirectType }) {
     isPreviewing && moveHistory[previewIndex!]
       ? fenToBoard(moveHistory[previewIndex!].fenAfter)
       : boardState
-  const displayedPieceOrigins = isPreviewing
-    ? previewPieceOrigins
-    : pieceOrigins
-
-  useEffect(() => {
-    if (previewIndex == null) {
-      setLastMove(undefined)
-    }
-    if (previewIndex !== null && moveHistory[previewIndex]) {
-      const move = moveHistory[previewIndex]
-      setLastMove({
-        from: algebraicToSquare(move.from),
-        to: algebraicToSquare(move.to),
-      })
-    }
-    const liveIdx = moveHistory.length - 1
-    const priorRaw = priorDisplayedIndexRef.current
-    const priorIdx = priorRaw ?? liveIdx
-    const nextIdx = previewIndex ?? liveIdx
-
-    priorDisplayedIndexRef.current = previewIndex
-
-    if (nextIdx === priorIdx) return
-
-    const baseMap = priorRaw === null ? pieceOrigins : previewPieceOrigins
-
-    if (nextIdx === priorIdx + 1 && moveHistory[nextIdx]) {
-      const move = moveHistory[nextIdx]
-      setPreviewPieceOrigins(
-        applyForwardStep(baseMap, {
-          from: algebraicToSquare(move.from),
-          to: algebraicToSquare(move.to),
-        })
-      )
-    } else if (nextIdx === priorIdx - 1 && moveHistory[priorIdx]) {
-      const move = moveHistory[priorIdx]
-      setPreviewPieceOrigins(
-        applyBackwardStep(baseMap, {
-          from: algebraicToSquare(move.from),
-          to: algebraicToSquare(move.to),
-        })
-      )
-    } else {
-      setPreviewPieceOrigins(EMPTY_PIECE_ORIGINS)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [previewIndex])
 
   return (
     <Layout>
@@ -455,7 +509,7 @@ function MatchInner({ state }: { state: MatchRedirectType }) {
                         moveCallback={handleVoiceMove}
                         boardState={boardState}
                         whitePerspective={isPlayerWhite}
-                        isInteractable={isPlayersTurn && !isGameOver}
+                        isInteractable={!!isPlayersTurn && !isGameOver}
                       />
                     </div>
                     <div className="ml-auto flex items-start gap-2">
@@ -494,7 +548,7 @@ function MatchInner({ state }: { state: MatchRedirectType }) {
               <MatchAnalysisPanel
                 moves={moveHistory}
                 selectedIndex={previewIndex}
-                onSelect={setPreviewIndex}
+                onSelect={handleSelect}
               />
             </div>
           </div>
@@ -529,7 +583,12 @@ function MatchInner({ state }: { state: MatchRedirectType }) {
       </Dialog>
       <Dialog
         open={gameOverDialogOpen}
-        onOpenChange={(open) => !open && setGameOverDialogOpen(false)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setGameOverDialogOpen(false)
+            cancelRef.current?.()
+          }
+        }}
       >
         <DialogContent>
           <DialogHeader>
@@ -542,7 +601,10 @@ function MatchInner({ state }: { state: MatchRedirectType }) {
             <QueueButton
               joinRequest={joinRequest}
               buttonText="New game"
-              onMatchFound={() => setIsGameOver(false)}
+              onMatchFound={() => {
+                setIsGameOver(false)
+                setGameOverDialogOpen(false)
+              }}
               cancelTrigger={(onClick) => (
                 <DialogClose asChild>
                   <Button onClick={onClick} variant="outline">
@@ -550,6 +612,7 @@ function MatchInner({ state }: { state: MatchRedirectType }) {
                   </Button>
                 </DialogClose>
               )}
+              cancelRef={cancelRef}
             />
           </DialogFooter>
         </DialogContent>
