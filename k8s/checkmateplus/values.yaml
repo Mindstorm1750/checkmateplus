@@ -13,7 +13,7 @@ frontend:
   replicas: 2
   image:
     repository: git.cs.kent.ac.uk:5050/jhl28/checkmate/frontend
-    tag: 2.2.2
+    tag: 2.2.3
   port: 80
   resources:
     requests:
@@ -31,7 +31,7 @@ gameserver:
   enabled: true
   image:
     repository: git.cs.kent.ac.uk:5050/jhl28/checkmate/gameserver
-    tag: 2.2.1
+    tag: 2.2.2
   replicaCount: 1
   service:
     httpPort: 8090
