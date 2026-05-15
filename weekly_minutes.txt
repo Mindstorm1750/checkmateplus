@@ -343,4 +343,32 @@ We *will* be asked to explain 2 or 3 functions that we've written.
 
 Aim to have everything done by 22nd May.
 
+# 15-5-2026 meeting
 
+## Fix stuff and finish in a week
+
+No implementation of new features, just fix what's broken.
+
+The deliverables (including individual reports) done by next week.
+
+## Next meeting
+
+Next meeting is in a fortnight. **Will be about viva practice**.
+
+**Everybody should turn up!** **29th May**.
+
+## The report
+
+Do it in any we want (LaTeX, asciidocs, etc.), just make sure there's an accessible .pdf file in the end.
+
+## Individual reports
+
+Don't put them in Git, email them individually to David.
+
+## Attempts in moving the Gitlab project
+
+Transferring the project from James to David couldn't be done because image tags were present in the container registry.
+
+Trying to export and then import didn't work because "entity is too large".
+
+**In the end**, David said it's alright to just use the original under James' namespace as David is an owner of the project.
