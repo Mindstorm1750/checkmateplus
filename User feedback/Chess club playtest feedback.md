@@ -35,6 +35,8 @@ annotation (whether it was "Best", "Good", etc.) to be shown on the board.
   for faster time controls**.
 - Users would like buttons to navigate to previous and next moves in the match analysis panel. This is especially
   important for mobile.
+- A user said of the fun animation feature "Woah, they're \[the pieces\] going everywhere". This wasn't said in a
+  negative tone.
 
 # Things we noticed
 
@@ -75,6 +77,11 @@ From this we noticed 3 things:
 A user didn't know you had to tap again to stop recording. **This could be worked around by reducing the max recording
 time so it shuts off earlier**. **Also, we could think about changing the text while recording. It currently just says "
 ...listening"**.
+
+A user used the voice command option several times before switching to moving the pieces normally. It was in a 1+0 game
+and they switched out of need to make moves quickly. **Improving processing times for the voice commands would help.
+Also, perhaps in low time situations the voice command feature could start listening automatically when its the player's
+turn so they don't have to press the button every time**.
 
 # Bugs/issues
 
