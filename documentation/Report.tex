@@ -1,0 +1,160 @@
+\documentclass[twoside,12pt,titlepage,a4paper]{article}
+\usepackage{url}
+% kentHarvard requires natbib
+\usepackage{natbib}
+% add line numbers
+\usepackage{lineno}
+\usepackage{xcolor}
+\linenumbers
+\definecolor{periwinkle}{rgb}{0.8, 0.8, 1.0}
+\renewcommand{\linenumberfont}{\normalfont\bfseries\small\color{periwinkle}}
+\usepackage[pass]{geometry}
+\usepackage{graphicx}
+\renewcommand{\baselinestretch}{1.3}
+\usepackage{todonotes}
+\usepackage{enumitem}
+
+\title{Checkmate+ COMP6030 report}
+\author{
+    Ainan Cawley\\
+    \texttt{acc59@kent.ac.uk}
+    \and
+    James Ledger\\
+    \texttt{jhl28@kent.ac.uk}
+    \and
+    Luke Williams\\
+    \texttt{lw571@kent.ac.uk}
+    \and
+    elendil7\\
+    
+    \\ \vspace{10mm}
+    \includegraphics[scale=0.6]{Kent_Comp_294_RGB} \\
+    School of Computing \\
+    University of Kent \\ \vspace{10mm} \\ Word Count: TODO
+}
+\begin{document}
+
+\newgeometry{hmarginratio=1:1}    %% make layout symmetric
+\maketitle
+\restoregeometry              %% restore the layout
+
+\begin{abstract}
+   TODO: This should provide a concise summary of the paper. Typically, it will be between 100 and 200 words in length.
+\end{abstract}
+
+
+    \section{Introduction}
+    \label{Introduction}
+    
+    Chess is a centuries old board game that has adapted well to the internet age. \textit{Chess.com}, the largest online chess platform, has over ten million games played on it every day \citep{chessdotcom-about}. 
+    
+    The online nature of these platforms enable features that don't exist when playing chess with a physical board and pieces. \textit{Lichess.org} introduced voice recognition to make moves in 2023 \citep{lichess-voice}, and \textit{Chess.com} offers alternative animations when moving or capturing pieces. However, there is little published evidence on whether such features improve user enjoyment.
+    
+    The goal of our project is two-fold. Firstly, to create a website for playing chess that implements three features: 
+    \begin{itemize}[noitemsep]
+    	\item Computer opponents that have human-like move times.
+    	\item Alternative move and capture animations
+    	\item Voice-command move input
+    \end{itemize}
+    Secondly, to investigate whether these features affect user enjoyment through surveying and conversational user evaluation sessions.
+    
+    \section{Collaboration methodology}
+    \label{Collaboration methodology}
+
+    TODO: basically how we worked together as a group to complete this project. Issue tracking, sprints/agile stuff. KEEP IT BRIEF.
+
+
+    \section{Project architecture}
+    \label{Project architecture}
+
+    TODO: For James an overview of the structure of the project. Microservices, how they communicate (GRPC), springboot, GraphQL, STOMP as protocol to backend (instead of raw websocket), etc.
+
+    Subsections for each service (brief)
+
+
+    \section{The computer opponent}
+    \label{The computer opponent}
+    
+    Online chess platforms often offer the option to play against a computer opponent (also called a ``bot''). For \textit{Checkmate+}, we implement a feature that neither \textit{Chess.com} or \textit{Lichess.org} have: bots that have human-like move times.
+    
+    The moves that bots make are decided by a program called a ``chess engine''. The bots on our site use an engine we created ourselves.
+
+    \subsection{Chess engine}
+    \label{Chess engine}
+
+    TODO: For Luke
+    This is where you go into detail about what you have done. You will need to decide the titles
+    for these sections yourself; they will depend on the content of the project. These sections
+    should summarise the technical and scientific achievements of the project.
+    Depending on the nature of your project, these sections may include: a comparison of
+    different approaches that you considered, accounts of experimental work, mathematical
+    analyses, specifications, top-level architectural diagrams, results obtained, problems
+    encountered, workarounds, user evaluations, performance measures, testing regimes and
+    results, comparisons between different approaches adopted, comparisons with existing work
+    on similar problems.
+    In particular, you should give a mixture of general discussion of your work and particular
+    examples. Too much general discussion and the reader cannot easily get a handle on what
+    you are doing; too many specific examples and the document fails to "tell a story".
+
+    \subsection{Human-like move time model}
+    \label{Human-like move time model}
+
+    TODO: For Ainan
+    This is where you go into detail about what you have done. You will need to decide the titles
+    for these sections yourself; they will depend on the content of the project. These sections
+    should summarise the technical and scientific achievements of the project.
+    Depending on the nature of your project, these sections may include: a comparison of
+    different approaches that you considered, accounts of experimental work, mathematical
+    analyses, specifications, top-level architectural diagrams, results obtained, problems
+    encountered, workarounds, user evaluations, performance measures, testing regimes and
+    results, comparisons between different approaches adopted, comparisons with existing work
+    on similar problems.
+    In particular, you should give a mixture of general discussion of your work and particular
+    examples. Too much general discussion and the reader cannot easily get a handle on what
+    you are doing; too many specific examples and the document fails to "tell a story".
+
+
+    \section{Front-end}
+    \label{Front-end}
+
+    TODO: For Ainan and James
+
+    Could talk about our choice of only having TOTP auth app stuff.
+
+    The frontend redesign.
+
+
+    \section{Voice commands feature}
+    \label{Voice commands feature}
+
+    TODO: For elendil7
+    This is where you go into detail about what you have done. You will need to decide the titles
+    for these sections yourself; they will depend on the content of the project. These sections
+    should summarise the technical and scientific achievements of the project.
+    Depending on the nature of your project, these sections may include: a comparison of
+    different approaches that you considered, accounts of experimental work, mathematical
+    analyses, specifications, top-level architectural diagrams, results obtained, problems
+    encountered, workarounds, user evaluations, performance measures, testing regimes and
+    results, comparisons between different approaches adopted, comparisons with existing work
+    on similar problems.
+    In particular, you should give a mixture of general discussion of your work and particular
+    examples. Too much general discussion and the reader cannot easily get a handle on what
+    you are doing; too many specific examples and the document fails to "tell a story".
+
+	\section{Feedback}
+	\label{Feedback}
+	
+	TODO: what we get from users from the poster fair survey and chess club playtest
+	
+	\section{Future development}
+	\label{Future development}
+
+    \section{Conclusions}
+    \label{Conclusions}
+    
+
+    \vskip 0.2in
+    \bibliography{report}
+    \bibliographystyle{kentHarvard}
+
+\end{document}
