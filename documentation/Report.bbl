@@ -1,12 +1,25 @@
-\begin{thebibliography}{2}
+\begin{thebibliography}{4}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \providecommand{\urlprefix}{URL }
 \providecommand{\eprint}[2][]{\url{#2}}
 
+\bibitem[{{Apple Computer, Inc.}(2002)}]{apple-chess-engine}
+{Apple Computer, Inc.} (2002). {MBCEngine.mm} --- {Chess} source code
+  (v110.3.4),
+  {\url{https://web.archive.org/web/20170929075055/https://opensource.apple.com/source/chess/chess-110.3.4/sources/mbcengine.mm}}.
+  Source file originally dated 2002--2011; archived 2017. Accessed: 2026-05-17.
+
 \bibitem[{{Chess.com}(2025)}]{chessdotcom-about}
 {Chess.com} (2025). About chess.com, {\url{https://www.chess.com/about}}.
   Accessed: 2026-05-16.
+
+\bibitem[{{Lichess.org}(2021)}]{lichess-db-univ}
+{Lichess.org} (2021). Lichess database,
+  {\url{https://database.lichess.org/db-univ/}}. PGN files with centisecond
+  clock annotations. January 2019 dataset used:
+  {\url{https://database.lichess.org/db-univ/lichess_db_univ_2019-01.pgn.bz2}}.
+  Accessed: 2026-05-17.
 
 \bibitem[{{Lichess.org}(2023)}]{lichess-voice}
 {Lichess.org} (2023). Lichess voice recognition beta,
