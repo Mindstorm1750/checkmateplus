@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2025.12.4)  17 MAY 2026 18:02
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2025.12.4)  19 MAY 2026 13:16
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -567,26 +567,54 @@ Package pdftex.def Info: Kent_Comp_294_RGB.pdf  used on input line 38.
 ] [2{/usr/share/texmf/fonts/enc/dvips/cm-super/cm-super-ts1.enc}]
 [3] [4]
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <12> on input line 138.
+(Font)              <12> on input line 140.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <8> on input line 138.
+(Font)              <8> on input line 140.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <6> on input line 138.
+(Font)              <6> on input line 140.
 
-Overfull \hbox (39.23576pt too wide) in paragraph at lines 138--139
+Overfull \hbox (39.23576pt too wide) in paragraph at lines 140--141
 []\OT1/cmtt/m/n/12 time[]pressure\OT1/cmr/m/n/12 , de-fined as $[]$ where $\OML
 /cmm/m/it/12 t$ \OT1/cmr/m/n/12 is \OT1/cmtt/m/n/12 time[]remaining[]for[]this[
 ]position\OT1/cmr/m/n/12 ,
  []
 
-[5] [6]
+[5]
+Overfull \hbox (0.62135pt too wide) in paragraph at lines 144--145
+[]\OT1/cmr/m/n/12 For train-ing a con-vo-lu-tional neu-ral net-work model, a fe
+a-ture called \OT1/cmtt/m/n/12 pieces
+ []
+
+
+Overfull \hbox (5.2002pt too wide) in paragraph at lines 157--158
+\OT1/cmtt/m/n/12 /EngineMoveTimeModel/src/main/python/Linear regression model f
+or
+ []
+
+
+Overfull \hbox (9.23895pt too wide) in paragraph at lines 159--160
+\OT1/cmr/m/n/12 these mod-els was trained in \OT1/cmtt/m/n/12 /EngineMoveTimeMo
+del/src/main/python/Keras
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 159--160
+\OT1/cmtt/m/n/12 models using pieces attempt 3 even bigger model with AdamW wei
+ght
+ []
+
+[6]
 Overfull \hbox (4.88013pt too wide) in paragraph at lines 165--169
 \OT1/cmr/m/n/12 its sim-plic-ity, it runs in-line within \OT1/cmtt/m/n/12 GameS
 erver\OT1/cmr/m/n/12 's \OT1/cmtt/m/n/12 MatchWebSocketController\OT1/cmr/m/n/1
 2 ,
  []
 
-[7] (./Report.bbl
+
+Underfull \vbox (badness 3471) has occurred while \output is active []
+
+ [7]
+(./Report.bbl
 Underfull \hbox (badness 1107) in paragraph at lines 8--12
 []\OT1/cmr/m/n/12 Apple Com-puter, Inc. (2002). MB-CEngine.mm --- Chess source 
 code
@@ -604,13 +632,13 @@ Underfull \hbox (badness 10000) in paragraph at lines 8--12
 3 . 4 / sources /
  []
 
-
+[8]
 Underfull \hbox (badness 1072) in paragraph at lines 18--23
 []\OT1/cmr/m/n/12 Lichess.org (2021). Lichess database, $\OT1/cmtt/m/n/12 https
  : / / database . lichess . org /
  []
 
-) [8] (./Report.aux)
+) [9] (./Report.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
@@ -623,7 +651,7 @@ Here is how much of TeX's memory you used:
  36719 multiletter control sequences out of 15000+600000
  564874 words of font info for 59 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 99i,11n,101p,666b,379s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 99i,11n,101p,1532b,379s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></us
 r/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/shar
 e/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/share/texl
@@ -637,10 +665,10 @@ m/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy
 6.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti12.pfb>
 </usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt12.pfb></usr/
 share/texmf/fonts/type1/public/cm-super/sfrm1200.pfb>
-Output written on Report.pdf (10 pages, 169224 bytes).
+Output written on Report.pdf (11 pages, 171665 bytes).
 PDF statistics:
- 123 PDF objects out of 1000 (max. 8388607)
- 77 compressed objects within 1 object stream
+ 126 PDF objects out of 1000 (max. 8388607)
+ 79 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  18 words of extra memory for PDF output out of 10000 (max. 10000000)
 

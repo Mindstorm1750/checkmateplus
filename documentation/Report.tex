@@ -62,6 +62,8 @@
     \label{Collaboration methodology}
 
     TODO: basically how we worked together as a group to complete this project. Issue tracking, sprints/agile stuff. KEEP IT BRIEF.
+    
+    
 
 
     \section{Project architecture}
@@ -139,7 +141,7 @@
     	\item \texttt{opening\_unfamiliarity}, defined as $\frac{1}{1 + e^{6 - n}}$ where $n$ is \texttt{move\_number}. This is a sigmoid that increases from 0 to 1 approximately around the point at which players leave memorised chess territory. This turning point was found empirically through correlation with the target feature to be around move six.
     \end{itemize}
     
-    For training a convolutional neural network model, a feature representing the state of the chess board was included. This feature was a 3-dimensional array of booleans of size (12, 8, 8) representing the 12 possible pieces (pawns, knights, bishops, rooks, queens, and kings in both colours) and their presence on the 8 by 8 chessboard.
+    For training a convolutional neural network model, a feature called \texttt{pieces} representing the state of the chess board was included. This feature was a 3-dimensional array of booleans of size (12, 8, 8) representing the presence of the 12 possible types of pieces (pawns, knights, bishops, rooks, queens, and kings in both colours) on the 8 by 8 chessboard.
     
     \subsubsection{Modelling}
     
@@ -152,13 +154,11 @@
     outliers using the IQR (interquartile range) method, and the two engineered features added, bringing the validation MSE to 62.69. Although this is numerically higher than the unfiltered model, the outlier removal produced a
     healthier distribution of predicted move times. Before, there were a notable number of negative predicted move times, which was much improved after outlier removal. 
     
-    The final model achieved a test set MSE of 64.40, corresponding to an RMSE (root mean squared error) of approximately 8.0 seconds.
+    This final linear regression model achieved a test set MSE of 64.40, corresponding to an RMSE (root mean squared error) of approximately 8.0 seconds. The training of this linear regression model can be seen in \texttt{/EngineMoveTimeModel/src/main/python/Linear regression model for poster fair (contains was\_capture).ipynb}.
     
-    We also trained a model with a convolutional neural network to make use of the board state as an additional feature. The state of the board, a (12, 8, 8) boolean array was given to a convolutional neural network with 3 hidden layers, resulting in 512 outputs. These outputs were concatenated with the original features and passed through dense layers. This achieved a best validation MSE of 51.77 (RMSE $\approx$ 7.2 seconds) --- an improvement of roughly 0.8 seconds in typical prediction error over the linear regression model. However, given that human move times are inherently noisy and the
-    improvement is unlikely to be perceptible to a user, this gain did not
-    justify the added complexity: each training epoch took approximately 43
-    minutes, and serving a model with 1.15 million parameters would have
-    required a dedicated microservice.
+    We also trained models with CNNs (convolutional neural networks) making use of the board state as an additional feature. The best performing one of these models was trained in \texttt{/EngineMoveTimeModel/src/main/python/Keras models using pieces attempt 3 even bigger model with AdamW weight decay.ipynb}. In this model the state of the board, a (12, 8, 8) boolean array, was given to a CNN with 3 hidden layers. The number of filters in the layers increase from 64 to 128 to 512. The first two layers use 3x3 kernels with ReLu (rectified linear unit) activation functions, a standard idea ever since the ``VGG'' CNNs (TODO add citation for VGG). Unlike VGG, we don't use any max-pooling layers because our ``image'' (the chessboard) is already low resolution (8x8 instead of 224x224). Still, we do get spatial pooling as we don't apply any padding before each filter. The final layer uses 4x4 kernels instead of 3x3 so that each filter gives a single output as opposed to a 2x2 output, reducing dimensionality before the dense layers. These 512 outputs from the CNN were concatenated with the original features and passed through dense layers to produce the final prediction. This overall model had 1,147,617 parameters and took over 10 hours to complete 14 epochs of training (TODO ADD HARDWARE CONTEXT). The model achieved a best validation MSE of 51.77 (RMSE $\approx$ 7.2 seconds), an improvement of roughly 0.8 seconds in typical prediction error over the linear regression model. 
+    
+    TODO add discussion about how even the best model had much higher loss than expected (7.2 seconds off on average? Isn't that bad?) and explain how the task of predicting move times doesn't actually have a ``right'' answer, thus making high losses.
     
     \subsubsection{Implementation}
     
