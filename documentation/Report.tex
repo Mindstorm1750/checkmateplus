@@ -143,7 +143,7 @@
     
     For training a convolutional neural network model, a feature called \texttt{pieces} representing the state of the chess board was included. This feature was a 3-dimensional array of booleans of size (12, 8, 8) representing the presence of the 12 possible types of pieces (pawns, knights, bishops, rooks, queens, and kings in both colours) on the 8 by 8 chessboard.
     
-    \subsubsection{Modelling}
+    \subsubsection{Modelling and results}
     
     The dataset was split 80\%/10\%/10\% into training, validation, and test
     sets. As a baseline, a dummy regressor predicting the mean move time
@@ -156,16 +156,20 @@
     
     This final linear regression model achieved a test set MSE of 64.40, corresponding to an RMSE (root mean squared error) of approximately 8.0 seconds. The training of this linear regression model can be seen in \texttt{/EngineMoveTimeModel/src/main/python/Linear regression model for poster fair (contains was\_capture).ipynb}.
     
-    We also trained models with CNNs (convolutional neural networks) making use of the board state as an additional feature. The best performing one of these models was trained in \texttt{/EngineMoveTimeModel/src/main/python/Keras models using pieces attempt 3 even bigger model with AdamW weight decay.ipynb}. In this model the state of the board, a (12, 8, 8) boolean array, was given to a CNN with 3 hidden layers. The number of filters in the layers increase from 64 to 128 to 512. The first two layers use 3x3 kernels with ReLu (rectified linear unit) activation functions, a standard idea ever since the ``VGG'' CNNs (TODO add citation for VGG). Unlike VGG, we don't use any max-pooling layers because our ``image'' (the chessboard) is already low resolution (8x8 instead of 224x224). Still, we do get spatial pooling as we don't apply any padding before each filter. The final layer uses 4x4 kernels instead of 3x3 so that each filter gives a single output as opposed to a 2x2 output, reducing dimensionality before the dense layers. These 512 outputs from the CNN were concatenated with the original features and passed through dense layers to produce the final prediction. This overall model had 1,147,617 parameters and took over 10 hours to complete 14 epochs of training (TODO ADD HARDWARE CONTEXT). The model achieved a best validation MSE of 51.77 (RMSE $\approx$ 7.2 seconds), an improvement of roughly 0.8 seconds in typical prediction error over the linear regression model. 
+    We also trained models with CNNs (convolutional neural networks) making use of the board state as an additional feature. The best performing one of these models was trained in \texttt{/EngineMoveTimeModel/src/main/python/Keras models using pieces attempt 3 even bigger model with AdamW weight decay.ipynb}. In this model the state of the board, a (12, 8, 8) boolean array, was given to a CNN with 3 hidden layers. The number of filters in the layers increase from 64 to 128 to 512. The first two layers use 3x3 kernels with ReLu (rectified linear unit) activation functions, a standard idea ever since the ``VGG'' CNNs \citep{simonyan2015deepconvolutionalnetworkslargescale}. Unlike VGG, we don't use any max-pooling layers because our ``image'' (the chessboard) is already low resolution (8x8 instead of 224x224). Still, we do get spatial pooling as we don't apply any padding before each filter. The final layer uses 4x4 kernels instead of 3x3 so that each filter gives a single output as opposed to a 2x2 output, reducing dimensionality before the dense layers. These 512 outputs from the CNN were concatenated with the other features and passed through 2 dense layers of 32 neurons each to produce the final output. This overall model had 1,147,617 parameters and took over 10 hours to complete 14 epochs of training (TODO ADD HARDWARE CONTEXT). The model achieved a best validation MSE of 51.77 (RMSE $\approx$ 7.2 seconds).
     
-    TODO add discussion about how even the best model had much higher loss than expected (7.2 seconds off on average? Isn't that bad?) and explain how the task of predicting move times doesn't actually have a ``right'' answer, thus making high losses.
+    It was surprising that the CNN model was only slightly better than a simple linear regression model (an improvement in RMSE of only 0.8 seconds). A much larger improvement was expected given that the CNN model could make use the state of the board. Instead, what we found is that the clock situation is the most important factor when it comes to how long a player takes to make their move. The features that correlate most with the target feature are \texttt{initial\_time}, \texttt{time\_opponent\_took}, \texttt{time\_remaining\_for\_this\_position}, and \texttt{increment}. 
     
-    \subsubsection{Implementation}
+    Disappointing was the high loss. Even the best model had a RMSE of 7.2 seconds. However, the task we're trying to model doesn't necessarily have a single correct answer. Given the exact same clock and board situation, even the same player may decide to take different amounts of time to move. This results in a high loss no matter the model.
     
-    The linear regression model was therefore chosen for implementation.
-    Given its simplicity, it runs inline within \texttt{GameServer}'s
-    \texttt{MatchWebSocketController}, rather than as a separate
-    microservice.
+    
+    \subsubsection{Implementation and feedback}
+    
+    Given that the CNN model was large and would have to run as its own microservice while performing only slightly better than the linear regression model, we chose to implement the linear regression model. This can be seen in \texttt{/ChessLibrary/.../RealisticMoveTimeModel.kt}.
+    
+    Feedback from users was mostly positive. TODO
+    
+    
     
     \section{Front-end}
     \label{Front-end}

@@ -1,4 +1,4 @@
-\begin{thebibliography}{4}
+\begin{thebibliography}{5}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \providecommand{\urlprefix}{URL }
@@ -25,5 +25,10 @@
 {Lichess.org} (2023). Lichess voice recognition beta,
   {\url{https://lichess.org/@/lichess/blog/lichess-voice-recognition-beta/tqazjvbb}}.
   Accessed: 2026-05-16.
+
+\bibitem[{Simonyan and
+  Zisserman(2015)}]{simonyan2015deepconvolutionalnetworkslargescale}
+Simonyan, K. and Zisserman, A. (2015). Very deep convolutional networks for
+  large-scale image recognition. \eprint{1409.1556}.
 
 \end{thebibliography}
