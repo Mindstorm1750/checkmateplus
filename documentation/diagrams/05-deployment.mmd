@@ -1,0 +1,100 @@
+flowchart LR
+    subgraph subGraph0["Traffic Flow"]
+        User["End Users"]
+        CF["Cloudflare Tunnel<br>Edge HTTPS + routing<br>Routes managed in CF console"]
+    end
+    subgraph Ingress["Ingress"]
+        CFD["cloudflared agent<br>1 replica<br>Outbound tunnel"]
+    end
+    subgraph subGraph2["Frontend - 2 replicas"]
+        FE1["Frontend Pod 1<br>Vite+React + nginx<br>128-256Mi RAM"]
+        FE2["Frontend Pod 2<br>Vite+React + nginx<br>128-256Mi RAM"]
+        FESvc["Frontend Service<br>ClusterIP :80"]
+    end
+    subgraph subGraph3["MatchmakingService - 1 replica, scalable"]
+        MM1["Matchmaking Pod<br>Spring Boot/Kotlin<br>128-512Mi RAM"]
+        MMSvc["Matchmaking Service<br>ClusterIP :8080"]
+    end
+    subgraph subGraph4["PlayerService - 1 replica, scalable"]
+        PS1["PlayerService Pod<br>Spring Boot/Kotlin JVM image<br>256-1024Mi RAM"]
+        PSSvc["PlayerService Service<br>ClusterIP :8095 / gRPC :9092"]
+    end
+    subgraph subGraph5["GameServer - StatefulSet, scalable per game load"]
+        GS0["gameserver-0<br>Spring Boot/Kotlin<br>128-512Mi RAM"]
+        GS1["gameserver-1<br>Spring Boot/Kotlin<br>128-512Mi RAM"]
+        GSX["gameserver-N<br>Future replicas"]
+        GSSvc["GameServer Headless Service<br>Per-pod DNS :8090"]
+    end
+    subgraph subGraph6["GameServerManager - 1 replica"]
+        GSM1["GSM Pod<br>Spring Boot/Kotlin<br>128-512Mi RAM"]
+        GSMSvc["GSM Service<br>ClusterIP :8081 / gRPC :9090"]
+    end
+    subgraph subGraph7["StockfishEngine - 1 replica, scalable"]
+        SF1["Stockfish Pod<br>Spring Boot + Stockfish binary<br>256-1024Mi RAM"]
+        SFSvc["Stockfish Service<br>ClusterIP gRPC :9093"]
+    end
+    subgraph subGraph8["Internal services - cluster-only"]
+        subGraph6
+        subGraph7
+    end
+    subgraph subGraph9["VoiceCommandService - 1 replica, scalable"]
+        VC1["Voice Pod<br>Spring Boot/Kotlin JVM image<br>256-768Mi RAM"]
+        VCSvc["Voice Service<br>ClusterIP :9100"]
+    end
+    subgraph subGraph10["Stateful - bitnami subcharts"]
+        PG[("PostgreSQL<br>Player + match data<br>Flyway-managed")]
+        RD[("Redis<br>Sessions + analysis queue")]
+    end
+    subgraph subGraph11["Kubernetes Cluster - namespace: checkmateplus"]
+        Ingress
+        subGraph2
+        subGraph3
+        subGraph4
+        subGraph5
+        subGraph8
+        subGraph9
+        subGraph10
+    end
+    User -- HTTPS --> CF
+    CF -- 6 public hostnames --> CFD
+    CFD -- "checkmateplus.org" --> FESvc
+    CFD -- "matchmaking.*" --> MMSvc
+    CFD -- "playerservice.*" --> PSSvc
+    CFD -- "voice.*" --> VCSvc
+    CFD -- "gs0..N.*" --> GSSvc
+    FESvc --> FE1 & FE2
+    MMSvc --> MM1
+    PSSvc --> PS1
+    VCSvc --> VC1
+    GSSvc --> GS0 & GS1
+    GSSvc -.-> GSX
+    GSMSvc --> GSM1
+    SFSvc --> SF1
+    MMSvc -- gRPC allocate --> GSMSvc
+    GSSvc -. gRPC heartbeat 30s .-> GSMSvc
+    GSSvc -- gRPC submit match --> PSSvc
+    PSSvc -- gRPC analyse --> SFSvc
+    PS1 --> PG & RD
+    GSM1 --> RD
+
+    style CF fill:#f48120,color:#fff
+    style CFD fill:#fad7a0
+    style FE1 fill:#ffeecc
+    style FE2 fill:#ffeecc
+    style FESvc fill:#ffddaa
+    style MM1 fill:#ccddff
+    style MMSvc fill:#aaddff
+    style PS1 fill:#ccffcc
+    style PSSvc fill:#aaffaa
+    style GS0 fill:#ffcccc
+    style GS1 fill:#ffcccc
+    style GSX fill:#ffeeee
+    style GSSvc fill:#ffaaaa
+    style GSM1 fill:#ffe5cc
+    style GSMSvc fill:#ffd699
+    style SF1 fill:#d0f0e0
+    style SFSvc fill:#a8e6cf
+    style VC1 fill:#eed9ff
+    style VCSvc fill:#e0bbff
+    style PG fill:#bbb,color:#000
+    style RD fill:#ff6b6b,color:#fff

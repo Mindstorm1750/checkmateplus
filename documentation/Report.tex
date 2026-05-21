@@ -1,18 +1,20 @@
-\documentclass[twoside,12pt,titlepage,a4paper]{article}
+\documentclass[12pt,titlepage,a4paper]{article}
 \usepackage{url}
 % kentHarvard requires natbib
 \usepackage{natbib}
 % add line numbers
 \usepackage{lineno}
 \usepackage{xcolor}
-\linenumbers
+% \linenumbers
 \definecolor{periwinkle}{rgb}{0.8, 0.8, 1.0}
 \renewcommand{\linenumberfont}{\normalfont\bfseries\small\color{periwinkle}}
-\usepackage[pass]{geometry}
+\usepackage[a4paper,margin=25mm]{geometry}
 \usepackage{graphicx}
 \renewcommand{\baselinestretch}{1.3}
 \usepackage{todonotes}
 \usepackage{enumitem}
+\usepackage{float}
+\usepackage{color}
 
 \title{Checkmate+ COMP6030 report}
 \author{
@@ -69,9 +71,149 @@
     \section{Project architecture}
     \label{Project architecture}
 
-    TODO: For James an overview of the structure of the project. Microservices, how they communicate (GRPC), springboot, GraphQL, STOMP as protocol to backend (instead of raw websocket), etc.
+    \subsection{Why design and build a microservices architecture?}
+    \label{subsec:why-microservices}
 
-    Subsections for each service (brief)
+    When designing Checkmate+, we chose a microservices architecture over a monolith. Several factors affected this decision. First, live chess matches are stateful: they are held in the memory of the Game Server for the duration of the match. This is different from a stateless service like authentication, where any pod can serve any request because no per-request state lives on the pod. Second, the post-game analysis engine wraps a native Stockfish binary, which was simpler to isolate in its own service than to embed inside an HTTP-serving Spring Boot process. Third, splitting the system into smaller deployable components lets us redeploy a single service after a bug fix without redeploying the whole platform, and contains the blast radius of a crash to a single pod. Kubernetes restarts the failed pod while the rest of the system is unaffected.
+
+    This approach comes with its costs. Every call inside the cluster is a point of failure with its own network semantics, intra-cluster networking must be considered, \texttt{.proto} contracts must be kept in sync across services, and the deployment topology is much more complex than a single monolith. Given that the project aims to build a chess platform comparable in operational shape to Chess.com or Lichess, we judged these costs acceptable and chose to build with scale in mind using the tools enterprises use to run systems of this kind.
+
+    \subsection{Overview}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.9\textwidth]{diagrams/00-overview}
+        \caption{High-level overview of the Checkmate+ platform.}
+        \label{fig:overview}
+    \end{figure}
+
+    \begin{enumerate}
+        \item \textbf{The Game Server (GS).} Responsible for holding live game states; players are connected to a Game Server pod for the duration of a match.
+        \item \textbf{The Game Server Manager (GSM).} Responsible for keeping track of active matches and balancing match allocation across Game Server pods. Tracks match lifecycle in Redis.
+        \item \textbf{The Matchmaking Service (MS).} Responsible for player requests to join matchmaking. Asks the GSM for a free server and tells the client where to connect over STOMP.
+        \item \textbf{The Player Service (PS).} Responsible for the main user-facing API, owns authentication and the database storing player data. Issues JWTs that every other backend service validates.
+        \item \textbf{The Stockfish Engine (SE).} Responsible for analysing completed matches using the Stockfish chess engine and returning per-move evaluations to the Player Service.
+        \item \textbf{The Voice Command Service (VC).} Responsible for the voice command feature, letting users use their voice to make moves.
+        \item \textbf{The Chess Library.} Not a service, but a shared Kotlin library used across the backend. Contains the shared types, the chess engine implementation, and the human-like move time model.
+    \end{enumerate}
+
+    \subsection{Inter-service communication}
+    \label{subsec:inter-service-communication}
+
+    Checkmate+ uses four different communication mechanisms.
+    Each was chosen based on the requirements of the interaction it serves, rather than for consistency across the system.
+    The frontend talks to the backend over three protocols (Figure \ref{fig:frontend-transports}), and the backend services talk among themselves using gRPC (Figure~\ref{fig:service-topology}).
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.9\textwidth]{diagrams/02-frontend-transports}
+        \caption{Protocols used between the frontend and the backend services.}
+        \label{fig:frontend-transports}
+    \end{figure}
+
+    Between the browser and the backend, the choice of protocol follows the shape of the data being exchanged.
+    Requests against the Player Service use GraphQL, served by Spring's GraphQL starter, because the frontend often needs slightly different shapes of player profile or match history data on different pages, and a single GraphQL endpoint lets the client pick the fields it needs without the backend exposing a new REST route every time.
+    The Matchmaking Service and the live Game Server both use STOMP over SockJS rather than plain WebSocket, because each interaction is bidirectional and pub/sub in nature: the client subscribes to a ``match found'' topic on the Matchmaking Service while it waits in the queue, and subscribes to a per-match topic on the Game Server during a live game so that the opponent's moves can be pushed without the client polling. STOMP gives us a frame format and subscription model on top of the raw WebSocket transport. Finally, the Voice Command Service exposes a plain HTTP POST endpoint, because voice input is a one-shot request-response with no need for a persistent connection.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=\textwidth]{diagrams/01-service-topology}
+        \caption{Service topology of the Checkmate+ backend, showing gRPC links between services and dependencies on PostgreSQL, Redis, and the OpenAI API.}
+        \label{fig:service-topology}
+    \end{figure}
+
+    Backend services communicate with each other over gRPC. The Matchmaking Service asks the Game Server Manager for a free Game Server, every Game Server sends a heartbeat to the Game Server Manager every 30 seconds, the Game Server reports completed matches to the Player Service, and the Player Service sends matches to the Stockfish Engine for analysis.
+    gRPC was chosen for these calls because the contracts are stable and well-defined, and gRPC's protocol buffer schemas make the contract explicit and the wire format compact compared to JSON over HTTP.
+
+    One cost of this approach is that the gRPC contracts live as duplicated \texttt{.proto} files inside each service that needs them, rather than as a single shared module.
+    A change to a service's gRPC API therefore requires updating every other service that consumes it, and a missed update will compile cleanly but fail at runtime with a message mismatch.
+
+    All backend services run on the JVM as Spring Boot applications written in Kotlin, which gives us a single tooling story across services even though each is a separate deployable.
+
+    \subsection{Authentication}
+    \label{subsec:authentication}
+
+    All authenticated calls between the frontend and the backend, and between the backend services themselves, are authorised using a JSON Web Token (JWT). Figure~\ref{fig:auth-hmac} shows the arrangement.
+    The Player Service issues a JWT after a successful user login (the login flow itself is covered in Section \ref{Front-end}). Every other backend service runs Spring Security as an OAuth2 resource server and validates that token on each incoming request. The token is supplied as a bearer header on HTTP and GraphQL requests, and on the initial \texttt{CONNECT} frame of STOMP sessions.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.8\textwidth]{diagrams/04-auth-hmac}
+        \caption{The Player Service issues JWTs; every other backend service validates them using a shared HMAC secret.}
+        \label{fig:auth-hmac}
+    \end{figure}
+
+    The tokens are signed with HMAC-SHA256 using a symmetric secret (\texttt{jwt.secret}) that is shared across all backend services as an environment variable.
+    This is simpler than running a separate identity provider and avoids an additional service in the dependency graph, at the cost of two trade-offs.
+    First, every service must be deployed with the same secret value; a mismatch will silently 401 every cross-service call.
+    Second, the secret cannot be rotated without redeploying all services together, so a leak of the secret would require coordinated remediation across the system.
+    These drawbacks were judged to be acceptable for the scale of the project.
+    In a production deployment at higher scale would likely benefit from an asymmetric signing scheme (RS256) where only the issuer holds the signing key.
+
+    \subsection{Match lifecycle: a worked example}
+    \label{subsec:match-lifecycle}
+
+    To highlight the role of each service, this section traces a single ranked match from the user pressing ``Find game'' to the post-game analysis being available.
+    Figure~\ref{fig:match-lifecycle} shows the sequence.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=\textwidth]{diagrams/03-match-lifecycle}
+        \caption{Sequence of interactions during a ranked match, from queue entry to analysis being available.}
+        \label{fig:match-lifecycle}
+    \end{figure}
+
+    When the user clicks ``Find game'', the frontend opens a STOMP connection to the Matchmaking Service and joins the queue.
+    The Matchmaking Service asks the Game Server Manager, over gRPC, for a Game Server with capacity.
+    The Game Server Manager replies with the endpoint of an allocated Game Server pod, and the Matchmaking Service publishes a ``match found'' message to the user's STOMP topic containing the WebSocket URL and a match identifier.
+
+    The frontend then opens a second STOMP connection, this time to the allocated Game Server, presenting the user's JWT on the \texttt{CONNECT} frame.
+    From this point on, all moves are pushed by the client into the Game Server and the resulting board state is broadcast to both players over their subscribed topic.
+    The Game Server holds the authoritative game state in memory for the duration of the match.
+
+    When the match ends, the Game Server submits the completed match to the Player Service over gRPC. The Player Service persists the match to PostgreSQL and enqueues an analysis job for the Stockfish Engine through Redis on player request.
+    The Stockfish Engine consumes the job, analyses each move, and returns the evaluations back to the Player Service.
+    Some time later, when the user opens the match in their history, the frontend fetches the analysis with a GraphQL query against the Player Service.
+
+    This single example utilises all four communication mechanisms described in Section~\ref{subsec:inter-service-communication} and every backend service in the platform.
+
+    \subsection{Deployment}
+    \label{subsec:deployment}
+
+    Checkmate+ is deployed to a Kubernetes cluster as a single Helm chart, with everything described above running in one namespace.
+    The deployment is split across two figures: Figure~\ref{fig:deployment-ingress} shows how public traffic enters the cluster and the services it reaches, and Figure~\ref{fig:deployment-data} shows the internal services and stateful subcharts together with the gRPC links between them.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=\textwidth]{diagrams/05a-ingress}
+        \caption{Ingress path and publicly reachable services. Public traffic enters via Cloudflare and is forwarded through the in-cluster \texttt{cloudflared} agent to a per-service ClusterIP, which in turn fronts one or more pods.}
+        \label{fig:deployment-ingress}
+    \end{figure}
+
+    \textbf{Ingress via Cloudflare Tunnel.} Rather than using a traditional Kubernetes ingress controller with a public load balancer, the cluster runs a single \texttt{cloudflared} agent pod which opens an outbound tunnel to the Cloudflare edge.
+    Public traffic for Checkmate+ enters Cloudflare's edge and is routed back through that tunnel to a ClusterIP Service inside the cluster.
+    This avoids exposing any inbound ports on the cluster's host and offloads TLS termination, DDoS protection, and DNS to Cloudflare.
+    The routing rules (six public hostnames such as \texttt{checkmateplus.org} for the frontend, \texttt{playerservice.checkmateplus.org} for the GraphQL API, and \texttt{gs0.checkmateplus.org} / \texttt{gs1.checkmateplus.org} for the individual Game Server pods) are configured in the Cloudflare Zero Trust dashboard rather than in the Helm values, which simplifies route changes but means the dashboard controls what is publicly available.
+
+    \textbf{StatefulSet for the Game Server.} The Game Server is deployed as a Kubernetes StatefulSet rather than a Deployment, fronted by a headless Service.
+    This gives each Game Server pod a stable per-pod DNS name (\texttt{gameserver-0.checkmateplus-gameserver}, \texttt{gameserver-1.checkmateplus-gameserver}, and so on), which is required for the Game Server Manager to route a specific match to a specific pod.
+    A regular Deployment with a round-robin Service would send the player to whichever Game Server pod the load balancer picked, which would not necessarily be the pod holding the game state for their match.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=\textwidth]{diagrams/05b-data}
+        \caption{Internal services and stateful subcharts. The Game Server Manager and the Stockfish Engine are not exposed publicly; PostgreSQL and Redis are deployed via Bitnami's Helm subcharts inside the same release.}
+        \label{fig:deployment-data}
+    \end{figure}
+
+    \textbf{Stateful dependencies.} PostgreSQL and Redis are deployed via Bitnami's Helm subcharts inside the same chart.
+    PostgreSQL holds the player and match data and is managed by Flyway migrations shipped inside the Player Service.
+    Redis carries session data and the post-game analysis queue between the Player Service and the Stockfish Engine.
+
+    \textbf{Container images.} Production images are built using Spring Boot's \texttt{bootBuildImage} task with the Paketo Buildpacks, producing GraalVM native images compiled with \texttt{-O3} and tuned with G1 GC. Native images give significantly faster startup and lower memory footprint than equivalent JVM images, which matters when running multiple Spring Boot services in one cluster.
+    Two services, the Player Service and the Voice Command Service, currently ship as JVM images instead of native ones due to a regression in their native builds that has not yet been resolved; this is reflected in their image tags (e.g.\ \texttt{2.2.2-jvm}) and in the resource requests in the Helm values.
+
+    \textbf{GitOps with Flux CD.} The Helm release itself is reconciled into the cluster by Flux CD, which watches the project's Git repository and applies any changes to the chart or values file automatically. Secrets, including the shared \texttt{jwt.secret} discussed in Section~\ref{subsec:authentication}, are stored as Sealed Secrets in the same repository, encrypted to the cluster's public key so that they can be checked in safely.
 
 
     \section{The computer opponent}

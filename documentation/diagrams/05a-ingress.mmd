@@ -1,0 +1,65 @@
+---
+config:
+  layout: dagre
+---
+flowchart LR
+    subgraph FE["Frontend - Deployment, 2 replicas"]
+        FESvc["Service ClusterIP :80"]
+        FE1["Pod 1"]
+        FE2["Pod 2"]
+    end
+    subgraph MM["MatchmakingService - 1 replica, scalable"]
+        MMSvc["Service :8080"]
+        MM1["Pod"]
+    end
+    subgraph PS["PlayerService - 1 replica, scalable"]
+        PSSvc["Service :8095 / gRPC :9092"]
+        PS1["Pod (JVM image)"]
+    end
+    subgraph VC["VoiceCommandService - 1 replica, scalable"]
+        VCSvc["Service :9100"]
+        VC1["Pod (JVM image)"]
+    end
+    subgraph GS["GameServer - StatefulSet, scalable per game load"]
+        GSSvc["Headless Service<br>per-pod DNS :8090"]
+        GS0["gameserver-0"]
+        GS1["gameserver-1"]
+        GSX["gameserver-N<br>future"]
+    end
+    subgraph Cluster["Kubernetes Cluster - namespace: checkmateplus"]
+        CFD["cloudflared agent<br>1 replica, outbound tunnel"]
+        FE
+        MM
+        PS
+        VC
+        GS
+    end
+    FESvc --> FE1 & FE2
+    MMSvc --> MM1
+    PSSvc --> PS1
+    VCSvc --> VC1
+    GSSvc --> GS0 & GS1
+    GSSvc -.-> GSX
+    User(("End Users")) -- HTTPS --> CF["Cloudflare Tunnel<br>Edge HTTPS + routing<br>Routes managed in CF console"]
+    CF -- 6 public hostnames --> CFD
+    CFD -- "checkmateplus.org" --> FESvc
+    CFD -- "matchmaking.*" --> MMSvc
+    CFD -- "playerservice.*" --> PSSvc
+    CFD -- "voice.*" --> VCSvc
+    CFD -- "gs0.* , gs1.*" --> GSSvc
+
+    style FESvc fill:#ffddaa
+    style FE1 fill:#ffeecc
+    style FE2 fill:#ffeecc
+    style MMSvc fill:#aaddff
+    style MM1 fill:#ccddff
+    style PSSvc fill:#aaffaa
+    style PS1 fill:#ccffcc
+    style VCSvc fill:#e0bbff
+    style VC1 fill:#eed9ff
+    style GSSvc fill:#ffaaaa
+    style GS0 fill:#ffcccc
+    style GS1 fill:#ffcccc
+    style GSX fill:#ffeeee
+    style CFD fill:#fad7a0
+    style CF fill:#f38020,color:#000
