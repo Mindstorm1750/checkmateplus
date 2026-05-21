@@ -31,7 +31,15 @@ type JwtContextType = {
 }
 
 export function JwtProvider({ children }: { children: ReactNode }) {
-  const [jwt, setJwt] = useState<string | null>(() => getLocalStorage("jwt"))
+  const [jwt, setJwt] = useState<string | null>(() => {
+    const stored = getLocalStorage("jwt")
+    if (stored && getIsGuest() && isJwtExpiringSoon(stored)) {
+      // guest tokens can't be refreshed — discard so guestQuery mints a fresh one
+      clearAuthStorage()
+      return null
+    }
+    return stored
+  })
   const [isGuest, setIsGuest] = useState<boolean>(() => getIsGuest())
 
   const guestQuery = useQuery({
