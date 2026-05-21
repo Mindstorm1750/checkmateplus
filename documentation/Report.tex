@@ -353,23 +353,27 @@
     Disappointing was the high loss. Even the best model had a RMSE of 7.2 seconds. However, the task we're trying to model doesn't necessarily have a single correct answer. Given the exact same clock and board situation, even the same player may decide to take different amounts of time to move. This results in a high loss no matter the model.
     
     
-    \subsubsection{Implementation and feedback}
+    \subsubsection{Implementation}
     
     Given that the CNN model was large and would have to run as its own microservice while performing only slightly better than the linear regression model, we chose to implement the linear regression model. This can be seen in \texttt{/ChessLibrary/.../RealisticMoveTimeModel.kt}.
-    
-    Feedback from users was mostly positive. TODO
-    
-    
     
     \section{Front-end}
     \label{Front-end}
 
-    TODO: For Ainan and James
-
-    Could talk about our choice of only having TOTP auth app stuff.
-
-    The frontend redesign.
-
+    Checkmate+'s front-end was made in React/Typescript with Vite as a build tool, a common combination. Most components on the site are from the ShadCN component library to focus development efforts on the custom chessboard component and its fun animation feature. The visual appearance of the site was overhauled in-between the first and second playtests TODO PICTURE BELOW.
+    
+    \subsection{Fun animations}
+    
+    We made the chessboard component ourselves (\texttt{/frontend/src/components/ui/ChessBoard.tsx}). The pieces are animated with the help of the Framer Motion animation library. The two animation options we have are ``normal'' and ``fun''. 
+    
+    The normal animation option is based on the animations seen on most chess platforms. Piece movement is a linear transition, and a captured piece has an opacity fade out.
+    
+    The fun animation option adds a rotational wiggle to piece movement, and makes capturing fling the captured piece off the board. Neither \textit{Lichess.org} or \textit{Chess.com} offer such an animation option. At most, \textit{Chess.com} offers an option called ``Arcade'' that adds a blue trail to movement and a red flash to capturing; the pieces themselves don't move any differently.
+    
+    \subsection{User authentication flow}
+    
+    We decided to only allow authentication via TOTPs (time-based one-time passwords). This avoids having to store users' password hashes.
+    
 
     \section{Voice commands feature}
     \label{Voice commands feature}
