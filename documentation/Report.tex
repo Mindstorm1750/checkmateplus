@@ -50,21 +50,22 @@
 
     Chess is a centuries old board game that has adapted well to the internet age. \textit{Chess.com}, the largest online chess platform, has over ten million games played on it every day \citep{chessdotcom-about}.
 
-    The online nature of these platforms enable features that don't exist when playing chess with a physical board and pieces. \textit{Lichess.org} introduced voice recognition to make moves in 2023 \citep{lichess-voice}, and \textit{Chess.com} offers alternative animations when moving or capturing pieces. However, there is little published evidence on whether such features improve user enjoyment.
+    The online nature of these platforms enable features that don't exist when playing chess with a physical board and pieces. \textit{Lichess.org} introduced voice recognition to make moves in 2023 \citep{lichess-voice}, and \textit{Chess.com} offers alternative animations when moving or capturing pieces.
+    However, there is little published evidence on whether such features improve user enjoyment.
 
-    The goal of our project is two-fold. Firstly, to create a website for playing chess that implements three features:
+    The goal of our project is two-fold.
+    Firstly, to create a website for playing chess that implements three features:
     \begin{itemize}[noitemsep]
     	\item Computer opponents that have human-like move times.
         \item Alternative move and capture animations
         \item Voice-command move input
     \end{itemize}
     Secondly, to investigate whether these features affect user enjoyment through surveying and conversational user evaluation sessions.
-
-
     \section{Collaboration methodology}
     \label{Collaboration methodology}
 
-    
+
+
 
 
     \section{Project architecture}
@@ -73,9 +74,17 @@
     \subsection{Why design and build a microservices architecture?}
     \label{subsec:why-microservices}
 
-    When designing Checkmate+, we chose a microservices architecture over a monolith. Several factors affected this decision. First, live chess matches are stateful: they are held in the memory of the Game Server for the duration of the match. This is different from a stateless service like authentication, where any pod can serve any request because no per-request state lives on the pod. Second, the post-game analysis engine wraps a native Stockfish binary, which was simpler to isolate in its own service than to embed inside an HTTP-serving Spring Boot process. Third, splitting the system into smaller deployable components lets us redeploy a single service after a bug fix without redeploying the whole platform, and contains the blast radius of a crash to a single pod. Kubernetes restarts the failed pod while the rest of the system is unaffected.
+    When designing Checkmate+, we chose a microservices architecture over a monolith.
+    Several factors affected this decision.
+    First, live chess matches are stateful: they are held in the memory of the Game Server for the duration of the match.
+    This is different from a stateless service like authentication, where any pod can serve any request because no per-request state lives on the pod.
+    Second, the post-game analysis engine wraps a native Stockfish binary, which was simpler to isolate in its own service than to embed inside an HTTP-serving Spring Boot process.
+    Third, splitting the system into smaller deployable components lets us redeploy a single service after a bug fix without redeploying the whole platform, and contains the blast radius of a crash to a single pod.
+    Kubernetes restarts the failed pod while the rest of the system is unaffected.
 
-    This approach comes with its costs. Every call inside the cluster is a point of failure with its own network semantics, intra-cluster networking must be considered, \texttt{.proto} contracts must be kept in sync across services, and the deployment topology is much more complex than a single monolith. Given that the project aims to build a chess platform comparable in operational shape to Chess.com or Lichess, we judged these costs acceptable and chose to build with scale in mind using the tools enterprises use to run systems of this kind.
+    This approach comes with its costs.
+    Every call inside the cluster is a point of failure with its own network semantics, intra-cluster networking must be considered, \texttt{.proto} contracts must be kept 1in sync across services, and the deployment topology is much more complex than a single monolith.
+    Given that the project aims to build a chess platform comparable in operational shape to Chess.com or Lichess, we judged these costs acceptable and chose to build with scale in mind using the tools enterprises use to run systems of this kind.
 
     \subsection{Overview}
 
@@ -353,13 +362,11 @@
     \subsubsection{Implementation}
 
     Given that the CNN model was large and would have to run as its own microservice while performing only slightly better than the linear regression model, we chose to implement the linear regression model. This can be seen in \texttt{/ChessLibrary/.../RealisticMoveTimeModel.kt}.
-
-
     \section{Front-end}
     \label{Front-end}
 
     Checkmate+'s front-end was made in React/Typescript with Vite as a build tool, a common combination. As we use Tailwind, a mobile-first CSS framework, our site works well both on desktop and mobile. Most components on the site are from the ShadCN component library to focus development efforts on the custom chessboard component and its fun animation feature. The visual appearance of the site was overhauled in-between the first and second playtests.
-    
+
     \begin{figure}[H]
     	\centering
     	\begin{minipage}{0.48\textwidth}
@@ -496,7 +503,15 @@
     \section{Conclusions}
     \label{Conclusions}
 
-	
+    Our main finding was the importance of clarity for the users in all aspects.
+    Users needed clarity on whose turn it was and also clarity on the registration process as well.
+
+
+
+    We found that players do not find the voice command feature very useful and prefer playing normally.
+    They typically do not remark on animation features.
+
+
 
     \vskip 0.2in
     \bibliography{report}
