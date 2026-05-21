@@ -36,35 +36,34 @@
 }
 \begin{document}
 
-\newgeometry{hmarginratio=1:1}    %% make layout symmetric
-\maketitle
-\restoregeometry              %% restore the layout
+    \newgeometry{hmarginratio=1:1}    %% make layout symmetric
+    \maketitle
+    \restoregeometry              %% restore the layout
 
-\begin{abstract}
-   TODO: This should provide a concise summary of the paper. Typically, it will be between 100 and 200 words in length.
-\end{abstract}
+    \begin{abstract}
+        TODO: This should provide a concise summary of the paper. Typically, it will be between 100 and 200 words in length.
+    \end{abstract}
 
 
     \section{Introduction}
     \label{Introduction}
-    
-    Chess is a centuries old board game that has adapted well to the internet age. \textit{Chess.com}, the largest online chess platform, has over ten million games played on it every day \citep{chessdotcom-about}. 
-    
+
+    Chess is a centuries old board game that has adapted well to the internet age. \textit{Chess.com}, the largest online chess platform, has over ten million games played on it every day \citep{chessdotcom-about}.
+
     The online nature of these platforms enable features that don't exist when playing chess with a physical board and pieces. \textit{Lichess.org} introduced voice recognition to make moves in 2023 \citep{lichess-voice}, and \textit{Chess.com} offers alternative animations when moving or capturing pieces. However, there is little published evidence on whether such features improve user enjoyment.
-    
-    The goal of our project is two-fold. Firstly, to create a website for playing chess that implements three features: 
+
+    The goal of our project is two-fold. Firstly, to create a website for playing chess that implements three features:
     \begin{itemize}[noitemsep]
     	\item Computer opponents that have human-like move times.
-    	\item Alternative move and capture animations
-    	\item Voice-command move input
+        \item Alternative move and capture animations
+        \item Voice-command move input
     \end{itemize}
     Secondly, to investigate whether these features affect user enjoyment through surveying and conversational user evaluation sessions.
-    
+
+
     \section{Collaboration methodology}
     \label{Collaboration methodology}
 
-    TODO: basically how we worked together as a group to complete this project. Issue tracking, sprints/agile stuff. KEEP IT BRIEF.
-    
     
 
 
@@ -218,9 +217,9 @@
 
     \section{The computer opponent}
     \label{The computer opponent}
-    
+
     Online chess platforms often offer the option to play against a computer opponent (also called a ``bot''). The moves that a bot makes is determined by a program called a ``chess engine''. For \textit{Checkmate+}, we created our own chess engine, covered in section \ref{Chess engine}.
-    
+
     Another aspect to the experience of playing against a bot is how long they take to make their moves. For \textit{Checkmate+}, we implement a feature that neither \textit{Chess.com} or \textit{Lichess.org} have: bots that have human-like move times. This feature will be covered in section \ref{Human-like move time model}.
 
     \subsection{Chess engine}
@@ -244,7 +243,6 @@
     The first stage, implemented in \texttt{generateAllMoves()}, produces pseudo-legal moves for all pieces belonging to the side to move (black/white). This generates candidate moves for each piece type - pawns, knights, bishops, rooks, queens and kings - based purely on their movement rules, without checking whether the resulting position leaves the moving side's king in check. Each piece type has its own generation function, making the rules for each piece clear and easy to maintain independently.
 
     The second stage, implemented in \texttt{generateLegalMoves()}, filters these pseudo-legal moves to produce only fully legal moves. Each candidate move is applied to a copy of the board, and any move that left the moving side's king in check is discarded using the \texttt{isInCheck()} function. This ensures that the search algorithm only considers legal positions. Special rules including castling, en passant, and pawn promotion are all handled explicitly within the individual piece generation functions.
-
 
     \subsubsection{Search Algorithm}
     The search algorithm is responsible for choosing the best move from a given position by looking ahead at possible future game states. We implemented a minimax algorithm with alpha-beta pruning, which is the standard approach for classical chess engines \citep{cpwiki-minimax}.
@@ -290,92 +288,109 @@
 
     \subsection{Human-like move time model}
     \label{Human-like move time model}
-    
+
     The time a computer opponent takes to reply to a user's moves affects the user experience. While it's usually best to minimise delays or loading times in software applications, a bot that replies near-instantly isn't ideal.
-    
+
     \begin{quotation}
-    	Paradoxically enough, moving as quickly as possible is not necessarily desirable. Users tend to get frustrated once they realize how little time their Mac really spends to crush them at low levels. In the interest of promoting harmonious Human - Machine relations, we enforce minimum response times \citep{apple-chess-engine}.
+        Paradoxically enough, moving as quickly as possible is not necessarily desirable. Users tend to get frustrated once they realize how little time their Mac really spends to crush them at low levels. In the interest of promoting harmonious Human - Machine relations, we enforce minimum response times \citep{apple-chess-engine}.
     \end{quotation}
-    
+
     When creating Mac OS X's Chess application, the developers at Apple added a minimum delay of two seconds before the computer play its moves to avoid frustrating users. A more nuanced approach could improve on this. Human players do not take a uniform two seconds per move: some moves are obvious and are played quickly, while others warrant a longer think. A move time model that reflects this would feel more natural to play against. It could also increase user enjoyment, as a bot taking noticeably longer to reply may give the user the feeling that they have posed a genuine challenge, even if the bot is not truly ``stumped''.
-    
+
     \subsubsection{Data}
-    
+
     To train such a model, we used game data from the Lichess.org open database
     \citep{lichess-db-univ}. We used the January 2019 dataset, which contains millions of games along with each player's clock times in centisecond precision.
-    
+
     The first 100,000 games in the dataset were filtered to only include those where a clock annotation exists for every move, and where at least four moves were played. Abandoned games and non-standard variants were excluded, as were casual (unrated) games on the basis that they're taken less seriously and may introduce noise. 55.72\% of games made it through this filtering.
-    
+
     Moves in each game were converted into rows in our dataset for training the model. Each row contains the following features:
-    
+
     \begin{itemize}[noitemsep]
     	\item \texttt{initial\_time}, the number of seconds on the clock when first starting the game. This feature is the same for all moves within the same game.
-    	\item \texttt{increment}, the number of seconds added to each player's clock after they make a move. Like \texttt{initial\_time}, this feature remains the same for all positions within the same game.
-    	\item \texttt{time\_remaining\_for\_this\_position}, the time in seconds remaining on the player's clock for them to make their move.
-    	\item \texttt{time\_opponent\_took}, the time in seconds the opponent spent on their previous move.
-    	\item \texttt{number\_of\_legal\_moves}, the number of legal moves available to the player in the current position.
-    	\item \texttt{in\_check}, whether the player's king is currently in check.
-    	\item \texttt{was\_capture}, whether the move just played by the opponent was a capture.
-    	\item \texttt{move\_number}, the full move number of the current position. This number increases as a game progresses.
-    	\item \texttt{time\_taken\_for\_this\_position}, the target feature. How many seconds the player took to make their move.
+        \item \texttt{increment}, the number of seconds added to each player's clock after they make a move. Like \texttt{initial\_time}, this feature remains the same for all positions within the same game.
+        \item \texttt{time\_remaining\_for\_this\_position}, the time in seconds remaining on the player's clock for them to make their move.
+        \item \texttt{time\_opponent\_took}, the time in seconds the opponent spent on their previous move.
+        \item \texttt{number\_of\_legal\_moves}, the number of legal moves available to the player in the current position.
+        \item \texttt{in\_check}, whether the player's king is currently in check.
+        \item \texttt{was\_capture}, whether the move just played by the opponent was a capture.
+        \item \texttt{move\_number}, the full move number of the current position. This number increases as a game progresses.
+        \item \texttt{time\_taken\_for\_this\_position}, the target feature. How many seconds the player took to make their move.
     \end{itemize}
-    
+
     Note that since players' clocks don't tick down for their first move on \textit{Lichess.org}, the first 2 moves of every game aren't converted into rows in our training dataset so that we don't have any null values.
-    
+
     In the end, our dataset for training move time models has 3,481,887 rows. This work can be seen in \texttt{/EngineMoveTimeModel/src/main/python/PGN to CSV.ipynb}.
-    
+
     For training the linear regression model, two engineered features were included to help model non-linearity in existing features:
-    
+
     \begin{itemize}
-    	\item \texttt{time\_pressure}, defined as $\frac{1}{1 + t}$ where $t$ is \texttt{time\_remaining\_for\_this\_position}, grows sharply as a player's clock runs low. The idea being that players play faster when low on time to avoid losing via timing-out.
-    	\item \texttt{opening\_unfamiliarity}, defined as $\frac{1}{1 + e^{6 - n}}$ where $n$ is \texttt{move\_number}. This is a sigmoid that increases from 0 to 1 approximately around the point at which players leave memorised chess territory. This turning point was found empirically through correlation with the target feature to be around move six.
+        \item \texttt{time\_pressure}, defined as $\frac{1}{1 + t}$ where $t$ is \texttt{time\_remaining\_for\_this\_position}, grows sharply as a player's clock runs low. The idea being that players play faster when low on time to avoid losing via timing-out.
+        \item \texttt{opening\_unfamiliarity}, defined as $\frac{1}{1 + e^{6 - n}}$ where $n$ is \texttt{move\_number}. This is a sigmoid that increases from 0 to 1 approximately around the point at which players leave memorised chess territory. This turning point was found empirically through correlation with the target feature to be around move six.
     \end{itemize}
-    
+
     For training a convolutional neural network model, a feature called \texttt{pieces} representing the state of the chess board was included. This feature was a 3-dimensional array of booleans of size (12, 8, 8) representing the presence of the 12 possible types of pieces (pawns, knights, bishops, rooks, queens, and kings in both colours) on the 8 by 8 chessboard.
-    
+
     \subsubsection{Modelling and results}
-    
+
     The dataset was split 80\%/10\%/10\% into training, validation, and test
     sets. As a baseline, a dummy regressor predicting the mean move time
     achieved an MSE (mean squared error) of 73.33 on the validation set.
-    
+
     A linear regression model trained on the original features achieved a
     validation MSE of 56.81. The training data was then cleaned of
     outliers using the IQR (interquartile range) method, and the two engineered features added, bringing the validation MSE to 62.69. Although this is numerically higher than the unfiltered model, the outlier removal produced a
-    healthier distribution of predicted move times. Before, there were a notable number of negative predicted move times, which was much improved after outlier removal. 
-    
+    healthier distribution of predicted move times. Before, there were a notable number of negative predicted move times, which was much improved after outlier removal.
+
     This final linear regression model achieved a test set MSE of 64.40, corresponding to an RMSE (root mean squared error) of approximately 8.0 seconds. The training of this linear regression model can be seen in \texttt{/EngineMoveTimeModel/src/main/python/Linear regression model for poster fair (contains was\_capture).ipynb}.
-    
+
     We also trained models with CNNs (convolutional neural networks) making use of the board state as an additional feature. The best performing one of these models was trained in \texttt{/EngineMoveTimeModel/src/main/python/Keras models using pieces attempt 3 even bigger model with AdamW weight decay.ipynb}. In this model the state of the board, a (12, 8, 8) boolean array, was given to a CNN with 3 hidden layers. The number of filters in the layers increase from 64 to 128 to 512. The first two layers use 3x3 kernels with ReLu (rectified linear unit) activation functions, a standard idea ever since the ``VGG'' CNNs \citep{simonyan2015deepconvolutionalnetworkslargescale}. Unlike VGG, we don't use any max-pooling layers because our ``image'' (the chessboard) is already low resolution (8x8 instead of 224x224). Still, we do get spatial pooling as we don't apply any padding before each filter. The final layer uses 4x4 kernels instead of 3x3 so that each filter gives a single output as opposed to a 2x2 output, reducing dimensionality before the dense layers. These 512 outputs from the CNN were concatenated with the other features and passed through 2 dense layers of 32 neurons each to produce the final output. This overall model had 1,147,617 parameters and took over 10 hours to complete 14 epochs of training (TODO ADD HARDWARE CONTEXT). The model achieved a best validation MSE of 51.77 (RMSE $\approx$ 7.2 seconds).
-    
-    It was surprising that the CNN model was only slightly better than a simple linear regression model (an improvement in RMSE of only 0.8 seconds). A much larger improvement was expected given that the CNN model could make use the state of the board. Instead, what we found is that the clock situation is the most important factor when it comes to how long a player takes to make their move. The features that correlate most with the target feature are \texttt{initial\_time}, \texttt{time\_opponent\_took}, \texttt{time\_remaining\_for\_this\_position}, and \texttt{increment}. 
-    
+
+    It was surprising that the CNN model was only slightly better than a simple linear regression model (an improvement in RMSE of only 0.8 seconds). A much larger improvement was expected given that the CNN model could make use the state of the board. Instead, what we found is that the clock situation is the most important factor when it comes to how long a player takes to make their move. The features that correlate most with the target feature are \texttt{initial\_time}, \texttt{time\_opponent\_took}, \texttt{time\_remaining\_for\_this\_position}, and \texttt{increment}.
+
     Disappointing was the high loss. Even the best model had a RMSE of 7.2 seconds. However, the task we're trying to model doesn't necessarily have a single correct answer. Given the exact same clock and board situation, even the same player may decide to take different amounts of time to move. This results in a high loss no matter the model.
-    
-    
+
     \subsubsection{Implementation}
-    
+
     Given that the CNN model was large and would have to run as its own microservice while performing only slightly better than the linear regression model, we chose to implement the linear regression model. This can be seen in \texttt{/ChessLibrary/.../RealisticMoveTimeModel.kt}.
-    
+
+
     \section{Front-end}
     \label{Front-end}
 
-    Checkmate+'s front-end was made in React/Typescript with Vite as a build tool, a common combination. As we use Tailwind, a mobile-first CSS framework, our site works well both on desktop and mobile. Most components on the site are from the ShadCN component library to focus development efforts on the custom chessboard component and its fun animation feature. The visual appearance of the site was overhauled in-between the first and second playtests. TODO PICTURE BELOW.
+    Checkmate+'s front-end was made in React/Typescript with Vite as a build tool, a common combination. As we use Tailwind, a mobile-first CSS framework, our site works well both on desktop and mobile. Most components on the site are from the ShadCN component library to focus development efforts on the custom chessboard component and its fun animation feature. The visual appearance of the site was overhauled in-between the first and second playtests.
     
+    \begin{figure}[H]
+    	\centering
+    	\begin{minipage}{0.48\textwidth}
+    		\centering
+    		\includegraphics[width=\textwidth]{diagrams/poster fair frontend}
+    		\caption{Appearance of main page during the poster fair playtest.}
+    		\label{fig:poster-fair-frontend}
+    	\end{minipage}
+    	\hfill
+    	\begin{minipage}{0.48\textwidth}
+    		\centering
+    		\includegraphics[width=\textwidth]{diagrams/Chess club frontend}
+    		\caption{Appearance of main page during the chess club playtest.}
+    		\label{fig:chess-club-frontend}
+    	\end{minipage}
+    \end{figure}
+
     \subsection{Fun animations}
-    
-    We made the chessboard component ourselves (\texttt{/frontend/src/components/ui/ChessBoard.tsx}). The pieces are animated with the help of the Framer Motion animation library. The two animation options we have are ``normal'' and ``fun''. 
-    
+
+    We made the chessboard component ourselves (\texttt{/frontend/src/components/ui/ChessBoard.tsx}). The pieces are animated with the help of the Framer Motion animation library. The two animation options we have are ``normal'' and ``fun''.
+
     The normal animation option is based on the animations seen on most chess platforms. Piece movement is a linear transition, and a captured piece has an opacity fade out.
-    
+
     The fun animation option adds a rotational wiggle to piece movement, and makes capturing fling the captured piece off the board. Neither \textit{Lichess.org} or \textit{Chess.com} offer such an animation option. At most, \textit{Chess.com} offers an option called ``Arcade'' that adds a blue trail to movement and a red flash to capturing; the pieces themselves don't move any differently.
-    
+
     \subsection{User authentication flow}
-    
+
     We decided to only allow authentication via TOTPs (time-based one-time passwords).
     This avoids having to store users' password hashes, reducing our liability with regard to users' personal information.
     When creating an account, a user is guided through our registration flow: first they pick a username, then they add the TOTP secret we provide to their authenticator app of choice (e.g.\ Google Authenticator, Microsoft Authenticator), and finally they confirm the setup by entering a generated code.
-    
+
 
     \section{Voice commands feature}
     \label{Voice commands feature}
@@ -394,15 +409,41 @@
     examples. Too much general discussion and the reader cannot easily get a handle on what
     you are doing; too many specific examples and the document fails to "tell a story".
 
-	\section{Feedback}
-	\label{Feedback}
-	
-	We had 2 playtest sessions. The first was during the poster fair on 13th March 2026. The second was during a chess club meeting on 13th May 2026.
-	
-	The poster fair session limited users to playing against the bot. The move-time model of the bot was randomised to either be our ``realistic'' model or a ``median'' model that always made a move after 2.24 seconds. Also randomised was the animation type (``normal'' or ``fun'').
-	
-	\section{Future development}
-	\label{Future development}
+
+    \section{User enjoyment and feedback}
+    \label{Feedback}
+
+    We had 2 playtest sessions. The first was during the poster fair on 13th March 2026. The second was during a chess club meeting on 13th May 2026.
+
+    \subsection{Poster fair playtest}
+
+    The poster fair session limited users to playing against the bot. The move-time model of the bot was randomised to either be our ``realistic'' model or a ``median'' model that always made a move after 2.24 seconds. Also randomised was the animation type (``normal'' or ``fun''). Feedback from this session is in \texttt{/User feedback/Poster fair survey.ods}.
+
+    Users at the poster fair liked the realistic move-time model. They remarked that they didn't feel rushed and that they can think on the bot's time.
+
+    Unfortunately, we didn't get much explicit feedback on the animations. The self-reported enjoyment ratings out of 5 don't clearly show a preference either. Averaging the 3 ratings for the fun animations and the 6 ratings for the normal animations gives us 4 out of 5 enjoyment for fun animations compared to 4.17 out of 5 for normal animations. This is insignificant given the small sample size.
+
+    Also unfortunate was that our voice command feature was not ready by the poster fair, so we couldn't yet get feedback on it.
+
+    The main feedback we received from the poster fair was that it needed to be clearer whose turn it was. We since worked on this by highlighting the squares involved in the most recent move and by making the chess clocks larger and green-coloured when ticking down.
+
+    \subsection{Chess club playtest}
+
+    The chess club playtest allowed users to use the site as they pleased. Some users played against the bot and others played against each other. Of note is that all users during this playtest were familiar with chess and online chess platforms. This feedback can be seen in \texttt{/User feedback/Chess club playtest feedback.md}.
+
+    Many players during this playtest wanted to know the bot's rating. Implementing this without just guessing the bot's rating is feasible and is a point for future development. A possible way could be temporarily sneaking the bot into the ranked human player pool, allowing the bot to lose and win rating from users and establish an accurate rating for itself.
+
+    Two players who had just played a game using a real board wanted to use our platform to analyse their game. We didn't have a ``free-form analysis'' page like other chess platforms have. What the players did instead was match against each other, replay the moves from the game they wanted to analyse, and then head to the match review. Adding a free-form analysis page is another point for future development.
+
+    Regarding the move-time feature, one user remarked that the bot took too much time during a ``bullet'' game where each side only has 1 minute on their clocks. As a result, the user easily won on time. This shows our move-time model has room for improvement, particularly in fast games.
+
+    The voice command feature was found to be awkward by the users. Users quickly abandoned using it in favour moving pieces normally, as for them it was easier and faster.
+
+    Not all users found our account creation flow intuitive. One user needed no guidance at all, while another needed to be told to paste the TOTP secret into their authenticator app. Making this process clearer is another point for future development.
+
+
+    \section{Future development}
+    \label{Future development}
 
     We have considered many features that could be added to Checkmate+ to improve the user experience.
 
@@ -450,9 +491,12 @@
     \begin{itemize}[noitemsep]
         \item OAuth support (e.g.\ Google, Microsoft, Facebook).
     \end{itemize}
+
+
     \section{Conclusions}
     \label{Conclusions}
-    
+
+	
 
     \vskip 0.2in
     \bibliography{report}
