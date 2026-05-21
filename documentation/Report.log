@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2025.12.4)  20 MAY 2026 15:52
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.5.19)  21 MAY 2026 11:51
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -443,42 +443,50 @@ Package: enumitem 2019/06/20 v3.9 Customized lists
 \enit@count@id=\count299
 \enitdp@description=\count300
 )
+(/usr/share/texlive/texmf-dist/tex/latex/float/float.sty
+Package: float 2001/11/08 v1.3d Float enhancements (AL)
+\c@float@type=\count301
+\float@exts=\toks35
+\float@box=\box64
+\@float@everytoks=\toks36
+\@floatcapt=\box65
+)
 (/usr/share/texlive/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
 File: l3backend-pdftex.def 2024-01-04 L3 backend support: PDF output (pdfTeX)
-\l__color_backend_stack_int=\count301
-\l__pdf_internal_box=\box64
+\l__color_backend_stack_int=\count302
+\l__pdf_internal_box=\box66
 )
 (./Report.aux)
 \openout1 = `Report.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 35.
-LaTeX Font Info:    ... okay on input line 35.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 35.
-LaTeX Font Info:    ... okay on input line 35.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 35.
-LaTeX Font Info:    ... okay on input line 35.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 35.
-LaTeX Font Info:    ... okay on input line 35.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 35.
-LaTeX Font Info:    ... okay on input line 35.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 35.
-LaTeX Font Info:    ... okay on input line 35.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 35.
-LaTeX Font Info:    ... okay on input line 35.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 37.
+LaTeX Font Info:    ... okay on input line 37.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 37.
+LaTeX Font Info:    ... okay on input line 37.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 37.
+LaTeX Font Info:    ... okay on input line 37.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 37.
+LaTeX Font Info:    ... okay on input line 37.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 37.
+LaTeX Font Info:    ... okay on input line 37.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 37.
+LaTeX Font Info:    ... okay on input line 37.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 37.
+LaTeX Font Info:    ... okay on input line 37.
 
 (/usr/share/texlive/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count302
+\scratchcounter=\count303
 \scratchdimen=\dimen265
-\scratchbox=\box65
-\nofMPsegments=\count303
-\nofMParguments=\count304
-\everyMPshowfont=\toks35
-\MPscratchCnt=\count305
+\scratchbox=\box67
+\nofMPsegments=\count304
+\nofMParguments=\count305
+\everyMPshowfont=\toks37
+\MPscratchCnt=\count306
 \MPscratchDim=\dimen266
-\MPnumerator=\count306
-\makeMPintoPDFobject=\count307
-\everyMPtoPDFconversion=\toks36
+\MPnumerator=\count307
+\makeMPintoPDFobject=\count308
+\everyMPtoPDFconversion=\toks38
 ) (/usr/share/texlive/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
 Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
 Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 4
@@ -491,19 +499,25 @@ e
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
 *geometry* verbose mode - [ preamble ] result:
-* pass: disregarded the geometry package!
+* driver: pdftex
+* paper: a4paper
+* layout: <same size as paper>
+* layoutoffset:(h,v)=(0.0pt,0.0pt)
+* modes: 
+* h-part:(L,W,R)=(71.13188pt, 455.24411pt, 71.13188pt)
+* v-part:(T,H,B)=(71.13188pt, 702.78308pt, 71.13188pt)
 * \paperwidth=597.50787pt
 * \paperheight=845.04684pt
-* \textwidth=390.0pt
-* \textheight=592.0pt
-* \oddsidemargin=10.0pt
-* \evensidemargin=52.0pt
-* \topmargin=20.0pt
+* \textwidth=455.24411pt
+* \textheight=702.78308pt
+* \oddsidemargin=-1.1381pt
+* \evensidemargin=-1.1381pt
+* \topmargin=-38.1381pt
 * \headheight=12.0pt
 * \headsep=25.0pt
 * \topskip=12.0pt
 * \footskip=30.0pt
-* \marginparwidth=85.0pt
+* \marginparwidth=35.0pt
 * \marginparsep=10.0pt
 * \columnsep=10.0pt
 * \skip\footins=10.8pt plus 4.0pt minus 2.0pt
@@ -511,10 +525,16 @@ e
 * \voffset=0.0pt
 * \mag=1000
 * \@twocolumnfalse
-* \@twosidetrue
-* \@mparswitchtrue
+* \@twosidefalse
+* \@mparswitchfalse
 * \@reversemarginfalse
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
+
+
+Package todonotes Warning: The length marginparwidth is less than 2cm and will 
+most likely cause issues with the appearance of inserted todonotes. The issue c
+an be solved by adding a line like \setlength {\marginparwidth }{2cm} prior to 
+loading the todonotes package. on input line 37.
 
 *geometry* verbose mode - [ newgeometry ] result:
 * driver: pdftex
@@ -522,7 +542,7 @@ e
 * layout: <same size as paper>
 * layoutoffset:(h,v)=(0.0pt,0.0pt)
 * hratio: 1:1
-* modes: twoside 
+* modes: 
 * h-part:(L,W,R)=(89.62709pt, 418.25368pt, 89.6271pt)
 * v-part:(T,H,B)=(101.40665pt, 591.5302pt, 152.11pt)
 * \paperwidth=597.50787pt
@@ -530,13 +550,13 @@ e
 * \textwidth=418.25368pt
 * \textheight=591.5302pt
 * \oddsidemargin=17.3571pt
-* \evensidemargin=17.35712pt
+* \evensidemargin=17.3571pt
 * \topmargin=-7.86334pt
 * \headheight=12.0pt
 * \headsep=25.0pt
 * \topskip=12.0pt
 * \footskip=30.0pt
-* \marginparwidth=85.0pt
+* \marginparwidth=35.0pt
 * \marginparsep=10.0pt
 * \columnsep=10.0pt
 * \skip\footins=10.8pt plus 4.0pt minus 2.0pt
@@ -544,19 +564,19 @@ e
 * \voffset=0.0pt
 * \mag=1000
 * \@twocolumnfalse
-* \@twosidetrue
-* \@mparswitchtrue
+* \@twosidefalse
+* \@mparswitchfalse
 * \@reversemarginfalse
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
 
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <14.4> on input line 38.
+(Font)              <14.4> on input line 40.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <7> on input line 38.
+(Font)              <7> on input line 40.
 <Kent_Comp_294_RGB.pdf, id=4, 483.8075pt x 126.4725pt>
 File: Kent_Comp_294_RGB.pdf Graphic file (type pdf)
 <use Kent_Comp_294_RGB.pdf>
-Package pdftex.def Info: Kent_Comp_294_RGB.pdf  used on input line 38.
+Package pdftex.def Info: Kent_Comp_294_RGB.pdf  used on input line 40.
 (pdftex.def)             Requested size: 290.28674pt x 75.88408pt.
 [1
 
@@ -564,103 +584,158 @@ Package pdftex.def Info: Kent_Comp_294_RGB.pdf  used on input line 38.
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map} <./Kent_Comp_294_RGB.pdf>] 
 [2] [1
 
-] [2{/usr/share/texmf/fonts/enc/dvips/cm-super/cm-super-ts1.enc}]
-[3] [4]
+] [1]
+<diagrams/00-overview.pdf, id=36, 602.25pt x 463.7325pt>
+File: diagrams/00-overview.pdf Graphic file (type pdf)
+<use diagrams/00-overview.pdf>
+Package pdftex.def Info: diagrams/00-overview.pdf  used on input line 85.
+(pdftex.def)             Requested size: 409.71692pt x 315.49666pt.
+ [2 <./diagrams/00-overview.pdf>]
+<diagrams/02-frontend-transports.pdf, id=48, 602.25pt x 171.76169pt>
+File: diagrams/02-frontend-transports.pdf Graphic file (type pdf)
+<use diagrams/02-frontend-transports.pdf>
+Package pdftex.def Info: diagrams/02-frontend-transports.pdf  used on input lin
+e 109.
+(pdftex.def)             Requested size: 409.71692pt x 116.85667pt.
+ [3 <./diagrams/02-frontend-transports.pdf>]
+<diagrams/01-service-topology.pdf, id=60, 602.25pt x 248.8497pt>
+File: diagrams/01-service-topology.pdf Graphic file (type pdf)
+<use diagrams/01-service-topology.pdf>
+Package pdftex.def Info: diagrams/01-service-topology.pdf  used on input line 1
+20.
+(pdftex.def)             Requested size: 455.24411pt x 188.11389pt.
+ [4 <./diagrams/01-service-topology.pdf>]
+<diagrams/04-auth-hmac.pdf, id=73, 602.25pt x 257.04028pt>
+File: diagrams/04-auth-hmac.pdf Graphic file (type pdf)
+<use diagrams/04-auth-hmac.pdf>
+Package pdftex.def Info: diagrams/04-auth-hmac.pdf  used on input line 141.
+(pdftex.def)             Requested size: 364.19667pt x 155.44513pt.
+<diagrams/03-match-lifecycle.pdf, id=74, 602.25pt x 284.02109pt>
+File: diagrams/03-match-lifecycle.pdf Graphic file (type pdf)
+<use diagrams/03-match-lifecycle.pdf>
+Package pdftex.def Info: diagrams/03-match-lifecycle.pdf  used on input line 16
+1.
+(pdftex.def)             Requested size: 455.24411pt x 214.70113pt.
+ [5 <./diagrams/04-auth-hmac.pdf>] [6 <./diagrams/03-match-lifecycle.pdf>]
+<diagrams/05a-ingress.pdf, id=99, 602.25pt x 400.37581pt>
+File: diagrams/05a-ingress.pdf Graphic file (type pdf)
+<use diagrams/05a-ingress.pdf>
+Package pdftex.def Info: diagrams/05a-ingress.pdf  used on input line 188.
+(pdftex.def)             Requested size: 455.24411pt x 302.6576pt.
+
+Overfull \hbox (1.54187pt too wide) in paragraph at lines 193--197
+\OT1/cmr/m/n/12 names such as \OT1/cmtt/m/n/12 checkmateplus.org \OT1/cmr/m/n/1
+2 for the fron-tend, \OT1/cmtt/m/n/12 playerservice.checkmateplus.org
+ []
+
+[7 <./diagrams/05a-ingress.pdf>]
+<diagrams/05b-data.pdf, id=111, 602.25pt x 305.22029pt>
+File: diagrams/05b-data.pdf Graphic file (type pdf)
+<use diagrams/05b-data.pdf>
+Package pdftex.def Info: diagrams/05b-data.pdf  used on input line 204.
+(pdftex.def)             Requested size: 455.24411pt x 230.72633pt.
+
+Overfull \hbox (1.54857pt too wide) in paragraph at lines 213--215
+[]\OT1/cmr/bx/n/12 Container im-ages. \OT1/cmr/m/n/12 Pro-duc-tion im-ages are 
+built us-ing Spring Boot's \OT1/cmtt/m/n/12 bootBuildImage
+ []
+
+[8 <./diagrams/05b-data.pdf>] [9] [10]
+
+pdfTeX warning: pdflatex (file ./diagrams/06-evaluation.pdf): PDF inclusion: fo
+und PDF version <1.7>, but at most version <1.5> allowed
+<diagrams/06-evaluation.pdf, id=130, 731.8542pt x 485.89528pt>
+File: diagrams/06-evaluation.pdf Graphic file (type pdf)
+<use diagrams/06-evaluation.pdf>
+Package pdftex.def Info: diagrams/06-evaluation.pdf  used on input line 267.
+(pdftex.def)             Requested size: 455.24411pt x 302.24545pt.
+[11]
+Overfull \hbox (27.34212pt too wide) in paragraph at lines 280--281
+[]\OT1/cmr/m/n/12 Coordinate con-ver-sion func-tions such as \OT1/cmtt/m/n/12 t
+oFileRank()\OT1/cmr/m/n/12 , \OT1/cmtt/m/n/12 toSquare()\OT1/cmr/m/n/12 , and \
+OT1/cmtt/m/n/12 toAlgebraic()
+ []
+
+[12 <./diagrams/06-evaluation.pdf>] [13]
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <12> on input line 140.
+(Font)              <12> on input line 330.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <8> on input line 140.
+(Font)              <8> on input line 330.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <6> on input line 140.
-
-Overfull \hbox (39.23576pt too wide) in paragraph at lines 140--141
-[]\OT1/cmtt/m/n/12 time[]pressure\OT1/cmr/m/n/12 , de-fined as $[]$ where $\OML
-/cmm/m/it/12 t$ \OT1/cmr/m/n/12 is \OT1/cmtt/m/n/12 time[]remaining[]for[]this[
-]position\OT1/cmr/m/n/12 ,
+(Font)              <6> on input line 330.
+ [14]
+Overfull \hbox (1.75876pt too wide) in paragraph at lines 349--350
+\OT1/cmr/m/n/12 in \OT1/cmtt/m/n/12 /EngineMoveTimeModel/src/main/python/Keras 
+models using pieces attempt 3
  []
 
-[5]
-Overfull \hbox (0.62135pt too wide) in paragraph at lines 144--145
-[]\OT1/cmr/m/n/12 For train-ing a con-vo-lu-tional neu-ral net-work model, a fe
-a-ture called \OT1/cmtt/m/n/12 pieces
+[15]
+Overfull \hbox (34.0074pt too wide) in paragraph at lines 358--359
+\OT1/cmr/m/n/12 lin-ear re-gres-sion model. This can be seen in \OT1/cmtt/m/n/1
+2 /ChessLibrary/.../RealisticMoveTimeModel.kt\OT1/cmr/m/n/12 . 
  []
 
-
-Overfull \hbox (5.2002pt too wide) in paragraph at lines 157--158
-\OT1/cmtt/m/n/12 /EngineMoveTimeModel/src/main/python/Linear regression model f
-or
- []
-
-
-Overfull \hbox (9.23895pt too wide) in paragraph at lines 159--160
-\OT1/cmr/m/n/12 these mod-els was trained in \OT1/cmtt/m/n/12 /EngineMoveTimeMo
-del/src/main/python/Keras
- []
-
-
-Overfull \hbox (11.3752pt too wide) in paragraph at lines 159--160
-\OT1/cmtt/m/n/12 models using pieces attempt 3 even bigger model with AdamW wei
-ght
- []
-
-[6] [7] (./Report.bbl
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [8]
-Underfull \hbox (badness 1107) in paragraph at lines 8--12
+[16] (./Report.bbl
+Underfull \hbox (badness 1320) in paragraph at lines 8--12
 []\OT1/cmr/m/n/12 Apple Com-puter, Inc. (2002). MB-CEngine.mm --- Chess source 
-code
+code (v110.3.4),
  []
 
 
 Underfull \hbox (badness 10000) in paragraph at lines 8--12
-\OT1/cmr/m/n/12 (v110.3.4), $\OT1/cmtt/m/n/12 https : / / web . archive . org /
- web / 20170929075055 / https :
+\OT1/cmtt/m/n/12 https : / / web . archive . org / web / 20170929075055 / https
+ : / / opensource . apple .
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 8--12
-\OT1/cmtt/m/n/12 / / opensource . apple . com / source / chess / chess-[]110 . 
-3 . 4 / sources /
+Underfull \hbox (badness 2057) in paragraph at lines 8--12
+\OT1/cmtt/m/n/12 com / source / chess / chess-[]110 . 3 . 4 / sources / mbcengi
+ne . mm$\OT1/cmr/m/n/12 . Source file orig-i-nally
  []
 
 
-Underfull \hbox (badness 1072) in paragraph at lines 18--23
-[]\OT1/cmr/m/n/12 Lichess.org (2021). Lichess database, $\OT1/cmtt/m/n/12 https
- : / / database . lichess . org /
+Underfull \hbox (badness 1735) in paragraph at lines 23--25
+[]\OT1/cmr/m/n/12 Chessprogramming Wiki (2024b). Min-i-max, $\OT1/cmtt/m/n/12 h
+ttps : / / www . chessprogramming . org /
  []
 
-) [9] (./Report.aux)
+
+Underfull \hbox (badness 1817) in paragraph at lines 27--32
+\OT1/cmr/m/n/12 files with cen-tisec-ond clock an-no-ta-tions. Jan-uary 2019 da
+taset used: $\OT1/cmtt/m/n/12 https :
+ []
+
+[17]) [18] (./Report.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
  ***********
  ) 
 Here is how much of TeX's memory you used:
- 14718 strings out of 474222
- 294920 string characters out of 5748733
- 1934975 words of memory out of 5000000
- 36722 multiletter control sequences out of 15000+600000
- 564874 words of font info for 59 fonts, out of 8000000 for 9000
- 1141 hyphenation exceptions out of 8191
+ 14888 strings out of 476182
+ 299257 string characters out of 5795595
+ 1932975 words of memory out of 5000000
+ 36637 multiletter control sequences out of 15000+600000
+ 564259 words of font info for 57 fonts, out of 8000000 for 9000
+ 14 hyphenation exceptions out of 8191
  99i,11n,101p,1496b,379s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></us
-r/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/shar
-e/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/share/texl
-ive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/share/texlive/tex
-mf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/share/texlive/texmf-dist
-/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/share/texlive/texmf-dist/fonts/
-type1/public/amsfonts/cm/cmr17.pfb></usr/share/texlive/texmf-dist/fonts/type1/p
-ublic/amsfonts/cm/cmr6.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/am
-sfonts/cm/cmr8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/c
-m/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy
-6.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti12.pfb>
-</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt12.pfb></usr/
-share/texmf/fonts/type1/public/cm-super/sfrm1200.pfb>
-Output written on Report.pdf (11 pages, 172763 bytes).
+ </home/lukew/.texlive2023/texmf-var/fonts/pk/ljfour/jknappen/ec/tcrm1200.600
+pk></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></u
+sr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/sha
+re/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/share/texl
+ive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/share/texlive/tex
+mf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/share/texlive/texmf-dist
+/fonts/type1/public/amsfonts/cm/cmr17.pfb></usr/share/texlive/texmf-dist/fonts/
+type1/public/amsfonts/cm/cmr6.pfb></usr/share/texlive/texmf-dist/fonts/type1/pu
+blic/amsfonts/cm/cmr8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/ams
+fonts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/
+cm/cmsy6.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti
+12.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt12.pfb
+>
+Output written on Report.pdf (21 pages, 674443 bytes).
 PDF statistics:
- 126 PDF objects out of 1000 (max. 8388607)
- 79 compressed objects within 1 object stream
+ 235 PDF objects out of 1000 (max. 8388607)
+ 152 compressed objects within 2 object streams
  0 named destinations out of 1000 (max. 500000)
- 18 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 58 words of extra memory for PDF output out of 10000 (max. 10000000)
 

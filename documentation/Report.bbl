@@ -1,4 +1,4 @@
-\begin{thebibliography}{5}
+\begin{thebibliography}{8}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \providecommand{\urlprefix}{URL }
@@ -13,6 +13,15 @@
 \bibitem[{{Chess.com}(2025)}]{chessdotcom-about}
 {Chess.com} (2025). About chess.com, {\url{https://www.chess.com/about}}.
   Accessed: 2026-05-16.
+
+\bibitem[{{Chessprogramming Wiki}(2024{\natexlab{a}})}]{cpwiki-getting-started}
+{Chessprogramming Wiki} (2024{\natexlab{a}}). Getting started,
+  {\url{https://www.chessprogramming.org/getting_started}}. Accessed:
+  2026-11-21.
+
+\bibitem[{{Chessprogramming Wiki}(2024{\natexlab{b}})}]{cpwiki-minimax}
+{Chessprogramming Wiki} (2024{\natexlab{b}}). Minimax,
+  {\url{https://www.chessprogramming.org/minimax}}. Accessed: 2026-11-22.
 
 \bibitem[{{Lichess.org}(2021)}]{lichess-db-univ}
 {Lichess.org} (2021). Lichess database,
@@ -30,5 +39,9 @@
   Zisserman(2015)}]{simonyan2015deepconvolutionalnetworkslargescale}
 Simonyan, K. and Zisserman, A. (2015). Very deep convolutional networks for
   large-scale image recognition. \eprint{1409.1556}.
+
+\bibitem[{Vrzina(2023)}]{vrzina-chess-engine}
+Vrzina, M. (2023). Piece by piece: Building a strong chess engine. BSc Thesis,
+  Vrije Universiteit Amsterdam. Accessed: 2026-12-11.
 
 \end{thebibliography}

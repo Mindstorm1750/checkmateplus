@@ -226,19 +226,67 @@
     \subsection{Chess engine}
     \label{Chess engine}
 
-    TODO: For Luke
-    This is where you go into detail about what you have done. You will need to decide the titles
-    for these sections yourself; they will depend on the content of the project. These sections
-    should summarise the technical and scientific achievements of the project.
-    Depending on the nature of your project, these sections may include: a comparison of
-    different approaches that you considered, accounts of experimental work, mathematical
-    analyses, specifications, top-level architectural diagrams, results obtained, problems
-    encountered, workarounds, user evaluations, performance measures, testing regimes and
-    results, comparisons between different approaches adopted, comparisons with existing work
-    on similar problems.
-    In particular, you should give a mixture of general discussion of your work and particular
-    examples. Too much general discussion and the reader cannot easily get a handle on what
-    you are doing; too many specific examples and the document fails to "tell a story".
+    \subsubsection{Background Research}
+    Before implementing the engine, we carried out background research into common chess engine designs. Most engines are built around four main components: \citep{cpwiki-getting-started}
+
+    \begin{itemize}
+        \item A board representation to store the current position.
+        \item A move generator to produce possible moves.
+        \item An evaluation function to score positions.
+        \item A search algorithm to choose the best move.
+    \end{itemize}
+
+    We also looked at the difference between pseudo-legal and fully legal move generation, as well as the use of move ordering to improve search efficiency. This research helped us to decide on a square-based board representation and a traditional minimax search with alpha-beta pruning, which were both suitable for a project of this scale.
+
+    \subsubsection{Move Generation}
+    Move generation is the process of producing all possible moves from a given board position, and forms the foundation of the search algorithm \citep{vrzina-chess-engine}. We implemented two stages of move generation.
+
+    The first stage, implemented in \texttt{generateAllMoves()}, produces pseudo-legal moves for all pieces belonging to the side to move (black/white). This generates candidate moves for each piece type - pawns, knights, bishops, rooks, queens and kings - based purely on their movement rules, without checking whether the resulting position leaves the moving side's king in check. Each piece type has its own generation function, making the rules for each piece clear and easy to maintain independently.
+
+    The second stage, implemented in \texttt{generateLegalMoves()}, filters these pseudo-legal moves to produce only fully legal moves. Each candidate move is applied to a copy of the board, and any move that left the moving side's king in check is discarded using the \texttt{isInCheck()} function. This ensures that the search algorithm only considers legal positions. Special rules including castling, en passant, and pawn promotion are all handled explicitly within the individual piece generation functions.
+
+
+    \subsubsection{Search Algorithm}
+    The search algorithm is responsible for choosing the best move from a given position by looking ahead at possible future game states. We implemented a minimax algorithm with alpha-beta pruning, which is the standard approach for classical chess engines \citep{cpwiki-minimax}.
+
+    Minimax works by modelling the game as a tree of positions. White aims to maximise the evaluation score while black aims to minimise it. At each node, the algorithm applies a move to produce a new board state and recursively evaluates the resulting position. When the search reaches its maximum depth, the position is scored using the evaluation function. The best move is then the one that leads to the highest score for white, or the lowest score for black.
+
+    To improve efficiency, we implemented alpha-beta pruning. This technique maintains two values - alpha, the best score white can guarantee, and beta, the best score black can guarantee. If a move is found that is worse than the current best for the side to move, that branch is cut off and not explored further. This significantly reduces the number of positions the engine needs to evaluate without affecting the result.
+
+    We also implemented iterative deepening, where the engine performs searches at increasing depths before reaching the target depth. Counter-intuitively, this improves overall performance because earlier searches populate the transposition table - a cache of previously evaluated positions - which helps prune the deeper search more effectively. Move ordering is applied at each node using the transposition table's best move and captures of valuable pieces, further improving the efficiency of alpha-beta pruning.
+
+    \subsubsection{Evaluation Function}
+    The evaluation function scores a board position from White's perspective, returning a positive value if White is better and a negative if Black is better. This score is used by the search algorithm at the leaves of the search tree to determine which positions are favourable.
+
+    The foundation of the evaluation is material balance. Each piece type is assigned a fixed centipawn value: pawns are worth 100, knights 315, bishops 330, rooks 500, queens 900 and kings 20000. The total material score is computed by summing White's piece values and subtracting Black's. This alone produces a functional engine that avoids losing material unnecessarily.
+
+    Beyond material, the evaluation includes several positional heuristics to encourage stronger play. Piece-square tables are applied to pawns and knights, assigning a bonus or penalty based on the square a piece occupies. Pawns are rewarded for advancing toward promotion and for occupying central squares, while knights are penalised for sitting on the edges of the board where their mobility is reduced. Rooks receive a bonus for being placed on open or semi-open files, where no pawns obstruct their activity, as well as an additional bonus for reaching the seventh rank, where they can threaten the opponent's back rank. Passed pawns - those with no opposing pawns blocking or guarding their path to promotion - are given a bonus that scales with how far they have advanced.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=\textwidth]{diagrams/06-evaluation}
+        \caption{Example evaluation of a board position, showing material balance
+        and positional bonuses contributing to the final score.}
+        \label{fig:evaluation-function}
+    \end{figure}
+
+    Together, these heuristics produce an engine that plays more purposefully than one relying on material counting alone, guiding the search towards positions with better piece activity and long-term structure.
+
+    \subsubsection{Tuning and Testing}
+    Testing was carried out using a comprehensive suite of unit tests written in Kotlin using the standard \texttt{kotlin.test} framework. These tests cover all major components of the engine, from low level board utilities to high-level search behaviour, ensuring correctness at every layer.
+
+    Board correctness was verified through several categories of tests.
+    \begin{itemize}
+        \item Coordinate conversion functions such as \texttt{toFileRank()}, \texttt{toSquare()}, and \texttt{toAlgebraic()} were tested against known square indices.
+        \item Move application was validated for standard moves, captures, castling in all four directions, en passant and promotion to all four piece types.
+        \item The half-move clock and full-move counter were also tested to confirm they increment and reset correctly under pawn moves, captures, and piece moves.
+    \end{itemize}
+
+    Legal move generation was validated using Perft, a well-established engine testing technique that recursively counts the total number of positions reachable from a given position at a fixed depth and compares this against a known correct value. We used the ``kiwipete`` position, a standard benchmark position specifically designed to exercise edge cases in move generation such as en passant, castling, and promotion. In practice, this provided a reliable way to confirm that the move generator behaved correctly at depth 5.
+
+    The evaluation function was tested by constructing positions with known material imbalances and asserting the correct sign of the score. Cases tested include an extra pawn, a rook-for-minor-piece exchange, a queen versus rook and minor piece and a minor piece versus two pawns.
+
+    Search quality was verified by testing the engine on a range of tactical and strategic puzzles at various depths. These included back-rank mates in two, material wins in one and two moves, a mate-in-three sequence, stalemate avoidance, passed pawn advancement, rook placement on open files and kingside and queenside castling to complete development. The engine was also tested for correct underpromotion, choosing a knight over a queen in a position where promoting to a queen would result in a stalemate.
 
     \subsection{Human-like move time model}
     \label{Human-like move time model}
