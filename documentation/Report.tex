@@ -372,7 +372,9 @@
     
     \subsection{User authentication flow}
     
-    We decided to only allow authentication via TOTPs (time-based one-time passwords). This avoids having to store users' password hashes.
+    We decided to only allow authentication via TOTPs (time-based one-time passwords).
+    This avoids having to store users' password hashes, reducing our liability with regard to users' personal information.
+    When creating an account, a user is guided through our registration flow: first they pick a username, then they add the TOTP secret we provide to their authenticator app of choice (e.g.\ Google Authenticator, Microsoft Authenticator), and finally they confirm the setup by entering a generated code.
     
 
     \section{Voice commands feature}
@@ -402,6 +404,52 @@
 	\section{Future development}
 	\label{Future development}
 
+    We have considered many features that could be added to Checkmate+ to improve the user experience.
+
+    \paragraph{Match modes and gameplay.}
+    \begin{itemize}[noitemsep]
+        \item Tournament play.
+        \item Private matches.
+        \item Friends and rivals.
+        \item In-match text chat.
+        \item Pre-moves.
+        \item Drag-and-drop piece movement.
+        \item Extra game modes (e.g.\ bughouse, crazyhouse).
+        \item Democracy games, where players vote in blocs on moves.
+        \item Bot players hidden in the competitive queue to generate ratings.
+    \end{itemize}
+
+    \paragraph{Visual customisation.}
+    \begin{itemize}[noitemsep]
+        \item Additional animation options (e.g.\ explosion, sword).
+        \item User-drawn chess pieces.
+        \item Additional board themes.
+        \item A 3D chess board effect.
+        \item Mobile app/PWA (Progressive Web App)
+    \end{itemize}
+
+    \paragraph{Analysis and statistics.}
+    \begin{itemize}[noitemsep]
+        \item Free-form analysis.
+        \item Book moves shown alongside analysis.
+        \item \texttt{.pgn} export so players can download their matches.
+        \item Scoresheet-photograph-to-match conversion for analysis.
+        \item Time-series data on player profiles (e.g.\ rating over time).
+        \item Sitewide statistics (player count, total matches played, etc.).
+        \item Daily puzzles.
+    \end{itemize}
+
+    \paragraph{Bots.}
+    \begin{itemize}[noitemsep]
+        \item Neural-network-based bots.
+        \item Bots using novel algorithms.
+        \item Integration with open-source engines (e.g.\ Stockfish, Leela Chess Zero).
+    \end{itemize}
+
+    \paragraph{Authentication.}
+    \begin{itemize}[noitemsep]
+        \item OAuth support (e.g.\ Google, Microsoft, Facebook).
+    \end{itemize}
     \section{Conclusions}
     \label{Conclusions}
     
