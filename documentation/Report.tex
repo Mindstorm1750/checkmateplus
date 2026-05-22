@@ -62,18 +62,6 @@
     \end{itemize}
     Secondly, to investigate whether these features affect user enjoyment through surveying and conversational user evaluation sessions.
 
-
-    \section{Collaboration methodology}
-    \label{Collaboration methodology}
-
-    <<<<<<< Updated upstream
-
-
-    =======
-    Our project used Git for version control, hosted on the University of Kent's gitlab. We used the issue tracking on gitlab to assign tasks and progress.
-    >>>>>>> Stashed changes
-
-
     \section{Project architecture}
     \label{Project architecture}
 
@@ -240,6 +228,8 @@
 
     \subsection{Chess engine}
     \label{Chess engine}
+    
+    Our chess engine work can be found in \path{/ChessLibrary/src/main/kotlin/org/checkmateplus/chessLibrary/chessEngine/Board.kt}. 
 
     \subsubsection{Background Research}
     Before implementing the engine, we carried out background research into common chess engine designs. Most engines are built around four main components: \citep{cpwiki-getting-started}
@@ -251,10 +241,10 @@
         \item A search algorithm to choose the best move.
     \end{itemize}
 
-    We also looked at the difference between pseudo-legal and fully legal move generation, as well as the use of move ordering to improve search efficiency. This research helped us to decide on a square-based board representation and a traditional minimax search with alpha-beta pruning, which were both suitable for a project of this scale.
+    This research helped us to decide on a square-based board representation and a traditional minimax search with alpha-beta pruning, which were both suitable for a project of this scale.
 
     \subsubsection{Move Generation}
-    Move generation is the process of producing all possible moves from a given board position, and forms the foundation of the search algorithm \citep{vrzina-chess-engine}. We implemented two stages of move generation.
+    Move generation is the process of producing all possible moves from a given board position, and is foundational for search. Our implementation of move generation has two stages:
 
     The first stage, implemented in \texttt{generateAllMoves()}, produces pseudo-legal moves for all pieces belonging to the side to move (black/white). This generates candidate moves for each piece type - pawns, knights, bishops, rooks, queens and kings - based purely on their movement rules, without checking whether the resulting position leaves the moving side's king in check. Each piece type has its own generation function, making the rules for each piece clear and easy to maintain independently.
 
@@ -265,7 +255,7 @@
 
     Minimax works by modelling the game as a tree of positions. White aims to maximise the evaluation score while black aims to minimise it. At each node, the algorithm applies a move to produce a new board state and recursively evaluates the resulting position. When the search reaches its maximum depth, the position is scored using the evaluation function. The best move is then the one that leads to the highest score for white, or the lowest score for black.
 
-    To improve efficiency, we implemented alpha-beta pruning. This technique maintains two values - alpha, the best score white can guarantee, and beta, the best score black can guarantee. If a move is found that is worse than the current best for the side to move, that branch is cut off and not explored further. This significantly reduces the number of positions the engine needs to evaluate without affecting the result.
+    To improve efficiency, we implemented alpha-beta pruning. This technique maintains two values - alpha, the best score white can guarantee, and beta, the best score black can guarantee. If a move is found that is worse than the current best for the side to move, that branch is cut off and not explored further. This significantly reduces the number of positions the engine needs to evaluate without affecting the result. Alpha-beta pruning is most efficient when the best moves are searched first, as there'd be more cutoffs \citep{vrzina-chess-engine}. The single change of prioritising moves where a less valuable piece captures a more valuable piece improved search time by a factor of 3.67 (see \path{/documentation/testing/Improving engine speed.md}).
 
     We also implemented iterative deepening, where the engine performs searches at increasing depths before reaching the target depth. Counter-intuitively, this improves overall performance because earlier searches populate the transposition table - a cache of previously evaluated positions - which helps prune the deeper search more effectively. Move ordering is applied at each node using the transposition table's best move and captures of valuable pieces, further improving the efficiency of alpha-beta pruning.
 
@@ -287,20 +277,9 @@
     Together, these heuristics produce an engine that plays more purposefully than one relying on material counting alone, guiding the search towards positions with better piece activity and long-term structure.
 
     \subsubsection{Tuning and Testing}
-    Testing was carried out using a comprehensive suite of unit tests written in Kotlin using the standard \texttt{kotlin.test} framework. These tests cover all major components of the engine, from low level board utilities to high-level search behaviour, ensuring correctness at every layer.
+    Testing was carried out using a comprehensive suite of unit tests (\path{/ChessLibrary/src/test/kotlin/EngineTest.kt}) written in Kotlin using the standard \texttt{kotlin.test} framework. These tests cover all major components of the engine, from low level board utilities to high-level search behaviour. 
 
-    Board correctness was verified through several categories of tests.
-    \begin{itemize}
-        \item Coordinate conversion functions such as \texttt{toFileRank()}, \texttt{toSquare()}, and \texttt{toAlgebraic()} were tested against known square indices.
-        \item Move application was validated for standard moves, captures, castling in all four directions, en passant and promotion to all four piece types.
-        \item The half-move clock and full-move counter were also tested to confirm they increment and reset correctly under pawn moves, captures, and piece moves.
-    \end{itemize}
-
-    Legal move generation was validated using Perft, a well-established engine testing technique that recursively counts the total number of positions reachable from a given position at a fixed depth and compares this against a known correct value. We used the ``kiwipete`` position, a standard benchmark position specifically designed to exercise edge cases in move generation such as en passant, castling, and promotion. In practice, this provided a reliable way to confirm that the move generator behaved correctly at depth 5.
-
-    The evaluation function was tested by constructing positions with known material imbalances and asserting the correct sign of the score. Cases tested include an extra pawn, a rook-for-minor-piece exchange, a queen versus rook and minor piece and a minor piece versus two pawns.
-
-    Search quality was verified by testing the engine on a range of tactical and strategic puzzles at various depths. These included back-rank mates in two, material wins in one and two moves, a mate-in-three sequence, stalemate avoidance, passed pawn advancement, rook placement on open files and kingside and queenside castling to complete development. The engine was also tested for correct underpromotion, choosing a knight over a queen in a position where promoting to a queen would result in a stalemate.
+    Having these tests helped speed up development as it was easy to ensure correctness while making changes to the search and evaluation.
 
     \subsection{Human-like move time model}
     \label{Human-like move time model}
@@ -360,7 +339,7 @@
 
     This final linear regression model achieved a test set MSE of 64.40, corresponding to an RMSE (root mean squared error) of approximately 8.0 seconds. The training of this linear regression model can be seen in \texttt{/EngineMoveTimeModel/src/main/python/Linear regression model for poster fair (contains was\_capture).ipynb}.
 
-    We also trained models with CNNs (convolutional neural networks) making use of the board state as an additional feature. The best performing one of these models was trained in \texttt{/EngineMoveTimeModel/src/main/python/Keras models using pieces attempt 3 even bigger model with AdamW weight decay.ipynb}. In this model the state of the board, a (12, 8, 8) boolean array, was given to a CNN with 3 hidden layers. The number of filters in the layers increase from 64 to 128 to 512. The first two layers use 3x3 kernels with ReLu (rectified linear unit) activation functions, a standard idea ever since the ``VGG'' CNNs \citep{simonyan2015deepconvolutionalnetworkslargescale}. Unlike VGG, we don't use any max-pooling layers because our ``image'' (the chessboard) is already low resolution (8x8 instead of 224x224). Still, we do get spatial pooling as we don't apply any padding before each filter. The final layer uses 4x4 kernels instead of 3x3 so that each filter gives a single output as opposed to a 2x2 output, reducing dimensionality before the dense layers. These 512 outputs from the CNN were concatenated with the other features and passed through 2 dense layers of 32 neurons each to produce the final output. This overall model had 1,147,617 parameters and took over 10 hours to complete 14 epochs of training (TODO ADD HARDWARE CONTEXT). The model achieved a best validation MSE of 51.77 (RMSE $\approx$ 7.2 seconds).
+    We also trained models with CNNs (convolutional neural networks) making use of the board state as an additional feature. The best performing one of these models was trained in \texttt{/EngineMoveTimeModel/src/main/python/Keras models using pieces attempt 3 even bigger model with AdamW weight decay.ipynb}. In this model the state of the board, a (12, 8, 8) boolean array, was given to a CNN with 3 hidden layers. The number of filters in the layers increase from 64 to 128 to 512. The first two layers use 3x3 kernels with ReLu (rectified linear unit) activation functions, a standard idea ever since the ``VGG'' CNNs \citep{simonyan2015deepconvolutionalnetworkslargescale}. Unlike VGG, we don't use any max-pooling layers because our ``image'' (the chessboard) is already low resolution (8x8 instead of 224x224). Still, we do get spatial pooling as we don't apply any padding before each filter. The final layer uses 4x4 kernels instead of 3x3 so that each filter gives a single output as opposed to a 2x2 output, reducing dimensionality before the dense layers. These 512 outputs from the CNN were concatenated with the other features and passed through 2 dense layers of 32 neurons each to produce the final output. This overall model had 1,147,617 parameters and achieved a best validation MSE of 51.77 (RMSE $\approx$ 7.2 seconds).
 
     It was surprising that the CNN model was only slightly better than a simple linear regression model (an improvement in RMSE of only 0.8 seconds). A much larger improvement was expected given that the CNN model could make use the state of the board. Instead, what we found is that the clock situation is the most important factor when it comes to how long a player takes to make their move. The features that correlate most with the target feature are \texttt{initial\_time}, \texttt{time\_opponent\_took}, \texttt{time\_remaining\_for\_this\_position}, and \texttt{increment}.
 
@@ -405,6 +384,7 @@
 
     We decided to only allow authentication via TOTPs (time-based one-time passwords).
     This avoids having to store users' password hashes, reducing our liability with regard to users' personal information.
+    
     When creating an account, a user is guided through our registration flow: first they pick a username, then they add the TOTP secret we provide to their authenticator app of choice (e.g.\ Google Authenticator, Microsoft Authenticator), and finally they confirm the setup by entering a generated code.
 
 
@@ -417,7 +397,7 @@
 
     Our voice recognition is done in the cloud. We use OpenAI's Whisper to transcribe users' speech snippets. We convert that transcription into a chess move by extracting piece types and square information using regex (regular expressions). The resulting move may not be a legal move, either due to a mistake on our part (transcription) or the user saying an illegal move. So the candidate move is checked for legality with relevant error messages relayed back to the user.
 
-    If we are unable to process the move using regex, or if there is ambiguity, we also have a fallback: sending the user's transcription to an LLM (large language model) along with legal moves for context. The LLM is prompted to select the move that best matches the user's transcription. Prompt injection is not a concern as the output is forced to adhere to a certain format (\texttt{data class DisambiguationResult}) via OpenAI's structured outputs feature, and moves are always checked for legality.
+    If we are unable to process the move using regex, or if there is ambiguity, we also have a fallback: sending the user's transcription to an LLM (large language model) along with legal moves for context. The LLM is prompted to select the move that best matches the user's transcription. Prompt injection is not a concern as the output is forced to adhere to a certain format (\texttt{data class DisambiguationResult}) via OpenAI's structured outputs feature \citep{openai-structured-outputs}, and moves are always checked for legality.
 
     This work can be seen in \path{/VoiceCommandService/src/main/kotlin/org/checkmateplus/voicecommandservice/service}.
 
@@ -433,9 +413,9 @@
 
     Users at the poster fair liked the realistic move-time model. They remarked that they didn't feel rushed and that they can think on the bot's time.
 
-    Unfortunately, we didn't get much explicit feedback on the animations. The self-reported enjoyment ratings out of 5 don't clearly show a preference either. Averaging the 3 ratings for the fun animations and the 6 ratings for the normal animations gives us 4 out of 5 enjoyment for fun animations compared to 4.17 out of 5 for normal animations. This is insignificant given the small sample size.
+    Unfortunately, we didn't get much explicit feedback on the animations. Users' self-reported enjoyment ratings didn't clearly show a preference either: the fun animations averaged 4 out of 5 while the normal animations averaged 4.17. This is insignificant given the small sample size of 9.
 
-    Also unfortunate was that our voice command feature was not ready by the poster fair, so we couldn't yet get feedback on it.
+    Also unfortunate was that the voice command feature was not ready yet during the poster fair, so we couldn't get feedback on it.
 
     The main feedback we received from the poster fair was that it needed to be clearer whose turn it was. We since worked on this by highlighting the squares involved in the most recent move and by making the chess clocks larger and green-coloured when ticking down.
 
@@ -446,6 +426,8 @@
     Many players during this playtest wanted to know the bot's rating. Implementing this without just guessing the bot's rating is feasible and is a point for future development. A possible way could be temporarily sneaking the bot into the ranked human player pool, allowing the bot to lose and win rating from users and establish an accurate rating for itself.
 
     Two players who had just played a game using a real board wanted to use our platform to analyse their game. We didn't have a ``free-form analysis'' page like other chess platforms have. What the players did instead was match against each other, replay the moves from the game they wanted to analyse, and then head to the match review. Adding a free-form analysis page is another point for future development.
+    
+    Related to the analysis, users wanted the match review page to closely align to existing platforms' analysis pages: with evaluation symbols and moves appearing on the board instead of solely in text form within the analysis panel. Users also wanted the option to copy the .pgn (portable game notation) of a game so they could transfer the game data to other sites or software.
 
     Regarding the move-time feature, one user remarked that the bot took too much time during a ``bullet'' game where each side only has 1 minute on their clocks. As a result, the user easily won on time. This shows our move-time model has room for improvement, particularly in fast games.
 
@@ -457,49 +439,35 @@
     \section{Future development}
     \label{Future development}
 
-    We have considered many features that could be added to Checkmate+ to improve the user experience.
+    Other than previously mentioned fixes and improvements based on user feedback, there are many features we'd like to add to Checkmate+. The most unique are:
 
-    \paragraph{Match modes and gameplay.}
+    \paragraph{Matchmaking}
     \begin{itemize}[noitemsep]
-        \item Tournament play.
-        \item Private matches.
-        \item Friends and rivals.
-        \item In-match text chat.
-        \item Pre-moves.
-        \item Drag-and-drop piece movement.
-        \item Extra game modes (e.g.\ bughouse, crazyhouse).
-        \item Democracy games, where players vote in blocs on moves.
-        \item Bot players hidden in the competitive queue to generate ratings.
+        \item Tournament play. An interactive bracket graph, making it easier for both organisers and players.
+        \item Rivals. Highlighting opponents that users have a poor track-record against and encouraging playing against them as a challenge. A new counterpart to existing ``Friend'' systems.
     \end{itemize}
 
-    \paragraph{Visual customisation.}
+    \paragraph{Visuals}
     \begin{itemize}[noitemsep]
-        \item Additional animation options (e.g.\ explosion, sword).
-        \item User-drawn chess pieces.
-        \item Additional board themes.
-        \item A 3D chess board effect.
-        \item Mobile app/PWA (Progressive Web App)
+        \item Additional animation options (e.g.\ pieces that walk, sword fights on captures).
+        \item 3D chess board and customisable pieces. Allowing users to play with 3D characters from their favourite media if they upload their own files.
     \end{itemize}
 
-    \paragraph{Analysis and statistics.}
+    \paragraph{Analysis and reviewing}
     \begin{itemize}[noitemsep]
-        \item Free-form analysis.
-        \item Book moves shown alongside analysis.
-        \item \texttt{.pgn} export so players can download their matches.
-        \item Scoresheet-photograph-to-match conversion for analysis.
-        \item Time-series data on player profiles (e.g.\ rating over time).
+        \item OCR (optical character recognition) tool to convert handwritten scoresheets into reviewable games on our site.
+        \item Time-series data on player profiles (e.g.\ rating over time), giving players a sense of their progress.
         \item Sitewide statistics (player count, total matches played, etc.).
-        \item Daily puzzles.
     \end{itemize}
 
-    \paragraph{Bots.}
+    \paragraph{Bots}
     \begin{itemize}[noitemsep]
-        \item Neural-network-based bots.
-        \item Bots using novel algorithms.
+        \item Neural-network-based bots. Hopefully making their moves seem more human-like.
         \item Integration with open-source engines (e.g.\ Stockfish, Leela Chess Zero).
+        \item Multiple bot options. Having all the above mentioned bots for users to choose from.
     \end{itemize}
 
-    \paragraph{Authentication.}
+    \paragraph{Authentication}
     \begin{itemize}[noitemsep]
         \item OAuth support (e.g.\ Google, Microsoft, Facebook).
     \end{itemize}
