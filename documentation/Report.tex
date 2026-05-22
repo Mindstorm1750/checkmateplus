@@ -61,11 +61,17 @@
         \item Voice-command move input
     \end{itemize}
     Secondly, to investigate whether these features affect user enjoyment through surveying and conversational user evaluation sessions.
+
+
     \section{Collaboration methodology}
     \label{Collaboration methodology}
 
+    <<<<<<< Updated upstream
 
 
+    =======
+    Our project used Git for version control, hosted on the University of Kent's gitlab. We used the issue tracking on gitlab to assign tasks and progress.
+    >>>>>>> Stashed changes
 
 
     \section{Project architecture}
@@ -110,7 +116,7 @@
 
     Checkmate+ uses four different communication mechanisms.
     Each was chosen based on the requirements of the interaction it serves, rather than for consistency across the system.
-    The frontend talks to the backend over three protocols (Figure \ref{fig:frontend-transports}), and the backend services talk among themselves using gRPC (Figure~\ref{fig:service-topology}).
+    The frontend talks to the backend over three protocols (Figure~\ref{fig:frontend-transports}), and the backend services talk among themselves using gRPC (Figure~\ref{fig:service-topology}).
 
     \begin{figure}[H]
         \centering
@@ -142,7 +148,7 @@
     \label{subsec:authentication}
 
     All authenticated calls between the frontend and the backend, and between the backend services themselves, are authorised using a JSON Web Token (JWT). Figure~\ref{fig:auth-hmac} shows the arrangement.
-    The Player Service issues a JWT after a successful user login (the login flow itself is covered in Section \ref{Front-end}). Every other backend service runs Spring Security as an OAuth2 resource server and validates that token on each incoming request. The token is supplied as a bearer header on HTTP and GraphQL requests, and on the initial \texttt{CONNECT} frame of STOMP sessions.
+    The Player Service issues a JWT after a successful user login (the login flow itself is covered in Section~\ref{Front-end}). Every other backend service runs Spring Security as an OAuth2 resource server and validates that token on each incoming request. The token is supplied as a bearer header on HTTP and GraphQL requests, and on the initial \texttt{CONNECT} frame of STOMP sessions.
 
     \begin{figure}[H]
         \centering
@@ -227,9 +233,10 @@
     \section{The computer opponent}
     \label{The computer opponent}
 
-    Online chess platforms often offer the option to play against a computer opponent (also called a ``bot''). The moves that a bot makes is determined by a program called a ``chess engine''. For \textit{Checkmate+}, we created our own chess engine, covered in section \ref{Chess engine}.
+    Online chess platforms often offer the option to play against a computer opponent (also called a ``bot''). The moves that a bot makes is determined by a program called a ``chess engine''. For \textit{Checkmate+}, we created our own chess engine, covered in section~\ref{Chess engine}.
 
-    Another aspect to the experience of playing against a bot is how long they take to make their moves. For \textit{Checkmate+}, we implement a feature that neither \textit{Chess.com} or \textit{Lichess.org} have: bots that have human-like move times. This feature will be covered in section \ref{Human-like move time model}.
+    Another aspect to the experience of playing against a bot is how long they take to make their moves. For \textit{Checkmate+}, we implement a feature that neither \textit{Chess.com} or \textit{Lichess.org} have: bots that have human-like move times.
+    This feature will be covered in section~\ref{Human-like move time model}.
 
     \subsection{Chess engine}
     \label{Chess engine}
@@ -361,27 +368,29 @@
 
     \subsubsection{Implementation}
 
-    Given that the CNN model was large and would have to run as its own microservice while performing only slightly better than the linear regression model, we chose to implement the linear regression model. This can be seen in \texttt{/ChessLibrary/.../RealisticMoveTimeModel.kt}.
+    Given that the CNN model was large and would have to run as its own microservice while performing only slightly better than the linear regression model, we chose to implement the linear regression model. This can be seen in \path{/ChessLibrary/src/main/kotlin/org/checkmateplus/chessLibrary/botEngine/RealisticMoveTimeModel.kt}.
+
+
     \section{Front-end}
     \label{Front-end}
 
     Checkmate+'s front-end was made in React/Typescript with Vite as a build tool, a common combination. As we use Tailwind, a mobile-first CSS framework, our site works well both on desktop and mobile. Most components on the site are from the ShadCN component library to focus development efforts on the custom chessboard component and its fun animation feature. The visual appearance of the site was overhauled in-between the first and second playtests.
 
     \begin{figure}[H]
-    	\centering
-    	\begin{minipage}{0.48\textwidth}
-    		\centering
-    		\includegraphics[width=\textwidth]{diagrams/poster fair frontend}
-    		\caption{Appearance of main page during the poster fair playtest.}
-    		\label{fig:poster-fair-frontend}
-    	\end{minipage}
-    	\hfill
-    	\begin{minipage}{0.48\textwidth}
-    		\centering
-    		\includegraphics[width=\textwidth]{diagrams/Chess club frontend}
-    		\caption{Appearance of main page during the chess club playtest.}
-    		\label{fig:chess-club-frontend}
-    	\end{minipage}
+        \centering
+        \begin{minipage}{0.48\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{diagrams/poster fair frontend}
+            \caption{Appearance of main page during the poster fair playtest.}
+            \label{fig:poster-fair-frontend}
+        \end{minipage}
+        \hfill
+        \begin{minipage}{0.48\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{diagrams/Chess club frontend}
+            \caption{Appearance of main page during the chess club playtest.}
+            \label{fig:chess-club-frontend}
+        \end{minipage}
     \end{figure}
 
     \subsection{Fun animations}
@@ -390,7 +399,7 @@
 
     The normal animation option is based on the animations seen on most chess platforms. Piece movement is a linear transition, and a captured piece has an opacity fade out.
 
-    The fun animation option adds a rotational wiggle to piece movement, and makes capturing fling the captured piece off the board. Neither \textit{Lichess.org} or \textit{Chess.com} offer such an animation option. At most, \textit{Chess.com} offers an option called ``Arcade'' that adds a blue trail to movement and a red flash to capturing; the pieces themselves don't move any differently.
+    The fun animation option adds a rotational wiggle to piece movement, and makes capturing a piece fling it off the board. Neither \textit{Lichess.org} or \textit{Chess.com} offer such an animation option. At most, \textit{Chess.com} offers an option called ``Arcade'' that adds a blue trail to movement and a red flash to capturing; the pieces themselves don't move any differently.
 
     \subsection{User authentication flow}
 
@@ -399,22 +408,18 @@
     When creating an account, a user is guided through our registration flow: first they pick a username, then they add the TOTP secret we provide to their authenticator app of choice (e.g.\ Google Authenticator, Microsoft Authenticator), and finally they confirm the setup by entering a generated code.
 
 
-    \section{Voice commands feature}
-    \label{Voice commands feature}
+    \section{Voice commands}
+    \label{Voice commands}
 
-    TODO: For elendil7
-    This is where you go into detail about what you have done. You will need to decide the titles
-    for these sections yourself; they will depend on the content of the project. These sections
-    should summarise the technical and scientific achievements of the project.
-    Depending on the nature of your project, these sections may include: a comparison of
-    different approaches that you considered, accounts of experimental work, mathematical
-    analyses, specifications, top-level architectural diagrams, results obtained, problems
-    encountered, workarounds, user evaluations, performance measures, testing regimes and
-    results, comparisons between different approaches adopted, comparisons with existing work
-    on similar problems.
-    In particular, you should give a mixture of general discussion of your work and particular
-    examples. Too much general discussion and the reader cannot easily get a handle on what
-    you are doing; too many specific examples and the document fails to "tell a story".
+    Users being able to make moves with their voice is already a feature on other chess platforms. However, our implementation is unique.
+
+    \textit{Lichess.org} implements voice recognition software locally; a user's voice recording never leaves their computer \citep{lichess-voice}. This has benefits in terms of latency but drawbacks in terms of accuracy. As a fallback for when their model gets confused, multiple coloured arrows appear on the user's board. The user then says the colour of the arrow representing their intended move.
+
+    Our voice recognition is done in the cloud. We use OpenAI's Whisper to transcribe users' speech snippets. We convert that transcription into a chess move by extracting piece types and square information using regex (regular expressions). The resulting move may not be a legal move, either due to a mistake on our part (transcription) or the user saying an illegal move. So the candidate move is checked for legality with relevant error messages relayed back to the user.
+
+    If we are unable to process the move using regex, or if there is ambiguity, we also have a fallback: sending the user's transcription to an LLM (large language model) along with legal moves for context. The LLM is prompted to select the move that best matches the user's transcription. Prompt injection is not a concern as the output is forced to adhere to a certain format (\texttt{data class DisambiguationResult}) via OpenAI's structured outputs feature, and moves are always checked for legality.
+
+    This work can be seen in \path{/VoiceCommandService/src/main/kotlin/org/checkmateplus/voicecommandservice/service}.
 
 
     \section{User enjoyment and feedback}
@@ -505,7 +510,6 @@
 
     Our main finding was the importance of clarity for the users in all aspects.
     Users needed clarity on whose turn it was and also clarity on the registration process as well.
-
 
 
     We found that players do not find the voice command feature very useful and prefer playing normally.
