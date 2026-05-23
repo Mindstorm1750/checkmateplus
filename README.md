@@ -54,7 +54,7 @@ MatchmakingService/      Player queue → GameServer assignment
 GameServer/              Match runtime (WebSocket + gRPC)
 GameServerManager/       GameServer fleet manager (gRPC)
 PlayerService/           Accounts, JWT, GraphQL, Postgres + Flyway
-StockfishEngine/         GraalVM-native Stockfish analysis service
+StockfishEngine/         Stockfish Match analysis service
 VoiceCommandService/     OpenAI-powered voice move input
 frontend/                Vite + React 19 client
 k8s/checkmateplus/       Helm umbrella chart (one sub-chart per service)
