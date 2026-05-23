@@ -15,6 +15,9 @@
 \usepackage{enumitem}
 \usepackage{float}
 \usepackage{color}
+\usepackage{hyperref}
+
+\hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=black}
 
 \title{Checkmate+ COMP6030 report}
 \author{
@@ -32,7 +35,7 @@
     \\ \vspace{10mm}
     \includegraphics[scale=0.6]{Kent_Comp_294_RGB} \\
     School of Computing \\
-    University of Kent \\ \vspace{10mm} \\ Word Count: TODO
+    University of Kent \\ Word Count: 5665
 }
 \begin{document}
 
@@ -41,7 +44,7 @@
     \restoregeometry              %% restore the layout
 
     \begin{abstract}
-        TODO: This should provide a concise summary of the paper. Typically, it will be between 100 and 200 words in length.
+        A report describing the design and implementation of Checkmate+, an online chess platform developed for COMP6030, along with an investigation into how its features affect user enjoyment.
     \end{abstract}
 
 
@@ -62,6 +65,9 @@
     \end{itemize}
     Secondly, to investigate whether these features affect user enjoyment through surveying and conversational user evaluation sessions.
 
+    To do this, we created \textit{Checkmate+}, a site accessible at \href{https://checkmateplus.org}{checkmateplus.org}.
+
+
     \section{Project architecture}
     \label{Project architecture}
 
@@ -77,7 +83,7 @@
     Kubernetes restarts the failed pod while the rest of the system is unaffected.
 
     This approach comes with its costs.
-    Every call inside the cluster is a point of failure with its own network semantics, intra-cluster networking must be considered, \texttt{.proto} contracts must be kept 1in sync across services, and the deployment topology is much more complex than a single monolith.
+    Every call inside the cluster is a point of failure with its own network semantics, intra-cluster networking must be considered, \texttt{.proto} contracts must be kept in sync across services, and the deployment topology is much more complex than a single monolith.
     Given that the project aims to build a chess platform comparable in operational shape to Chess.com or Lichess, we judged these costs acceptable and chose to build with scale in mind using the tools enterprises use to run systems of this kind.
 
     \subsection{Overview}
@@ -136,7 +142,7 @@
     \label{subsec:authentication}
 
     All authenticated calls between the frontend and the backend, and between the backend services themselves, are authorised using a JSON Web Token (JWT). Figure~\ref{fig:auth-hmac} shows the arrangement.
-    The Player Service issues a JWT after a successful user login (the login flow itself is covered in Section~\ref{Front-end}). Every other backend service runs Spring Security as an OAuth2 resource server and validates that token on each incoming request. The token is supplied as a bearer header on HTTP and GraphQL requests, and on the initial \texttt{CONNECT} frame of STOMP sessions.
+    The Player Service issues a JWT after a successful user login (the login flow itself is covered in Section~\ref{user-authentication-flow}). Every other backend service runs Spring Security as an OAuth2 resource server and validates that token on each incoming request. The token is supplied as a bearer header on HTTP and GraphQL requests, and on the initial \texttt{CONNECT} frame of STOMP sessions.
 
     \begin{figure}[H]
         \centering
@@ -150,7 +156,7 @@
     First, every service must be deployed with the same secret value; a mismatch will silently 401 every cross-service call.
     Second, the secret cannot be rotated without redeploying all services together, so a leak of the secret would require coordinated remediation across the system.
     These drawbacks were judged to be acceptable for the scale of the project.
-    In a production deployment at higher scale would likely benefit from an asymmetric signing scheme (RS256) where only the issuer holds the signing key.
+    A production deployment at higher scale would likely benefit from an asymmetric signing scheme (RS256) where only the issuer holds the signing key.
 
     \subsection{Match lifecycle: a worked example}
     \label{subsec:match-lifecycle}
@@ -221,15 +227,15 @@
     \section{The computer opponent}
     \label{The computer opponent}
 
-    Online chess platforms often offer the option to play against a computer opponent (also called a ``bot''). The moves that a bot makes is determined by a program called a ``chess engine''. For \textit{Checkmate+}, we created our own chess engine, covered in section~\ref{Chess engine}.
+    Online chess platforms often offer the option to play against a computer opponent (also called a ``bot''). The moves that a bot makes is determined by a program called a ``chess engine''. For \textit{Checkmate+}, we created our own chess engine, covered in Section~\ref{Chess engine}.
 
     Another aspect to the experience of playing against a bot is how long they take to make their moves. For \textit{Checkmate+}, we implement a feature that neither \textit{Chess.com} or \textit{Lichess.org} have: bots that have human-like move times.
-    This feature will be covered in section~\ref{Human-like move time model}.
+    This feature will be covered in Section~\ref{Human-like move time model}.
 
     \subsection{Chess engine}
     \label{Chess engine}
-    
-    Our chess engine work can be found in \path{/ChessLibrary/src/main/kotlin/org/checkmateplus/chessLibrary/chessEngine/Board.kt}. 
+
+    Our chess engine work can be found in \path{/ChessLibrary/src/main/kotlin/org/checkmateplus/chessLibrary/chessEngine/Board.kt}.
 
     \subsubsection{Background Research}
     Before implementing the engine, we carried out background research into common chess engine designs. Most engines are built around four main components: \citep{cpwiki-getting-started}
@@ -277,7 +283,7 @@
     Together, these heuristics produce an engine that plays more purposefully than one relying on material counting alone, guiding the search towards positions with better piece activity and long-term structure.
 
     \subsubsection{Tuning and Testing}
-    Testing was carried out using a comprehensive suite of unit tests (\path{/ChessLibrary/src/test/kotlin/EngineTest.kt}) written in Kotlin using the standard \texttt{kotlin.test} framework. These tests cover all major components of the engine, from low level board utilities to high-level search behaviour. 
+    Testing was carried out using a comprehensive suite of unit tests (\path{/ChessLibrary/src/test/kotlin/EngineTest.kt}) written in Kotlin using the standard \texttt{kotlin.test} framework. These tests cover all major components of the engine, from low level board utilities to high-level search behaviour.
 
     Having these tests helped speed up development as it was easy to ensure correctness while making changes to the search and evaluation.
 
@@ -341,13 +347,13 @@
 
     We also trained models with CNNs (convolutional neural networks) making use of the board state as an additional feature. The best performing one of these models was trained in \texttt{/EngineMoveTimeModel/src/main/python/Keras models using pieces attempt 3 even bigger model with AdamW weight decay.ipynb}. In this model the state of the board, a (12, 8, 8) boolean array, was given to a CNN with 3 hidden layers. The number of filters in the layers increase from 64 to 128 to 512. The first two layers use 3x3 kernels with ReLu (rectified linear unit) activation functions, a standard idea ever since the ``VGG'' CNNs \citep{simonyan2015deepconvolutionalnetworkslargescale}. Unlike VGG, we don't use any max-pooling layers because our ``image'' (the chessboard) is already low resolution (8x8 instead of 224x224). Still, we do get spatial pooling as we don't apply any padding before each filter. The final layer uses 4x4 kernels instead of 3x3 so that each filter gives a single output as opposed to a 2x2 output, reducing dimensionality before the dense layers. These 512 outputs from the CNN were concatenated with the other features and passed through 2 dense layers of 32 neurons each to produce the final output. This overall model had 1,147,617 parameters and achieved a best validation MSE of 51.77 (RMSE $\approx$ 7.2 seconds).
 
-    It was surprising that the CNN model was only slightly better than a simple linear regression model (an improvement in RMSE of only 0.8 seconds). A much larger improvement was expected given that the CNN model could make use the state of the board. Instead, what we found is that the clock situation is the most important factor when it comes to how long a player takes to make their move. The features that correlate most with the target feature are \texttt{initial\_time}, \texttt{time\_opponent\_took}, \texttt{time\_remaining\_for\_this\_position}, and \texttt{increment}.
+    It was surprising that the CNN model was only slightly better than a simple linear regression model (an improvement in RMSE of only 0.8 seconds). A much larger improvement was expected given that the CNN model could make use the state of the board. Instead, we found that the clock situation is the most important factor when it comes to how long a player takes to make their move. The features that correlate most with the target feature are \texttt{initial\_time}, \texttt{time\_opponent\_took}, \texttt{time\_remaining\_for\_this\_position}, and \texttt{increment}.
 
     Disappointing was the high loss. Even the best model had a RMSE of 7.2 seconds. However, the task we're trying to model doesn't necessarily have a single correct answer. Given the exact same clock and board situation, even the same player may decide to take different amounts of time to move. This results in a high loss no matter the model.
 
     \subsubsection{Implementation}
 
-    Given that the CNN model was large and would have to run as its own microservice while performing only slightly better than the linear regression model, we chose to implement the linear regression model. This can be seen in \path{/ChessLibrary/src/main/kotlin/org/checkmateplus/chessLibrary/botEngine/RealisticMoveTimeModel.kt}.
+    Given that the CNN model was large and would have to run as its own microservice while performing only slightly better than linear regression, we chose to implement the linear regression model. This can be seen in \path{/ChessLibrary/src/main/kotlin/org/checkmateplus/chessLibrary/botEngine/RealisticMoveTimeModel.kt}.
 
 
     \section{Front-end}
@@ -381,10 +387,11 @@
     The fun animation option adds a rotational wiggle to piece movement, and makes capturing a piece fling it off the board. Neither \textit{Lichess.org} or \textit{Chess.com} offer such an animation option. At most, \textit{Chess.com} offers an option called ``Arcade'' that adds a blue trail to movement and a red flash to capturing; the pieces themselves don't move any differently.
 
     \subsection{User authentication flow}
+    \label{user-authentication-flow}
 
     We decided to only allow authentication via TOTPs (time-based one-time passwords).
     This avoids having to store users' password hashes, reducing our liability with regard to users' personal information.
-    
+
     When creating an account, a user is guided through our registration flow: first they pick a username, then they add the TOTP secret we provide to their authenticator app of choice (e.g.\ Google Authenticator, Microsoft Authenticator), and finally they confirm the setup by entering a generated code.
 
 
@@ -405,7 +412,7 @@
     \section{User enjoyment and feedback}
     \label{Feedback}
 
-    We had 2 playtest sessions. The first was during the poster fair on 13th March 2026. The second was during a chess club meeting on 13th May 2026.
+    We had two playtest sessions. The first was during the poster fair on 13th March 2026. The second was during a chess club meeting on 13th May 2026.
 
     \subsection{Poster fair playtest}
 
@@ -426,12 +433,12 @@
     Many players during this playtest wanted to know the bot's rating. Implementing this without just guessing the bot's rating is feasible and is a point for future development. A possible way could be temporarily sneaking the bot into the ranked human player pool, allowing the bot to lose and win rating from users and establish an accurate rating for itself.
 
     Two players who had just played a game using a real board wanted to use our platform to analyse their game. We didn't have a ``free-form analysis'' page like other chess platforms have. What the players did instead was match against each other, replay the moves from the game they wanted to analyse, and then head to the match review. Adding a free-form analysis page is another point for future development.
-    
+
     Related to the analysis, users wanted the match review page to closely align to existing platforms' analysis pages: with evaluation symbols and moves appearing on the board instead of solely in text form within the analysis panel. Users also wanted the option to copy the .pgn (portable game notation) of a game so they could transfer the game data to other sites or software.
 
-    Regarding the move-time feature, one user remarked that the bot took too much time during a ``bullet'' game where each side only has 1 minute on their clocks. As a result, the user easily won on time. This shows our move-time model has room for improvement, particularly in fast games.
+    Regarding the move-time feature, one user remarked that the bot played too slowly during a ``bullet'' game: each side only having 1 minute on their clocks. As a result, the user easily won on time. A possible cause for poor performance in quick games is our choice of loss. With MSE, the difference between 3 and 1 seconds is just as erroneous as the difference between 23 and 20 seconds. Relative loss functions like MAPE (mean absolute percentage error) would consider the former example more erroneous, hopefully improving performance in quick games.
 
-    The voice command feature was found to be awkward by the users. Users quickly abandoned using it in favour moving pieces normally, as for them it was easier and faster.
+    The voice command feature was found to be awkward by users. Users quickly abandoned using it in favour moving pieces normally, as for them it was easier and faster. To reduce latency we could make transcription local, only using cloud services for the disambiguation fallback. Users also didn't know they had to click on the button again to stop recording: the button simply said ``Listening\ldots''. In addition to making the button text clearer, transcribing-as-we-go would allow us to stop the recording automatically once a user has said a move.
 
     Not all users found our account creation flow intuitive. One user needed no guidance at all, while another needed to be told to paste the TOTP secret into their authenticator app. Making this process clearer is another point for future development.
 
@@ -444,42 +451,28 @@
     \paragraph{Matchmaking}
     \begin{itemize}[noitemsep]
         \item Tournament play. An interactive bracket graph, making it easier for both organisers and players.
-        \item Rivals. Highlighting opponents that users have a poor track-record against and encouraging playing against them as a challenge. A new counterpart to existing ``Friend'' systems.
+        \item Rivals. Highlighting opponents that users have a poor track-record against and encouraging playing against them as a challenge. A counterpart to existing ``Friend'' systems.
     \end{itemize}
 
     \paragraph{Visuals}
     \begin{itemize}[noitemsep]
         \item Additional animation options (e.g.\ pieces that walk, sword fights on captures).
-        \item 3D chess board and customisable pieces. Allowing users to play with 3D characters from their favourite media if they upload their own files.
+        \item 3D chess board and customisable pieces. Allowing users to play with 3D characters from their favourite media.
     \end{itemize}
 
-    \paragraph{Analysis and reviewing}
+    \paragraph{Analysis and bots}
     \begin{itemize}[noitemsep]
-        \item OCR (optical character recognition) tool to convert handwritten scoresheets into reviewable games on our site.
-        \item Time-series data on player profiles (e.g.\ rating over time), giving players a sense of their progress.
-        \item Sitewide statistics (player count, total matches played, etc.).
-    \end{itemize}
-
-    \paragraph{Bots}
-    \begin{itemize}[noitemsep]
-        \item Neural-network-based bots. Hopefully making their moves seem more human-like.
-        \item Integration with open-source engines (e.g.\ Stockfish, Leela Chess Zero).
-        \item Multiple bot options. Having all the above mentioned bots for users to choose from.
-    \end{itemize}
-
-    \paragraph{Authentication}
-    \begin{itemize}[noitemsep]
-        \item OAuth support (e.g.\ Google, Microsoft, Facebook).
+        \item OCR (optical character recognition) tool to convert handwritten scoresheets into reviewable games on our site. Inspired by two players at the chess club wanting to review a game they had written down.
+        \item Personalised neural-network bots. Human-like bots like \textit{Maia} already exist \citep{tang2024maia2unifiedmodelhumanai}, but we could offer bots fine-tuned to play like particular users or famous chess players.
     \end{itemize}
 
 
     \section{Conclusions}
     \label{Conclusions}
 
-    We set out to investigate the effect of our 3 features on user enjoyment and instead found that clarity in general was more important. ``Whose turn is it?'' and ``how do I create an account?'' were the main pain points for new users, while experienced chess players only found voice commands or move animations to be briefly entertaining gimmicks.
-    
-    The ``realistic bot move-times'' feature was well received by most, with the caveat that it was unrealistically slow in quick ``bullet'' games. Future work could revolve around using alternative loss functions when modelling
+    We set out to investigate the effect of our three features on user enjoyment and instead found that clarity and general ease-of-use was more important. ``Whose turn is it?'' and ``how do I create an account?'' were the main pain points for new users, while experienced chess players only found voice commands or move animations to be briefly entertaining gimmicks.
 
+    Still, the ``realistic bot move-times'' feature was well received by most. With improvements to its realism in quicker games, such a feature would be a positive addition to online chess platforms.
 
 
     \vskip 0.2in
