@@ -40,7 +40,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
-      <div className="flex items-center justify-between gap-2">
+      <header className="flex items-center justify-between gap-2">
         <h1 className="font-serif text-2xl font-bold tracking-tight md:text-3xl lg:text-4xl">
           <Link to="/">
             Checkmate
@@ -75,7 +75,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           )}
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="outline">
+              <Button variant="outline" aria-label="Settings">
                 <Settings className="size-5" />
               </Button>
             </DialogTrigger>
@@ -145,10 +145,10 @@ export default function Layout({ children }: { children: ReactNode }) {
             </DialogContent>
           </Dialog>
         </div>
-      </div>
+      </header>
 
       <hr className="mt-4 mb-8" />
-      {children}
+      <main>{children}</main>
     </div>
   )
 }

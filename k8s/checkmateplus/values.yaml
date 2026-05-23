@@ -13,7 +13,7 @@ frontend:
   replicas: 2
   image:
     repository: git.cs.kent.ac.uk:5050/jhl28/checkmate/frontend
-    tag: 2.2.2
+    tag: 2.2.6
   port: 80
   resources:
     requests:
@@ -31,7 +31,7 @@ gameserver:
   enabled: true
   image:
     repository: git.cs.kent.ac.uk:5050/jhl28/checkmate/gameserver
-    tag: 2.2.0
+    tag: 2.2.2
   replicaCount: 1
   service:
     httpPort: 8090
@@ -153,7 +153,7 @@ voicecommandservice:
   enabled: true
   image:
     repository: git.cs.kent.ac.uk:5050/jhl28/checkmate/voicecommandservice
-    tag: 2.2.3
+    tag: 2.2.3-jvm
   replicaCount: 1
   service:
     httpPort: 9100
@@ -268,7 +268,7 @@ securityContext: { }
   # capabilities:
   #   drop:
   #   - ALL
-  # readOnlyRootFilesystem: true
+# readOnlyRootFilesystem: true
 # runAsNonRoot: true
 # runAsUser: 1000
 
@@ -297,7 +297,7 @@ resources: { }
   # limits:
   #   cpu: 100m
   #   memory: 128Mi
-  # requests:
+# requests:
 #   cpu: 100m
 #   memory: 128Mi
 
