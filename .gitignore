@@ -124,3 +124,13 @@ bin/
 ### Helm Chart Packages from dep update ###
 *.tgz
 *.lock
+/documentation/report.synctex.gz
+/documentation/report.log
+/documentation/Report.log
+/documentation/report.blg
+/documentation/Report.blg
+/documentation/Report.synctex.gz
+/documentation/report.bbl
+/documentation/Report.bbl
+/documentation/report.aux
+/documentation/Report.aux

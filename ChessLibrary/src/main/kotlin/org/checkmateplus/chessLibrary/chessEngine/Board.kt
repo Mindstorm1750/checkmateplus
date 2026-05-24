@@ -51,6 +51,7 @@ data class Board(
             newSquares[rookFrom] = null
         }
 
+        //applyMove - the en passant check
         val newEnPassantSquare = if (piece.type == PieceType.PAWN && abs(move.to - move.from) == 16) {
             (move.from + move.to) / 2
         } else {
@@ -121,7 +122,7 @@ data class Board(
         return score
     }
 
-
+    //pawn move generation -
     fun generatePawnMoves(from: Square, color: Colour): List<Move> {
         val moves = mutableListOf<Move>()
         val direction = if (color == Colour.WHITE) 8 else -8
@@ -279,7 +280,7 @@ data class Board(
         return moves
     }
 
-
+    //Queen move generation - combine bishop and rook movement
     fun generateQueenMoves(from: Square, color: Colour): List<Move> {
         val moves = mutableListOf<Move>()
         moves.addAll(generateBishopMoves(from, color))
@@ -457,8 +458,8 @@ data class Board(
         return isSquareAttacked(kingSquare, color.opposite())
     }
 
-    //not sure if this is best way for this, but works for now (possibly create separate function for pawn?)
-    //check if square is attacked by any piece
+
+    //check attack coverage by iterating all enemy pieces and testing their move generation
     fun isSquareAttacked(square: Square, byColour: Colour): Boolean {
         for (sqr in 0..63) {
             val piece = squares[sqr] ?: continue
@@ -507,6 +508,7 @@ data class Board(
     }
 
     //Check for passed pawn space - if there is a passed pawn returns true
+    //A pawn is passed if no enemy pawn can block or capture on way to promotion
     fun isPassedPawn(square: Int, color: Colour): Boolean {
         val file = square % 8
         val rank = square / 8
@@ -893,7 +895,7 @@ data class Board(
         //strip the fen down to the key parts
         fun fenKey(fen: String): String = fen.split(" ").take(4).joinToString(" ")
 
-
+        //create starting board position
         fun startingPosition(): Board {
             val squares = Array<Piece?>(64) { null }
 
@@ -951,32 +953,6 @@ data class Board(
         return result
     }
 
-
-    //temp testing function
-    fun printBoard() {
-        println(" a b c d e f g h")
-        for (rank in 7 downTo 0) {
-            print("${rank + 1} ")
-            for (file in 0..7) {
-                val fileRank = Pair(file, rank)
-                val sq = fileRank.toSquare()
-                val piece = squares[sq]
-                val symbol = when (piece?.type) {
-                    PieceType.PAWN -> if (piece.color == Colour.WHITE) "P" else "p"
-                    PieceType.KNIGHT -> if (piece.color == Colour.WHITE) "N" else "n"
-                    PieceType.BISHOP -> if (piece.color == Colour.WHITE) "B" else "b"
-                    PieceType.ROOK -> if (piece.color == Colour.WHITE) "R" else "r"
-                    PieceType.QUEEN -> if (piece.color == Colour.WHITE) "Q" else "q"
-                    PieceType.KING -> if (piece.color == Colour.WHITE) "K" else "k"
-                    null -> "."
-                }
-                print("$symbol ")
-            }
-            println("${rank + 1}")
-        }
-        println(" a b c d e f g h")
-        println("Side to move: $sideToMove")
-    }
 
     fun toFen(): String {
         val parts = mutableListOf<String>()
