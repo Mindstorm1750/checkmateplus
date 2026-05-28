@@ -1,0 +1,624 @@
+import Layout from "@/components/Layout"
+import { BackArrowLink } from "@/components/ui/back-arrow-link"
+import ChessBoard, {
+  type ChessBoardProps,
+  type PlayerLabelsType,
+} from "@/components/ui/ChessBoard"
+import {
+  algebraicToSquare,
+  fenToBoard,
+  squareToAlgebraic,
+} from "@/lib/chess.helpers"
+import { usePreferences } from "@/lib/PreferencesProvider"
+import type { JoinMatchMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/JoinMatchMessage"
+import {
+  GAME_OVER_TITLES,
+  type MatchEventMessage,
+  type MatchEventType,
+} from "@/lib/stompMessageTypes/GameServer/models/messages/MatchEventMessage"
+import type {
+  MatchStateMessage,
+  MoveHistoryEntry,
+  Player,
+} from "@/lib/stompMessageTypes/GameServer/models/messages/MatchStateMessage"
+import { applyForwardStep } from "@/lib/pieceOrigins.helpers"
+import MatchAnalysisPanel from "@/components/match-analysis/MatchAnalysisPanel"
+import type { MoveMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/MoveMessage"
+import type { TimeUpdateMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/TimeUpdateMessage"
+import {
+  EMPTY_BOARD,
+  EMPTY_PIECE_ORIGINS,
+  type Board,
+  type Move,
+  type Square,
+  type PieceType,
+  type VoiceMove,
+} from "@/types/Chess.type"
+import { Client, type IMessage } from "@stomp/stompjs"
+import { useEffect, useRef, useState } from "react"
+import { useLocation, useNavigate, useParams } from "react-router"
+import SockJS from "sockjs-client/dist/sockjs"
+import { useJwt } from "@/lib/JwtProvider"
+import { ensureFreshJwt } from "@/lib/auth"
+import { getLocalStorage } from "@/lib/local-storage.helpers.ts"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog.tsx"
+import { Button } from "@/components/ui/button.tsx"
+import type { DrawOfferMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/DrawOfferMessage.ts"
+import type { DrawOfferState, MatchRedirectType } from "@/types/Match.type.ts"
+import type { DrawResponseMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/DrawResponseMessage.ts"
+import type { ResignMessage } from "@/lib/stompMessageTypes/GameServer/models/messages/ResignMessage.ts"
+import { usePlayerName, usePlayerRating } from "@/hooks/usePlayerStats.ts"
+import { VoiceMoveButton } from "@/components/ui/VoiceMoveButton.tsx"
+import { QueueButton } from "@/components/QueueButton.tsx"
+import { usePreviewNavigation } from "@/hooks/usePreviewNavigation.ts"
+import { useSpectateMatch } from "@/hooks/useSpectateMatch.ts"
+import type { JoinRequest } from "@/lib/stompMessageTypes/MatchMakingService/models/messages/JoinRequest.ts"
+import type { MatchType } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/MatchType.ts"
+import { Spinner } from "@/components/ui/spinner.tsx"
+import type { BotConfiguration } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/BotConfiguration.ts"
+
+function Match() {
+  const navigate = useNavigate()
+  const { state }: { state: MatchRedirectType | null } = useLocation()
+  const { matchId } = useParams<{ matchId: string }>()
+  const ourPlayerId = getLocalStorage("playerId")
+  const { data: playerRating } = usePlayerName(ourPlayerId)
+  const {
+    data: queriedMatch,
+    isPending: queryPending,
+    isError: queryError,
+  } = useSpectateMatch(matchId, !state?.matchFoundEvent.websocketUrl)
+
+  const websocketUrl =
+    state?.matchFoundEvent.websocketUrl ?? queriedMatch?.websocketUrl
+  const matchType = state?.matchFoundEvent.matchType ?? queriedMatch?.matchType
+
+  useEffect(() => {
+    if (!matchId) {
+      // redirect to main page if we haven't got a matchId in the url
+      navigate("/")
+    }
+  }, [])
+  if (!matchId) {
+    return null // don't continue rendering if we haven't got a matchId in the url
+  }
+
+  if (
+    !queryPending &&
+    !(
+      ourPlayerId == state?.matchFoundEvent.playerId ||
+      ourPlayerId == queriedMatch?.whitePlayer?.playerId ||
+      ourPlayerId == queriedMatch?.blackPlayer?.playerId
+    ) // if we aren't a player involved in the match
+  ) {
+    return (
+      <Layout>
+        <p className="text-destructive">Invalid matchId in URL.</p>
+        <BackArrowLink />
+      </Layout>
+    )
+  }
+
+  if (!state && queryPending) {
+    return (
+      <Layout>
+        <Spinner />
+      </Layout>
+    )
+  }
+
+  if (!state && (queryError || !queriedMatch)) {
+    return (
+      <Layout>
+        <p className="text-destructive">Match not found or no longer live.</p>
+        <BackArrowLink />
+      </Layout>
+    )
+  }
+
+  const timeControl = queriedMatch?.timeControl
+  const botConfiguration = queriedMatch?.botConfiguration
+  const displayName = playerRating?.displayName
+
+  if (!state?.joinRequest && !(displayName && matchType && timeControl)) {
+    return (
+      <Layout>
+        <Spinner />
+      </Layout>
+    )
+  }
+
+  if (!ourPlayerId) {
+    return (
+      <Layout>
+        <p className="text-destructive">
+          You don't have a playerId! Please refresh the page or log-in
+        </p>
+      </Layout>
+    )
+  }
+
+  const joinRequest: JoinRequest = state?.joinRequest ?? {
+    displayName: displayName ?? "",
+    matchType: matchType ?? "CASUAL_PVP",
+    timeControl,
+    botConfiguration: botConfiguration as BotConfiguration,
+  }
+
+  // The point of doing this wrapping is to reload the page when using the "New game" button when a game ends and new matchId is given
+  return (
+    websocketUrl &&
+    matchType && (
+      <MatchInner
+        matchId={matchId}
+        websocketUrl={websocketUrl}
+        playerId={ourPlayerId}
+        matchType={matchType}
+        joinRequest={joinRequest}
+      />
+    )
+  )
+}
+
+function MatchInner({
+  joinRequest,
+  matchId,
+  websocketUrl,
+  playerId,
+  matchType,
+}: {
+  joinRequest: JoinRequest // we'll only know the joinRequest if we are sent to this page via QueueButton
+  matchId: string
+  websocketUrl: string
+  playerId: string
+  matchType: MatchType
+}) {
+  const [boardState, setBoardState] = useState<Board>(EMPTY_BOARD)
+  /**
+   * pieceOrigins is used in ChessBoard to animate pieces via framer motion's layoutId.
+   * Identifies pieces as they move from boardState to boardState.
+   */
+  const [pieceOrigins, setPieceOrigins] =
+    useState<Map<Square, Square>>(EMPTY_PIECE_ORIGINS)
+  const [moveHistory, setMoveHistory] = useState<MoveHistoryEntry[]>([])
+  const {
+    previewIndex,
+    displayedPieceOrigins,
+    lastMove,
+    setLastMove,
+    handleSelect,
+    isCheck,
+  } = usePreviewNavigation(moveHistory, pieceOrigins, boardState)
+  const [clockState, setClockState] = useState<ChessBoardProps["clockState"]>()
+  const [isPlayersTurn, setIsPlayersTurn] = useState<boolean>()
+  const [isPlayerWhite, setIsPlayerWhite] = useState<boolean>(true)
+  const [isGameOver, setIsGameOver] = useState<boolean>(false)
+  const [gameOverMessage, setGameOverMessage] = useState<String>()
+  // isGameOver is also used to show the back button, so gameOverDialogOpen is needed to separate concerns
+  const [gameOverDialogOpen, setGameOverDialogOpen] = useState(false)
+  const [gameOverEventType, setGameOverEventType] = useState<MatchEventType>()
+  const [resignConfirmationDialog, setResignConfirmationDialog] =
+    useState<boolean>(false)
+  const [drawOfferState, setDrawOfferState] =
+    useState<DrawOfferState>("noOffer")
+  const { preferences } = usePreferences()
+  const stompClient = useRef<Client | null>(null)
+  const { jwt, isPending: jwtIsPending } = useJwt()
+  const [players, setPlayers] = useState<{
+    whitePlayer: Player
+    blackPlayer: Player
+  }>()
+  const { data: whitePlayerRatingData } = usePlayerRating(
+    players?.whitePlayer.playerId ?? null
+  )
+  const { data: blackPlayerRatingData } = usePlayerRating(
+    players?.blackPlayer.playerId ?? null
+  )
+  const cancelRef = useRef<() => void | null>(null)
+  // so that closing out of the game over dialog cancels the queue from queue button
+
+  const playerLabels: PlayerLabelsType | undefined = players
+    ? {
+        whitePlayerLabel:
+          players.whitePlayer.displayName +
+          (matchType === "COMPETITIVE_PVP" && whitePlayerRatingData
+            ? ` (${whitePlayerRatingData.skillRating})`
+            : ""),
+        blackPlayerLabel:
+          players.blackPlayer.displayName +
+          (matchType === "COMPETITIVE_PVP" && blackPlayerRatingData
+            ? ` (${blackPlayerRatingData.skillRating})`
+            : ""),
+      }
+    : undefined
+
+  useEffect(() => {
+    if (!jwtIsPending && jwt) {
+      connect()
+    }
+  }, [matchId, jwtIsPending])
+
+  const connect = () => {
+    const client = new Client({
+      webSocketFactory: () =>
+        new SockJS(
+          `${import.meta.env.VITE_HTTP_PROTOCOL}://${websocketUrl}/match`
+        ),
+      beforeConnect: async () => {
+        const fresh = (await ensureFreshJwt()) ?? jwt
+        client.connectHeaders = { Authorization: `Bearer ${fresh}` }
+      },
+      debug: (str: string) => console.log(str),
+      onConnect: () => {
+        // Subscribe to your specific user queue for status updates
+        client.subscribe(
+          `/topic/match/${matchId}/events`,
+          (message: IMessage) => {
+            const body: MatchEventMessage = JSON.parse(message.body)
+            console.log("Got match event message: " + body.message)
+            if (body.eventType == "MATCH_ENDED") {
+              // if the game has ended in checkmate, stalemate, or is a draw
+              setIsGameOver(true)
+              setGameOverDialogOpen(true)
+              setGameOverEventType("MATCH_ENDED")
+              setGameOverMessage(body.message)
+            }
+            if (body.eventType == "TIME_EXPIRED") {
+              // if the game has ended due to time
+              setIsGameOver(true)
+              setGameOverDialogOpen(true)
+              setGameOverEventType("TIME_EXPIRED")
+              setGameOverMessage(body.message)
+            }
+            if (body.eventType == "PLAYER_RESIGNED") {
+              setIsGameOver(true)
+              setGameOverDialogOpen(true)
+              setGameOverEventType("PLAYER_RESIGNED")
+              setGameOverMessage(body.message)
+            }
+            if (body.eventType == "DRAW_ACCEPTED") {
+              // both players agree to draw
+              setIsGameOver(true)
+              setGameOverDialogOpen(true)
+              setGameOverEventType("DRAW_ACCEPTED")
+              setGameOverMessage(body.message)
+            }
+            if (body.eventType == "DRAW_DECLINED") {
+              setDrawOfferState("noOffer")
+            }
+          }
+        )
+
+        client.subscribe(
+          `/topic/match/${matchId}/time`,
+          (message: IMessage) => {
+            const timeUpdate: TimeUpdateMessage = JSON.parse(message.body)
+            const { whitePlayerTime, blackPlayerTime } = timeUpdate
+            setClockState({ whitePlayerTime, blackPlayerTime })
+          }
+        )
+
+        client.subscribe(
+          `/user/queue/match/${matchId}/state`,
+          (message: IMessage) => {
+            const match: MatchStateMessage = JSON.parse(message.body)
+            console.log(`Got initial match state message`)
+            setBoardState(fenToBoard(match.fen)) // should be the starting position
+            if (match.whitePlayer && match.blackPlayer) {
+              setPlayers({
+                whitePlayer: match.whitePlayer,
+                blackPlayer: match.blackPlayer,
+              })
+            }
+            setIsPlayerWhite(match.whitePlayer?.playerId === playerId)
+            setMoveHistory(match.moveHistory ?? [])
+          }
+        )
+
+        // Subscribe to the match state. This will update our board
+        client.subscribe(
+          `/topic/match/${matchId}/state`,
+          (message: IMessage) => {
+            const match: MatchStateMessage = JSON.parse(message.body)
+            console.log(
+              `Is checkmate? ${match.isCheckmate}. Is stalemate? ${match.isStalemate}. Is draw? ${match.isDraw}`
+            )
+            const newBoard = fenToBoard(match.fen)
+            const playerWithTurn =
+              newBoard.sideToMove === "WHITE"
+                ? match.whitePlayer
+                : match.blackPlayer
+            if (playerWithTurn?.playerId === playerId) {
+              setIsPlayersTurn(true)
+            }
+            setBoardState(newBoard)
+            setLastMove(
+              match.lastMove && {
+                from: algebraicToSquare(match.lastMove.from),
+                to: algebraicToSquare(match.lastMove.to),
+                promotion: match.lastMove.promotion,
+              }
+            )
+            if (match.lastMove) {
+              const move = {
+                from: algebraicToSquare(match.lastMove.from),
+                to: algebraicToSquare(match.lastMove.to),
+              }
+              setPieceOrigins((prev) => applyForwardStep(prev, move))
+            }
+            setMoveHistory(match.moveHistory ?? [])
+          }
+        )
+
+        client.subscribe(
+          `/topic/match/${matchId}/draw-offer`,
+          (message: IMessage) => {
+            const drawOfferMessage: DrawOfferMessage = JSON.parse(message.body)
+            console.log(
+              "Got draw offer message from: " + drawOfferMessage.offeredBy
+            )
+            if (drawOfferMessage.offeredBy != playerId) {
+              setDrawOfferState("receivedOffer")
+            }
+          }
+        )
+
+        joinGame()
+      },
+    })
+
+    client.activate()
+    stompClient.current = client
+  }
+
+  const joinGame = () => {
+    if (stompClient.current?.connected) {
+      const joinRequest: JoinMatchMessage = {
+        playerId,
+        matchId,
+        playerName: getLocalStorage("displayName") ?? "",
+        playerPreferences: preferences,
+      }
+
+      stompClient.current.publish({
+        destination: `/app/match/${matchId}/join`,
+        body: JSON.stringify(joinRequest),
+      })
+    }
+  }
+
+  const handleMove: (move: Move) => void = (move) => {
+    if (stompClient.current?.connected) {
+      setIsPlayersTurn(false)
+      const moveRequest: MoveMessage = {
+        matchId,
+        playerId,
+        from: squareToAlgebraic(move.from),
+        to: squareToAlgebraic(move.to),
+        promotion: move.promotion,
+      }
+
+      stompClient.current.publish({
+        destination: `/app/match/${matchId}/move`,
+        body: JSON.stringify(moveRequest),
+      })
+    }
+  }
+
+  const handleResign = () => {
+    const resignMessage: ResignMessage = {
+      matchId,
+      playerId,
+    }
+    if (stompClient.current?.connected) {
+      stompClient.current.publish({
+        destination: `/app/match/${matchId}/resign`,
+        body: JSON.stringify(resignMessage),
+      })
+    }
+  }
+
+  const offerDraw = () => {
+    if (stompClient.current?.connected) {
+      setDrawOfferState("waitingForResponse")
+      const drawOfferMessage: DrawOfferMessage = {
+        matchId,
+        offeredBy: playerId,
+      }
+      stompClient.current.publish({
+        destination: `/app/match/${matchId}/draw/offer`,
+        body: JSON.stringify(drawOfferMessage),
+      })
+    }
+  }
+
+  const respondToDraw = (accepted: boolean) => {
+    if (stompClient.current?.connected) {
+      setDrawOfferState("noOffer")
+      const drawResponseMessage: DrawResponseMessage = {
+        matchId,
+        playerId,
+        accepted,
+      }
+      stompClient.current.publish({
+        destination: `/app/match/${matchId}/draw/respond`,
+        body: JSON.stringify(drawResponseMessage),
+      })
+    }
+  }
+
+  const handleVoiceMove = (voiceMove: VoiceMove) => {
+    if (!voiceMove.from || !voiceMove.to) {
+      console.warn("Voice move missing resolved squares", voiceMove)
+      return
+    }
+
+    const from = algebraicToSquare(voiceMove.from)
+    const to = algebraicToSquare(voiceMove.to)
+
+    if (from == null || to == null) {
+      console.warn("Voice move contained invalid algebraic squares", voiceMove)
+      return
+    }
+
+    handleMove({
+      from,
+      to,
+      promotion: (voiceMove.promotion as PieceType) ?? undefined,
+    })
+  }
+
+  const isPreviewing = previewIndex !== null
+  const displayedBoardState =
+    isPreviewing && moveHistory[previewIndex!]
+      ? fenToBoard(moveHistory[previewIndex!].fenAfter)
+      : boardState
+
+  return (
+    <Layout>
+      <Dialog open={resignConfirmationDialog}>
+        <div className="flex w-full justify-center">
+          <div className="flex w-full flex-col gap-4 md:w-11/12 md:flex-row lg:w-5/6">
+            <div className="min-w-0 md:flex-1">
+              <ChessBoard
+                isPlayersTurn={isPlayersTurn}
+                isGameOver={isGameOver}
+                isCheck={isCheck}
+                lastMove={lastMove}
+                boardState={displayedBoardState}
+                clockState={clockState}
+                moveCallback={handleMove}
+                whitePerspective={isPlayerWhite}
+                pieceOrigins={displayedPieceOrigins}
+                playerLabels={playerLabels}
+                readOnly={isPreviewing}
+              >
+                {!isGameOver && (
+                  <div className="flex w-full items-start gap-2">
+                    <div className="shrink-0">
+                      <VoiceMoveButton
+                        matchId={matchId}
+                        moveCallback={handleVoiceMove}
+                        boardState={boardState}
+                        whitePerspective={isPlayerWhite}
+                        isInteractable={!!isPlayersTurn && !isGameOver}
+                      />
+                    </div>
+                    <div className="ml-auto flex items-start gap-2">
+                      <Button
+                        onClick={() => setResignConfirmationDialog(true)}
+                        variant="outline"
+                      >
+                        Resign
+                      </Button>
+                      {drawOfferState == "noOffer" && (
+                        <Button onClick={offerDraw} variant="outline">
+                          Offer draw
+                        </Button>
+                      )}
+                      {drawOfferState == "waitingForResponse" && (
+                        <Button disabled variant="outline">
+                          Draw offered
+                        </Button>
+                      )}
+                      {drawOfferState == "receivedOffer" && (
+                        <>
+                          <Button onClick={() => respondToDraw(true)}>
+                            Accept draw
+                          </Button>
+                          <Button onClick={() => respondToDraw(false)}>
+                            Reject draw
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </ChessBoard>
+            </div>
+            <div className="w-full shrink-0 md:w-72 lg:w-80">
+              <MatchAnalysisPanel
+                moves={moveHistory}
+                selectedIndex={previewIndex}
+                onSelect={handleSelect}
+              />
+            </div>
+          </div>
+        </div>
+        {isGameOver && <BackArrowLink />}
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogDescription>
+              <p>Resign this game?</p>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              onClick={() => {
+                handleResign()
+                setResignConfirmationDialog(false)
+              }}
+              variant="destructive"
+            >
+              Resign
+            </Button>
+            <DialogClose asChild>
+              <Button
+                onClick={() => setResignConfirmationDialog(false)}
+                variant="outline"
+              >
+                Cancel
+              </Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={gameOverDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setGameOverDialogOpen(false)
+            cancelRef.current?.()
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {gameOverEventType && GAME_OVER_TITLES[gameOverEventType]}
+            </DialogTitle>
+            <DialogDescription>{gameOverMessage}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <QueueButton
+              joinRequest={joinRequest}
+              buttonText="New game"
+              onMatchFound={() => {
+                setIsGameOver(false)
+                setGameOverDialogOpen(false)
+              }}
+              cancelTrigger={(onClick) => (
+                <DialogClose asChild>
+                  <Button onClick={onClick} variant="outline">
+                    Cancel
+                  </Button>
+                </DialogClose>
+              )}
+              cancelRef={cancelRef}
+            />
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Layout>
+  )
+}
+
+export default Match

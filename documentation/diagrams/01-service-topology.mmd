@@ -1,0 +1,35 @@
+---
+config:
+  layout: dagre
+  flowchart:
+    padding: 30
+  themeVariables:
+    fontSize: 28px
+---
+flowchart LR
+    subgraph Frontend["Frontend <br>"]
+        FE["frontend<br>Vite+React :5173"]
+    end
+    subgraph Backend["Backend"]
+        PS["PlayerService<br>:8095 / gRPC :9092"]
+        MM["MatchmakingService<br>:8080"]
+        GSM["GameServerManager<br>:8081 / gRPC :9090"]
+        GS["GameServer<br>:8090 / gRPC :9091"]
+        SF["StockfishEngine<br>:8085 / gRPC :9093"]
+        VC["VoiceCommandService<br>:9100"]
+        subgraph Data["Data"]
+            PG[("PostgreSQL<br>Flyway-managed")]
+            RD[("Redis<br>session + analysis queue")]
+        end
+    end
+    User(("User browser")) --> FE
+    FE -- GraphQL --> PS
+    FE -- STOMP/SockJS --> MM & GS
+    FE -- HTTP POST --> VC
+    PS --> PG & RD
+    GSM --> RD
+    GS -. gRPC heartbeat 30s .-> GSM
+    MM -- gRPC allocate --> GSM
+    GS -- gRPC submit match --> PS
+    PS -- gRPC analyse --> SF
+    VC --> OAI["OpenAI API"]

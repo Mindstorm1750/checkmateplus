@@ -1,0 +1,190 @@
+type Mutation {
+    register(username: String!): RegisterResponse!
+    confirmTotp(code: String!): AuthResponse!
+    loginWithTotp(username: String!, code: String!): AuthResponse!
+    loginAsGuest: AuthResponse!
+    exchangeOAuthCode(code: String!): AuthResponse!
+    refresh(refreshToken: String!): AuthResponse!
+    logout(refreshToken: String!): Boolean!
+    postGameSurvey(matchId: String!, surveyScore: Int!, optionalComments: String): Survey!
+    requestMatchAnalysis(matchId: ID!): MatchAnalysis!
+}
+
+type Query {
+    me: PlayerProfile
+    playerStats(playerId: String!): PlayerStats
+    matchHistory(playerId: String!, afterCursor: String, size: Int = 20): MatchHistoryPage
+    leaderboard(size: Int = 10): [LeaderboardEntry!]!
+    liveMatches(afterCursor: String, size: Int = 20): SpectateMatchPage!
+    spectateMatch(matchId: ID!): SpectateMatch
+    matchAnalysis(matchId: ID!): MatchAnalysis
+    matchMoveHistory(matchId: ID!): MatchMoveHistory
+}
+
+type MatchMoveHistory {
+    matchId: String!
+    whitePlayer: SpectatePlayer
+    blackPlayer: SpectatePlayer
+    timeControl: TimeControl!
+    matchType: String!
+    outcome: String!
+    finalFen: String!
+    moves: [MoveHistoryView!]!
+    createdAtEpochMs: Float!
+    gameDurationMs: Float!
+}
+
+type MoveHistoryView {
+    san: String!
+    from: String!
+    to: String!
+    fenAfter: String!
+    colour: String!
+    playerId: String!
+}
+
+type MatchAnalysis {
+    matchId: String!
+    status: String!
+    moves: [MoveAnalysis!]!
+}
+
+type MoveAnalysis {
+    ply: Int!
+    moveUci: String!
+    bestMoveUci: String!
+    scoreBefore: AnalysisScore!
+    scoreAfter: AnalysisScore!
+    cpLoss: Int!
+    classification: String!
+    pv: [String!]!
+    depth: Int!
+}
+
+type AnalysisScore {
+    cp: Int
+    mate: Int
+}
+
+type SpectateMatchPage {
+    matches: [SpectateMatch!]!
+    nextCursor: String
+    hasMore: Boolean!
+}
+
+type SpectateMatch {
+    matchId: String!
+    status: String!
+    serverId: String
+    websocketUrl: String
+    whitePlayer: SpectatePlayer
+    blackPlayer: SpectatePlayer
+    whiteTimeSeconds: Int!
+    blackTimeSeconds: Int!
+    lastFen: String
+    activeColor: String
+    moveNumber: Int!
+    winnerId: String
+    reason: String
+    updatedAt: Float!
+    botConfiguration: SpectateBotConfiguration
+    matchType: String
+    timeControl: TimeControl
+}
+
+type SpectatePlayer {
+    playerId: String!
+    displayName: String!
+    rating: Int!
+    type: String!
+}
+
+type SpectateBotConfiguration {
+    botModelType: String!
+    botMoveTimeModelType: String!
+}
+
+type PlayerStats {
+    playerId: String!
+    displayName: String!
+    skillRating: Int
+    ratingDeviation: Float
+    wins: Int!
+    losses: Int!
+    draws: Int!
+    totalGames: Int!
+    winRate: Int!
+    winsAsWhite: Int!
+    winsAsBlack: Int!
+    gamesAsWhite: Int!
+    gamesAsBlack: Int!
+    currentStreak: Int!
+    longestWinStreak: Int!
+    averageGameDurationMs: Float!
+    favouriteTimeControl: String
+    memberSinceEpochMs: Float!
+}
+
+type MatchHistoryPage {
+    matches: [MatchSummary!]!
+    nextCursor: String
+    hasMore: Boolean!
+}
+
+type MatchSummary {
+    matchId: String!
+    opponentId: String
+    result: MatchResult!
+    colour: String!
+    matchType: String!
+    timeControl: String!
+    gameDurationMs: Float
+    createdAtEpochMs: Float!
+}
+
+type LeaderboardEntry {
+    rank: Int!
+    playerId: String!
+    displayName: String!
+    skillRating: Int!
+}
+
+enum MatchResult { WIN LOSS DRAW}
+
+enum TimeControl {
+    BULLET_1_0
+    BULLET_2_1
+    BLITZ_3_0
+    BLITZ_5_0
+    RAPID_10_0
+    RAPID_15_10
+    CLASSICAL_30_0
+}
+
+type RegisterResponse {
+    qrCodeUri: String!
+    secret: String!
+    playerId: String!
+}
+
+type AuthResponse {
+    jwt: String!
+    refreshToken: String
+    playerId: String!
+    displayName: String!
+    isGuest: Boolean!
+}
+
+type PlayerProfile {
+    playerId: String!
+    displayName: String!
+    username: String
+    skillRating: Int
+    totpEnabled: Boolean!
+}
+
+type Survey {
+    matchId: String!
+    surveyScore: Int!
+    optionalComments: String
+}

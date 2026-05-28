@@ -1,0 +1,16 @@
+import type { MatchType } from "@/lib/stompMessageTypes/ChessLibrary/PlayerModels/MatchType.ts"
+
+/**
+ * Event sent to players when a match has been successfully formed and a server allocated.
+ *
+ * @property matchId The unique identifier of the formed match.
+ * @property websocketUrl The WebSocket URL of the game server where the match is hosted.
+ * @property opponentName The display name of the opponent player.
+ */
+export type MatchFoundEvent = {
+  matchId: string
+  websocketUrl: string
+  opponentName: string
+  playerId: string
+  matchType: MatchType
+}

@@ -1,0 +1,58 @@
+enabled: true
+image:
+  repository: git.cs.kent.ac.uk:5050/jhl28/checkmate/gameserver
+  tag: latest
+  pullPolicy: IfNotPresent
+replicaCount: 1
+service:
+  httpPort: 8090
+  grpcPort: 9091
+serviceAccount:
+  create: false
+  name: "checkmateplus-default"
+imagePullSecrets: [ ]
+nameOverride: ""
+podAnnotations: { }
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 128Mi
+  limits:
+    cpu: 1000m
+    memory: 512Mi
+podSecurityContext: { }
+# fsGroup: 2000
+env:
+  GAMESERVERMANAGER_HOST: "{{ .Release.Name }}-gameservermanager"
+  GAMESERVERMANAGER_PORT: "9090"
+  GAMESERVER_ADVERTISE_HOST: "{{ .Release.Name }}-gameserver"
+  GAMESERVER_ADVERTISE_GRPCPORT: "9091"
+  GAMESERVER_MAXCONCURRENTMATCHES: "25"
+  SPRING_DATA_REDIS_HOST: "{{ .Release.Name }}-redis-master"
+  SPRING_DATA_REDIS_PORT: "6379"
+  SPRING_PROFILES_ACTIVE: "dev"
+securityContext: { }
+  # capabilities:
+  #   drop:
+  #   - ALL
+# readOnlyRootFilesystem: true
+# runAsNonRoot: true
+# runAsUser: 1000
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: { }
+
+tolerations: [ ]
+
+affinity: { }
+
+global:
+  environment: dev
+  imagePullPolicy: IfNotPresent

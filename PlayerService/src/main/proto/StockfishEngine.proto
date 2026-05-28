@@ -1,0 +1,57 @@
+syntax = "proto3";
+option java_package = "org.checkmateplus.stockfishengine.proto";
+option java_outer_classname = "StockfishEngineProto";
+
+service StockfishEngine {
+  rpc AnalyseMatch(AnalyseMatchRequest) returns (AnalyseMatchResponse);
+}
+
+message AnalyseMatchRequest {
+  string match_id = 1;
+  string starting_fen = 2;
+  repeated string uci_moves = 3;
+  AnalysisConfig config = 4;
+}
+
+message AnalysisConfig {
+  int32 depth = 1;
+  int32 movetime_ms = 2;
+  int32 multi_pv = 3;
+}
+
+message AnalyseMatchResponse {
+  string match_id = 1;
+  bool success = 2;
+  string error = 3;
+  repeated MoveAnalysis moves = 4;
+}
+
+message MoveAnalysis {
+  int32 ply = 1;
+  string move_uci = 2;
+  string best_move_uci = 3;
+  Score score_before = 4;
+  Score score_after = 5;
+  int32 cp_loss = 6;
+  Classification classification = 7;
+  repeated string pv = 8;
+  int32 depth = 9;
+}
+
+message Score {
+  oneof kind {
+    int32 cp = 1;
+    int32 mate = 2;
+  }
+}
+
+enum Classification {
+  CLASSIFICATION_UNKNOWN = 0;
+  CLASSIFICATION_BEST = 1;
+  CLASSIFICATION_GREAT = 2;
+  CLASSIFICATION_GOOD = 3;
+  CLASSIFICATION_INACCURACY = 4;
+  CLASSIFICATION_MISTAKE = 5;
+  CLASSIFICATION_BLUNDER = 6;
+  CLASSIFICATION_OK = 7;
+}

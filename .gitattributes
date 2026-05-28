@@ -1,0 +1,5 @@
+.csv filter=lfs diff=lfs merge=lfs -text
+*.csv filter=lfs diff=lfs merge=lfs -text
+*.exe filter=lfs diff=lfs merge=lfs -text
+StockfishEngine/src/main/resources/stockfishExecutables/linux/stockfish-ubuntu-x86-64-avx2 filter=lfs diff=lfs merge=lfs -text
+ProjectDemoCheckmatePlus.mp4 filter=lfs diff=lfs merge=lfs -text

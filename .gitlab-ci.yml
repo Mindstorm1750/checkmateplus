@@ -1,0 +1,168 @@
+stages: # List of stages for jobs, and their order of execution
+  - build
+  - test
+  - secret-detection
+  - docker-image
+  - security-test
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "master"
+    - if: $CI_COMMIT_BRANCH == "develop"
+    - if: $CI_COMMIT_BRANCH
+build-job: # This job runs in the build stage, which runs first.
+  image: gradle:9.3.1-jdk25-graal
+  stage: build
+  script:
+    - GRADLE_USER_HOME="$(pwd)/.gradle"
+    - export GRADLE_USER_HOME
+    - chmod +x ./gradlew #for sbom detection
+    - gradle --build-cache assemble
+  artifacts:
+    paths:
+      - build/libs/*.jar
+    expire_in: 1 hour
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: push
+    paths:
+      - build
+      - .gradle
+
+frontend-test:
+  image: node:24-alpine
+  stage: test
+  cache:
+    key: "$CI_COMMIT_REF_NAME-frontend"
+    paths:
+      - frontend/node_modules/
+  script:
+    - cd frontend
+    - npm ci
+    - npm run test -- --reporter=junit --outputFile=junit.xml
+  artifacts:
+    reports:
+      junit: frontend/junit.xml
+    expire_in: 1 day
+
+test:
+  image: gradle:9.3.1-jdk25-graal
+  stage: test
+  script:
+    - GRADLE_USER_HOME="$(pwd)/.gradle"
+    - export GRADLE_USER_HOME
+    - gradle check
+  artifacts:
+    reports:
+      junit: "**/build/test-results/test/TEST-*.xml"
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull
+    paths:
+      - build
+      - .gradle
+.build-cached-rootless:
+  image:
+    name: moby/buildkit:rootless
+    entrypoint: [ "" ]
+  stage: docker-image
+  needs:
+    - frontend-test
+  tags:
+    - docker-socket-support
+  variables:
+    BUILDKITD_FLAGS: --oci-worker-no-process-sandbox
+    CACHE_IMAGE: $CI_REGISTRY_IMAGE/frontend:cache
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master"'
+      when: on_success
+    - when: manual
+  before_script:
+    - mkdir -p ~/.docker
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > ~/.docker/config.json
+  script:
+    - |
+      buildctl-daemonless.sh build \
+        --frontend dockerfile.v0 \
+        --local context=./frontend \
+        --local dockerfile=./frontend \
+        --export-cache type=registry,ref=$CACHE_IMAGE \
+        --import-cache type=registry,ref=$CACHE_IMAGE \
+        --output type=image,name=$CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHA,push=true
+
+.native-docker-image:
+  image: gradle:9.3.1-jdk25-graal
+  stage: docker-image
+  needs:
+    - build-job
+    - test
+  tags:
+    - docker-socket-support
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master"'
+      when: on_success
+    - when: manual
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull
+    paths:
+      - build
+      - .gradle
+  before_script:
+    - export GRADLE_USER_HOME="$(pwd)/.gradle"
+    - mkdir -p $HOME/.docker
+    - echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > $HOME/.docker/config.json
+  script:
+    - gradle --no-parallel --max-workers 1 bootBuildImage --publishImage
+include:
+  - template: Jobs/SAST.gitlab-ci.yml
+  - template: Jobs/Secret-Detection.gitlab-ci.yml
+#  - template: Jobs/Container-Scanning.gitlab-ci.yml
+  - template: Jobs/Dependency-Scanning.gitlab-ci.yml
+
+variables:
+  SECRET_DETECTION_ENABLED: 'true'
+  CS_REGISTRY_USER: $CI_REGISTRY_USER
+  CS_REGISTRY_PASSWORD: $CI_REGISTRY_PASSWORD
+
+#.container_scanning_gameserver:
+#  extends: container_scanning
+ # stage: security-test
+#  needs:
+#    - job: native-docker-image
+#  variables:
+#    CS_IMAGE: $CI_REGISTRY_IMAGE/gameserver:$CI_COMMIT_SHA
+
+#.container_scanning_gameservermanager:
+ # extends: container_scanning
+ # stage: security-test
+ # needs:
+  #  - job: native-docker-image
+ # variables:
+  #  CS_IMAGE: $CI_REGISTRY_IMAGE/gameservermanager:$CI_COMMIT_SHA
+
+#.container_scanning_matchmaking:
+#  extends: container_scanning
+ # stage: security-test
+ # needs:
+ #   - job: native-docker-image
+ # variables:
+#    CS_IMAGE: $CI_REGISTRY_IMAGE/matchmakingservice:$CI_COMMIT_SHA
+
+#.container_scanning_frontend:
+ # extends: container_scanning
+ # stage: security-test
+ # needs:
+ #   - job: build-cached-rootless
+ # variables:
+ #   CS_IMAGE: $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHA
+
+sast:
+  stage: security-test
+
+dependency_scanning:
+  stage: security-test
+
+secret_detection:
+  stage: security-test

@@ -1,0 +1,17 @@
+plugins {
+    kotlin("jvm") version "2.3.20"
+    id("java-library")
+    kotlin("plugin.serialization") version "2.3.20"
+}
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+    testImplementation(kotlin("test"))
+}
+
+tasks.test {
+    useJUnitPlatform()
+}

@@ -1,0 +1,115 @@
+services:
+  matchmakingservice:
+    image: git.cs.kent.ac.uk:5050/jhl28/checkmate/matchmakingservice:2.1.0
+    container_name: matchmakingservice
+    environment:
+      - jwtSecret=+/J48zc2Hq1vtHZNU+9HGXZ6vP3ZDaX4UtgNWqR7eSY=
+    ports:
+      - "8080:8080"
+    networks:
+      - game-network
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - gameservermanager
+
+  gameserver:
+    image: git.cs.kent.ac.uk:5050/jhl28/checkmate/gameserver:2.1.0
+    container_name: gameserver
+    ports:
+      - "8090:8090"
+      - "9091:9091"
+    environment:
+      - jwtSecret=+/J48zc2Hq1vtHZNU+9HGXZ6vP3ZDaX4UtgNWqR7eSY=
+    networks:
+      - game-network
+    restart: unless-stopped
+    depends_on:
+      - gameservermanager
+      - playerservice
+
+  gameservermanager:
+    image: git.cs.kent.ac.uk:5050/jhl28/checkmate/gameservermanager:2.1.0
+    container_name: gameservermanager
+    networks:
+      - game-network
+    restart: unless-stopped
+
+  playerservice:
+    image: git.cs.kent.ac.uk:5050/jhl28/checkmate/playerservice:2.1.2
+
+    container_name: playerservice
+    ports:
+      - "8095:8095"
+      - "9092:9092"
+    environment:
+      - jwtSecret=+/J48zc2Hq1vtHZNU+9HGXZ6vP3ZDaX4UtgNWqR7eSY=
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=checkmate
+      - postgresUser=checkmate
+      - postgresPassword=checkmate
+      - STOCKFISHENGINE_HOST=stockfishengine
+      - STOCKFISHENGINE_PORT=9093
+    networks:
+      - game-network
+    restart: unless-stopped
+    depends_on:
+      - stockfishengine
+
+  stockfishengine:
+    image: git.cs.kent.ac.uk:5050/jhl28/checkmate/stockfishengine:0.0.1-SNAPSHOT
+    container_name: stockfishengine
+    ports:
+      - "9093:9093"
+      - "8085:8085"
+    environment:
+      - GRPC_PORT=9093
+      - SERVER_PORT=8085
+    networks:
+      - game-network
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:18-alpine
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=checkmate
+      - POSTGRES_PASSWORD=checkmate
+      - POSTGRES_DB=checkmate
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - game-network
+    restart: unless-stopped
+
+  voicecommandservice:
+    image: git.cs.kent.ac.uk:5050/jhl28/checkmate/voicecommandservice:latest
+    container_name: voicecommandservice
+    ports:
+      - "9100:9100"
+
+    networks:
+      - game-network
+    restart: unless-stopped
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - jwt.secret=MtBTjKZfckEP9if9FdwmggOtf2Geh9YQXBxLmNxEnR0=
+
+  redis:
+    image: redis:8.6.0-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - game-network
+    restart: unless-stopped
+
+networks:
+  game-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
