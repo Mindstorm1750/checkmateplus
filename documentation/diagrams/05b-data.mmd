@@ -1,0 +1,41 @@
+---
+config:
+  themeVariables:
+    fontSize: 22px
+---
+flowchart TB
+    subgraph Cluster["Kubernetes Cluster - namespace: checkmateplus"]
+
+        subgraph Public["Publicly reachable services (see Figure 6)"]
+            MM["MatchmakingService"]
+            PS["PlayerService"]
+            GS["GameServer<br>StatefulSet"]
+        end
+
+        subgraph Internal["Internal services (cluster-only)"]
+            GSM["GameServerManager"]
+            SF["StockfishEngine"]
+        end
+
+        subgraph Data["Stateful - bitnami subcharts"]
+            PG[("PostgreSQL<br>player + match data<br>Flyway-managed")]
+            RD[("Redis<br>sessions + analysis queue")]
+        end
+    end
+
+    MM -- "gRPC allocate" --> GSM
+    GS -. "gRPC heartbeat 30s" .-> GSM
+    GS -- "gRPC submit match" --> PS
+    PS -- "gRPC analyse (async via Redis)" --> SF
+
+    PS --> PG
+    PS --> RD
+    GSM --> RD
+
+    style MM fill:#aaddff
+    style PS fill:#aaffaa
+    style GS fill:#ffaaaa
+    style GSM fill:#ffd699
+    style SF fill:#a8e6cf
+    style PG fill:#bbb,color:#000
+    style RD fill:#ff6b6b,color:#fff

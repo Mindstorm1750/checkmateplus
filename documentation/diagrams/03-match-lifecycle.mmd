@@ -1,0 +1,29 @@
+---
+config:
+  themeVariables:
+    fontSize: 28px
+---
+sequenceDiagram
+    actor U as User
+    participant FE as frontend
+    participant MM as MatchmakingService
+    participant GSM as GameServerManager
+    participant GS as GameServer
+    participant PS as PlayerService
+    participant SF as StockfishEngine
+
+    U->>FE: click "Find game"
+    FE->>MM: STOMP join queue
+    MM->>GSM: gRPC allocate
+    GSM-->>MM: GameServer endpoint
+    MM-->>FE: STOMP match-found (WS URL + match id)
+    FE->>GS: STOMP connect (JWT)
+    loop game in progress
+        U->>FE: move
+        FE->>GS: STOMP send move
+        GS-->>FE: STOMP broadcast state
+    end
+    GS->>PS: gRPC submitMatch
+    PS->>SF: gRPC analyse (async via Redis queue)
+    SF-->>PS: analysis result
+    FE->>PS: GraphQL fetch result

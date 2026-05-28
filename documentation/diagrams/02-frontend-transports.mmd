@@ -1,0 +1,6 @@
+graph TB
+    FE[frontend]
+    FE -->|"GraphQL (Spring GraphQL)"| PS[PlayerService]
+    FE -->|"STOMP over SockJS<br/>queue + match-found events"| MM[MatchmakingService]
+    FE -->|"STOMP over SockJS<br/>live game state"| GS[GameServer]
+    FE -->|"HTTP POST<br/>/api/voice/move"| VC[VoiceCommandService]

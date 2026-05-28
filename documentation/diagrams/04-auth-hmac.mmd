@@ -1,0 +1,10 @@
+---
+config:
+  layout: dagre
+---
+flowchart TB
+    U(("User")) -- login --> PS["PlayerService<br>JWT issuer"]
+    PS -- "JWT signed w/ jwt.secret" --> U
+    U -- JWT in header --> MM["MatchmakingService"] & VC["VoiceCommandService"]
+    U -- JWT in STOMP CONNECT --> GS["GameServer"]
+    PS -. "shares jwt.secret" .-> MM & GS & VC

@@ -1,0 +1,32 @@
+---
+config:
+  layout: elk
+---
+flowchart LR
+    subgraph subGraph0["Backend Services"]
+        PS["PlayerService"]
+        MM["MatchmakingService"]
+        GS["GameServer"]
+        VC["VoiceCommandService"]
+        GSM["GameServerManager"]
+        SF["StockfishEngine"]
+    end
+    subgraph subGraph1["Kubernetes Cluster"]
+        FE["Frontend"]
+        subGraph0
+        DB[("Postgres + Redis")]
+    end
+    User(("User")) -- HTTPS --> CF["Cloudflare<br>Tunnel Edge"]
+    CF --> FE & PS & MM & GS & VC
+    PS --- DB
+    GSM --- DB
+
+    style PS fill:#ccffcc
+    style MM fill:#ccddff
+    style GS fill:#ffcccc
+    style VC fill:#eed9ff
+    style GSM fill:#ffe5cc
+    style SF fill:#d0f0e0
+    style FE fill:#ffeecc
+    style DB fill:#bbb,color:#000
+    style CF fill:#f38020,color:#000
