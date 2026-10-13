@@ -88,7 +88,7 @@ For a local install you can create plain Secrets manually:
 ```bash
 kubectl -n checkmateplus create secret generic \
   checkmateplus-playerservice-secret \
-  --from-literal=jwtSecret='+/J48zc2Hq1vtHZNU+9HGXZ6vP3ZDaX4UtgNWqR7eSY=' \
+  --from-literal=jwtSecret="$(openssl rand -base64 32)" \
   --from-literal=postgresUser='checkmateuser' \
   --from-literal=postgresPassword='change-me'
 

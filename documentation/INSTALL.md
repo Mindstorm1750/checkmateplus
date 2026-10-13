@@ -88,7 +88,7 @@ GAMESERVERMANAGER_HOST=gsm.local GAMESERVERMANAGER_PORT=9090 \
 ```
 
 The JWT secret in the checked-in `application.properties` files is a
-shared dev value (`+/J48zc2Hq1vtHZNU+9HGXZ6vP3ZDaX4UtgNWqR7eSY=`). All
+shared, **dev-only** value (`QDTNT7u+qrEDSRmwTYsPawyGevb6Jpm+9j4DsJcJ/aU=`). Never reuse it in a real deployment — generate a fresh one with `openssl rand -base64 32`. All
 services that issue or validate tokens must use the same value — keep
 it in sync if you override it.
 

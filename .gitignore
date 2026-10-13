@@ -134,3 +134,10 @@ bin/
 /documentation/Report.bbl
 /documentation/report.aux
 /documentation/Report.aux
+
+### Local secrets / generated output ###
+/token.txt
+template-output.yaml
+/frontend/junit*.xml
+/frontend/json-report.json
+/.claude/settings.local.json

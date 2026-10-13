@@ -3,7 +3,7 @@ services:
     image: git.cs.kent.ac.uk:5050/jhl28/checkmate/matchmakingservice:2.1.0
     container_name: matchmakingservice
     environment:
-      - jwtSecret=+/J48zc2Hq1vtHZNU+9HGXZ6vP3ZDaX4UtgNWqR7eSY=
+      - jwtSecret=QDTNT7u+qrEDSRmwTYsPawyGevb6Jpm+9j4DsJcJ/aU=
     ports:
       - "8080:8080"
     networks:
@@ -20,7 +20,7 @@ services:
       - "8090:8090"
       - "9091:9091"
     environment:
-      - jwtSecret=+/J48zc2Hq1vtHZNU+9HGXZ6vP3ZDaX4UtgNWqR7eSY=
+      - jwtSecret=QDTNT7u+qrEDSRmwTYsPawyGevb6Jpm+9j4DsJcJ/aU=
     networks:
       - game-network
     restart: unless-stopped
@@ -43,7 +43,7 @@ services:
       - "8095:8095"
       - "9092:9092"
     environment:
-      - jwtSecret=+/J48zc2Hq1vtHZNU+9HGXZ6vP3ZDaX4UtgNWqR7eSY=
+      - jwtSecret=QDTNT7u+qrEDSRmwTYsPawyGevb6Jpm+9j4DsJcJ/aU=
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
       - POSTGRES_DB=checkmate
@@ -96,7 +96,7 @@ services:
     restart: unless-stopped
     environment:
       - SPRING_PROFILES_ACTIVE=docker
-      - jwt.secret=MtBTjKZfckEP9if9FdwmggOtf2Geh9YQXBxLmNxEnR0=
+      - jwt.secret=QDTNT7u+qrEDSRmwTYsPawyGevb6Jpm+9j4DsJcJ/aU=
 
   redis:
     image: redis:8.6.0-alpine

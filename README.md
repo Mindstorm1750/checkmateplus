@@ -1,9 +1,10 @@
 # Checkmate+
 
 A multiplayer chess platform built as a set of Spring Boot
-microservices (Kotlin/Java), a Vite + React 19 frontend. Production runs on
-Kubernetes behind a Cloudflared tunnel at
-[checkmateplus.org](https://checkmateplus.org).
+microservices (Kotlin/Java), a Vite + React 19 frontend. Built as a
+University of Kent final-year group project. It ran in production on
+Kubernetes behind a Cloudflared tunnel at checkmateplus.org; that deployment
+has since been shut down.
 
 ## Documentation
 
@@ -65,4 +66,6 @@ documentation/           Install / deployment guides + project report
 
 ## Licence
 
-See [LICENCE](LICENCE).
+See [LICENCE](LICENCE). The bundled Stockfish executables under
+`StockfishEngine/src/main/resources/stockfishExecutables/` are GPLv3 — see the
+[README there](StockfishEngine/src/main/resources/stockfishExecutables/README.md).
